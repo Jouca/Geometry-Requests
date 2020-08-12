@@ -1,0 +1,13 @@
+Error. <:error:472907618386575370>
+Tu cuenta no está vinculada al bot y necesita estar vinculada para usar este comando, usa `req!profile link` para vincular tu cuenta.
+
+Ajustes del perfil
+Información
+Para cambiar la configuración, usa `req!settings profile (configuración) (valor)`.
+
+Lenguaje
+Inglés (en)
+Francés (fr)
+Español (es)
+
+Si quieres usar tu icono, lea la documentación

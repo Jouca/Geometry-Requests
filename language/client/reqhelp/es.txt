@@ -1,0 +1,23 @@
+Lista de comandos de ayuda
+`req!help` = Muestra todos los comandos de Geometry Requests.
+`req!about` = Muestra la información de Geometry Requests + el servidor oficial de Discord + el enlace de invitación al bot.
+`req!profile link` = Enlaza tu cuenta de Discord a la base de datos del bot (necesario para usar algunos comandos).
+`req!profile unlink` = Desenlaza tu cuenta de Discord de la base de datos del bot (resetea el progreso de los logros + niveles sugeridos).
+`req!level (levelid)` = Envía el nivel a el canal de los revisores (es necesario que los canales ReviewerChannel y RequestsChannel esten configurados)(necesita que esten enlazados al bot).
+`req!search (levelID/name)` = Muestra todos los detalles de un nivel en los servidores de Geometry Dash.
+`req!queue` = Muestra todos los niveles enviados en este servidor.
+`req!myqueue` = Muestra todos los niveles que tú has enviado en todos los servidores.
+`req!report` = Reporta un nivel a los moderadores de Geometry Requests si el nivel está rompiendo las reglas de Geometry Dash (No abuses de este comando ya que si el reporte es falso, serás baneado del bot).
+`req!achievements` = Muestra todos los logros con el bot + los que tú lograste (debes estar vinculado con el bot).
+`req!profile (opcional: discord_IDdelusuario)` = Muestra el perfil del usuario.
+`req!settings profile` = Muestra todas las configuraciones para el usuario.
+`req!setsettings profile (language/color1/color2/cubeid/glowoutline) (('fr'/'en'/'es')/colorID/colorID/cubeid/(1/0))` = Editar una configuración en la configuración del perfil.
+`req!review (IDdelnivel) (yes/no) (opcional: opinión)` = Darle una revisión a un nivel de la lista (Requiere ReviewerRole, CheckedReviewChannel seleccionado en las configuraciones y en el permiso del Reviewer Role. Si el servidor es de un Mod de GD, por favor ponga 'gdmodchannel'.
+`req!setconfig (reviewerrole/ownerrole/requestchannel/reviewchannel/checkedreviewchannel/announcementbot/gdmodchannel/tagreviewer/needvideo/language) (ID/(1/0 for tagreviewer and needvideo)/('fr'/'en'/'en'))` = Configura las opciones, puedes usarlo para taguear un canal o algún rol.
+`req!remove (levelid/all)` = Elimina un nivel (o todos los niveles) de la lista.
+`req!send (levelid) (star/featured) (numero de estrellas) (opcional: 1=Easy Demon, 2=Medium Demon, 3=Hard Demon, 4=Insane Demon, 5=Extreme Demon) (optional: captura de pantalla)` = Enviar el nivel de la lista de tu servidor (Requiere permisos de GD Mod).
+`req!mod approve (levelid)` = Hacer que un nivel reportado esté en lista negra (Requiere permiso de Mod de GR).
+`req!mod unapprove (levelid)` = Elimina un nivel reportado de la lista de reportes (Requiere permiso de Mod de GR).
+`req!mod ban (discord_IDdelusuario)` = Banea a un usuario de usar el bot (Requiere permiso de Mod de GR).
+**IMPORTANTE** : Si eres nuevo, te recomendamos mirar los ejemplos de comandos aquí :
+[Link de los comandos de ejemplos](http://clairfygdpsbyjoucacorpo.tk/geometry-requests/)

@@ -1,0 +1,19 @@
+Error. <:error:472907618386575370>
+Este nivel puede estar eliminado, oculto (unlisted) o ser invalido. Por favor, comprueba la ID del nivel e inténtalo de nuevo.
+
+<:info:472908656514433064> Cargando...
+Cargando... Por favor espera un momento
+
+Tu cuenta no está vinculada al bot y necesita estar vinculada para usar este comando, usa `req!profile link` para vincular tu cuenta.
+El administrador del servidor necesita configurar el rol para ReviewerRole.
+Este nivel ya ha sido enviado en este servidor. Necesitas esperar a que un revisor revise este nivel para publicarlo de nuevo.
+El administrador del servidor necesita configurar el canal para ReviewerRole.
+El administrador del servidor necesita configurar el canal para RequestChannel.
+Su solicitud debe ser compartida en
+Has sido baneado porque no has cumplido las reglas del bot, ya no podrás enviar/revisar/reportar niveles. Si crees que ha sido un error, por favor póngase en contacto con el soporte del bot con esta dirección de email: joucagame@gmail.com.
+Este nivel esta en la lista negra del bot. Las razones se deben a que este nivel va en contra de las normas de Geometry Dash.
+Necesitas poner un video en tu solicitud en este servidor.
+
+Finalizado! <:success:472908961176092702>
+de
+¡Solicitado con éxito!

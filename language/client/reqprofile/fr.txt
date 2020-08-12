@@ -1,0 +1,6 @@
+<:info:472908656514433064> Chargement...
+Chargement... Veuillez patienter un petit moment
+
+Erreur. <:error:472907618386575370>
+Vôtre compte n'est pas lié sur le bot et a besoin d'être lié pour utiliser cette commande, utiliser `req!profile link` pour lier vôtre compte.
+Le profil que vous avez essayé d'avoir n'existe pas sur nos serveurs, si vous voulez avoir un profil, utiliser l'ID d'un utilisateur. Exemple : `req!profile 216708683290247168`

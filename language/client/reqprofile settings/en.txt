@@ -1,0 +1,6 @@
+Error. <:error:472907618386575370>
+Your account is not linked on the bot and need to be linked for use this command, use `req!profile link` for link your account.
+
+Profile Settings
+Information
+For edit settings, use `req!setsettings profile (setting) (value)`.

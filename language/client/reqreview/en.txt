@@ -1,0 +1,18 @@
+<:info:472908656514433064> Loading...
+Loading... Please wait a little moment
+
+Error. <:error:472907618386575370>
+Your account is not linked on the bot and need to be linked for use this command, use `req!profile link` for link your account.
+The admin of the server need to setup the channel for CheckedReviewChannel.
+You need to select in the command with 'yes' for say that this is good for sent or 'no' for say that this is no good for sent in your review.
+You were banned because you didn't followed the bot rules, you will no longer be able to review/suggest/report levels. If this is an error, please contact support at this email address: joucagame@gmail.com.
+You don't have the required role for review levels in this server.
+No levels with the ID
+found on the queue.
+
+Your level
+by
+have been reviewed on
+
+Success! <:success:472908961176092702>
+have been successfully reviewed and announced on the CheckedReviewChannel, GDModChannel and in the requester DM!

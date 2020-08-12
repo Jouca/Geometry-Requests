@@ -1,0 +1,39 @@
+Setups of Geometry Requests
+Server Settings
+
+No role
+No channel
+No
+Yes
+
+English (en)
+French (fr)
+Spanish (es)
+
+Server Name =
+Reviewer Role =
+Owner Role =
+RequestChannel =
+ReviewChannel =
+CheckedReviewChannel =
+AnnouncementBot =
+GDModChannel =
+TagReviewer =
+NeedVideo =
+Language =
+
+Error. <:error:472907618386575370>
+You don't have the admin permissions to use this command.
+
+<:info:472908656514433064> Loading...
+Loading... Please wait a little moment
+
+Your account is not linked on the bot and need to be linked for use this command, use `req!profile link` for link your account.
+This role you selected don't exist on this server.
+This channel you selected don't exist on this server.
+You need to put the tag of the role.
+You need to put the tag of the channel.
+This server need to be owned by a GD Mod to use this setting.
+You need to put with `1` or `0` in this setting.
+You need to put a setting (settings are in 'req!help').
+The language you selected don't exist or is not on the bot, only languages which are added are : (`en,fr`).

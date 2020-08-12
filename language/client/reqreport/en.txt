@@ -1,0 +1,12 @@
+<:info:472908656514433064> Loading...
+Loading... Please wait a little moment
+
+Error. <:error:472907618386575370>
+The level ID is either deleted, unlisted, or invalid. Please check the level ID and try again.
+This level have been already submitted to the moderation team.
+You need to select a Level ID for report it.
+You were banned because you didn't followed the bot rules, you will no longer be able to send/review/report levels. If this is an error, please contact support at this email address: joucagame@gmail.com.
+
+Success! <:success:472908961176092702>
+by
+have been successfully reported to the moderation team!

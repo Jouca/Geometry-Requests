@@ -1,0 +1,6 @@
+Erreur. <:error:472907618386575370>
+Vous avez besoin de mettre du texte pour utiliser cette commande.
+Vous n'avez pas accès pour utiliser cette commande.
+
+Succès ! <:success:472908961176092702>
+L'annonce a été expédié sur tout les serveurs qui ont configuré `AnnouncementBot` !

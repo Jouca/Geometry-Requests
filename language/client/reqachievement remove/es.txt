@@ -1,0 +1,10 @@
+<:info:472908656514433064> Cargando...
+Cargando... Por favor espera un momento
+
+Error. <:error:472907618386575370>
+Necesitas seleccionar un logro para eliminar a un usuario.
+Este usuario no está vinculado en el bot.
+No tienes acceso para usar este comando.
+
+Finalizado! <:success:472908961176092702>
+Este usuario perdió el logro

@@ -1,0 +1,12 @@
+<:info:472908656514433064> Chargement...
+Chargement... Veuillez patienter un petit moment
+
+Erreur. <:error:472907618386575370>
+L'ID du niveau est soit supprimé, non listé, ou invalide. Veuillez vérifier l'ID du niveau et réessayer.
+Ce niveau a déjà été envoyé à la team de modération.
+Vous avez besoin de sélectionner une ID de niveau pour le rapporter.
+Vous avez été banni car vous n'avez pas suivi les règles du bot, vous n'êtes plus capâble d'envoyer/d'évaluer/de rapporter des niveaux. Si ceci est une erreur, Merci de contacter le support à cette adresse email : joucagame@gmail.com.
+
+Succès ! <:success:472908961176092702>
+par
+a été rapporté avec succès à la team de modération !

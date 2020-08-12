@@ -1,0 +1,6 @@
+Error. <:error:472907618386575370>
+Necesitas ingresar texto para usar este comando.
+No tienes acceso para usar este comando.
+
+¡Exitoso! <:success:472908961176092702>
+! El anuncio ha sido enviado en todos los servidores configurados con `AnnouncementBot`!

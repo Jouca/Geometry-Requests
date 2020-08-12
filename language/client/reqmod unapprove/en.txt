@@ -1,0 +1,9 @@
+<:info:472908656514433064> Loading...
+Loading... Please wait a little moment
+
+Error. <:error:472907618386575370>
+You don't have the access to use this command.
+Level not found on the reports.
+
+Success! <:success:472908961176092702>
+This level have been removed from the report list.

@@ -1,0 +1,10 @@
+**¡Gracias por utilizar Geometry Request!**
+**Versión del bot = 1.2 (Actualización de traducción)**
+**Versión de Discord.py = 1.3.4**
+Geometry Request es un bot desarrollado por Jouca y hecho para los jugadores de Geometry Dash. El propósito principal del bot es entregar niveles solicitados o Level requests a servidores de Discord que permitirá a jugadores configurar y buscar los niveles solicitados fácilmente. Aunque este bot no está conectado a Geometry Dash, buscará información sobre varios niveles de Geometry Dash directamente.
+El bot está operando actualmente en {servernumber} servidores, si quieres agregar el bot, el enlace está debajo de este mensaje!
+Enlace de invitación de Geometry Request = <https://discord.com/oauth2/authorize?client_id=707756141114949674&scope=bot&permissions=8>
+Si tienes sugerencias, preguntas o bugs para reportar, no dudes en hacernos saber en cualquier momento!
+Link de Discord = <https://discord.com/invite/eHeXQf2>
+Foto de perfil del bot hecha por **Hir0Shi**
+Insignias de los logros realizadas por **XShadowWizardX (8=8)**

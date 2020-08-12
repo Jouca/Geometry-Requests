@@ -1,0 +1,39 @@
+Configurations de Geometry Requests
+Configurations Serveur
+
+Aucun rôle
+Aucun salon
+Non
+Oui
+
+Anglais (en)
+Français (fr)
+Espagnol (es)
+
+Server Name =
+Reviewer Role =
+Owner Role =
+RequestChannel =
+ReviewChannel =
+CheckedReviewChannel =
+AnnouncementBot =
+GDModChannel =
+TagReviewer =
+NeedVideo =
+Language =
+
+Erreur. <:error:472907618386575370>
+Vous n'avez pas les permissions admin pour utiliser cette commande.
+
+<:info:472908656514433064> Chargement...
+Chargement... Veuillez attendre un petit moment
+
+Vôtre compte n'est pas lié sur le bot et a besoin d'être lié pour utiliser cette commande, utiliser `req!profile link` pour lier vôtre compte.
+Le rôle que vous avez sélectionné n'existe pas sur ce serveur.
+Le salon que vous avez sélectionné n'existe pas sur ce serveur.
+Vous avez besoin de mettre le tag du rôle.
+Vous avez besoin de mettre le tag du salon.
+Ce serveur a besoin d'être occupé par un GD Mod pour utiliser cette configuration.
+Vous avez besoin de mettre avec `1` ou `0` sur cette configuration.
+Vous avez besoin de mettre une configuration (les configurations sont dans 'req!help').
+La langue que vous avez sélectionné n'existe pas ou qu'il n'est pas sur le bot, les langages qui ont été rajoutés sont : (`en,fr`).

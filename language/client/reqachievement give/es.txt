@@ -1,0 +1,10 @@
+Cargando...
+Cargando... Por favor, espera un momento
+
+Error. <:error:472907618386575370>
+Necesitas seleccionar un logro para otorgarle a un usuario.
+Este usuario no está vinculado al bot.
+No tienes acceso para utilizar este comando.
+
+¡Listo! <:success:472908961176092702>
+Este usuario ha sido recompensado con el logro!

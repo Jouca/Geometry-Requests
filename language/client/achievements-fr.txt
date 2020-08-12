@@ -1,0 +1,74 @@
+<:linkage:726371163730608169> **SUCCÈS DÉVERROUILLÉ !!!** <:linkage:726371163730608169>
+<:success:472908961176092702> Succès déverrouillé : __Un nouveau venu !__ Description : `S'est synchronisé pour la première fois avec un compte Discord sur le bot`
+
+<:requests_0001:726371183507013644> **SUCCÈS DÉVERROUILLÉ !!!** <:requests_0001:726371183507013644>
+<:success:472908961176092702> Succès déverrouillé : __La première Requête__ Description : `A envoyé son premier niveau sur un serveur`
+
+<:requests_0005:726371183746088960> **SUCCÈS DÉVERROUILLÉ !!!** <:requests_0005:726371183746088960>
+<:success:472908961176092702> Succès déverrouillé : __Débutant en Requête__ Description : `A envoyé 5 niveaux dans des serveurs différents`
+
+<:requests_0010:726371183725117461> **SUCCÈS DÉVERROUILLÉ !!!** <:requests_0010:726371183725117461>
+<:success:472908961176092702> Succès déverrouillé : __Avancée en Requête__ Description : `A envoyé 10 niveaux dans des serveurs différents`
+
+<:requests_0050:726371181602799656> **SUCCÈS DÉVERROUILLÉ !!!** <:requests_0050:726371181602799656>
+<:success:472908961176092702> Succès déverrouillé : __Maitre en Requête__ Description : `A envoyé 50 niveaux dans des serveurs différents`
+
+<:requests_0100:726371183108554774> **SUCCÈS DÉVERROUILLÉ !!!** <:requests_0100:726371183108554774>
+<:success:472908961176092702> Succès déverrouillé : __Challenger en Requête__ Description : `A envoyé 100 niveaux dans des serveurs différents`
+
+<:reviewed_0001:726371164095512636> **SUCCÈS DÉVERROUILLÉ !!!** <:reviewed_0001:726371164095512636>
+<:success:472908961176092702> Succès déverrouillé : __La première Évaluation__ Description : `A évalué son premier niveau sur un serveur`
+
+<:reviewed_0005:726371165861314582> **SUCCÈS DÉVERROUILLÉ !!!** <:reviewed_0005:726371165861314582>
+<:success:472908961176092702> Succès déverrouillé : __Débutant en Évaluation__ Description : `A évalué 5 niveaux dans des serveurs différents`
+
+<:reviewed_0010:726371166859558994> **SUCCÈS DÉVERROUILLÉ !!!** <:reviewed_0010:726371166859558994>
+<:success:472908961176092702> Succès déverrouillé : __Avancée en Évaluation__ Description : `A évalué 10 niveaux dans des serveurs différents`
+
+<:reviewed_0050:726371163399520287> **SUCCÈS DÉVERROUILLÉ !!!** <:reviewed_0050:726371163399520287>
+<:success:472908961176092702> Succès déverrouillé : __Maître en Évaluation__ Description : `A évalué 50 niveaux dans des serveurs différents`
+
+<:reviewed_0100:726371165924491344> **SUCCÈS DÉVERROUILLÉ !!!** <:reviewed_0100:726371165924491344>
+<:success:472908961176092702> Succès déverrouillé : __Challenger en Évaluation__ Description : `A évalué 100 niveaux dans des serveurs différents`
+
+<:approved_0001:726371180986236948> **SUCCÈS DÉVERROUILLÉ !!!** <:approved_0001:726371180986236948>
+<:success:472908961176092702> Succès déverrouillé : __Le premier like__ Description : `A eu sur 1 niveau évalué avec une évaluation approuvé`
+
+<:approved_0005:726371182575878165> **SUCCÈS DÉVERROUILLÉ !!!** <:approved_0005:726371182575878165>
+<:success:472908961176092702> Succès déverrouillé : __Super like__ Description : `A eu sur 5 niveaux évalués avec une évaluation approuvé`
+
+<:approved_0010:726371183955804260> **SUCCÈS DÉVERROUILLÉ !!!** <:approved_0010:726371183955804260>
+<:success:472908961176092702> Succès déverrouillé : __Mega like__ Description : `A eu sur 10 niveaux évalués avec une évaluation approuvé`
+
+<:approved_0050:726371182483603456> **SUCCÈS DÉVERROUILLÉ !!!** <:approved_0050:726371182483603456>
+<:success:472908961176092702> Succès déverrouillé : __Ultra like__ Description : `A eu sur 50 niveaux évalués avec une évaluation approuvé`
+
+<:approved_0100:726371182856765451> **SUCCÈS DÉVERROUILLÉ !!!** <:approved_0100:726371182856765451>
+<:success:472908961176092702> Succès déverrouillé : __Extreme like__ Description : `A eu sur 100 niveaux évalués avec une évaluation approuvé`
+
+<:unapproved_0001:726371182957297674> **SUCCÈS DÉVERROUILLÉ !!!** <:unapproved_0001:726371182957297674>
+<:success:472908961176092702> Succès déverrouillé : __Le premier dislike__ Description : `A eu sur 1 niveau évalué avec une évaluation non approuvé`
+
+<:unapproved_0005:726371183678980116> **SUCCÈS DÉVERROUILLÉ !!!** <:unapproved_0005:726371183678980116>
+<:success:472908961176092702> Succès déverrouillé : __Super dislike__ Description : `A eu sur 5 niveaux évalués avec une évaluation non approuvé`
+
+<:unapproved_0010:726371183687368815> **SUCCÈS DÉVERROUILLÉ !!!** <:unapproved_0010:726371183687368815>
+<:success:472908961176092702> Succès déverrouillé : __Mega dislike__ Description : `A eu sur 10 niveaux évalués avec une évaluation non approuvé`
+
+<:unapproved_0050:726371182730936330> **SUCCÈS DÉVERROUILLÉ !!!** <:unapproved_0050:726371182730936330>
+<:success:472908961176092702> Succès déverrouillé : __Ultra dislike__ Description : `A eu sur 50 niveaux évalués avec une évaluation non approuvé`
+
+<:unapproved_0100:726371183708078110> **SUCCÈS DÉVERROUILLÉ !!!** <:unapproved_0100:726371183708078110>
+<:success:472908961176092702> Succès déverrouillé : __Extreme dislike__ Description : `A eu sur 100 niveaux évalués avec une évaluation non approuvé`
+
+<:modSend:726371184635150336> **SUCCÈS DÉVERROUILLÉ !!!** <:modSend:726371184635150336>
+<:success:472908961176092702> Succès déverrouillé : __Mod Sunshine__ Description : `A eu son niveau envoyé par un Geometry Dash Moderator`
+
+<:suggestion:726371171242737696> **SUCCÈS DÉVERROUILLÉ !!!** <:suggestion:726371171242737696>
+<:success:472908961176092702> Succès déverrouillé : __Helper suggestion__ Description : `A suggéré une idée sur le bot`
+
+<:suggestionApproved:726371175449755698> **SUCCÈS DÉVERROUILLÉ !!!** <:suggestionApproved:726371175449755698>
+<:success:472908961176092702> Succès déverrouillé : __Helper Approuvé__ Description : `A eu son idée approuvé sur le bot`
+
+<:bugemote:726371177475342416> **SUCCÈS DÉVERROUILLÉ !!!** <:bugemote:726371177475342416>
+<:success:472908961176092702> Succès déverrouillé : __Chercheur de Bug__ Description : `A rapporté un bug approuvé sur le bot`

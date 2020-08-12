@@ -1,0 +1,74 @@
+<:linkage:726371163730608169> **LOGRO DESBLOQUEADO!!!** <:linkage:726371163730608169>
+<:success:472908961176092702> Logro desbloqueado: __Un recién llegado!__ Descripción: `Vincular por primera vez tu cuenta de discord con el bot`
+
+<:requests_0001:726371183507013644> **LOGRO DESBLOQUEADO!!!** <:requests_0001:726371183507013644>
+<:success:472908961176092702> Logro desbloqueado: __La Primera Sugerencia__ Descripción: `Haber sugerido tu primer nivel en un servidor`
+
+<:requests_0005:726371183746088960> **LOGRO DESBLOQUEADO!!!** <:requests_0005:726371183746088960>
+<:success:472908961176092702> Logro desbloqueado : __Principiante en Sugerencias__ Descripción: `Haber sugerido 5 niveles en diferentes servidores`
+
+<:requests_0010:726371183725117461> **LOGRO DESBLOQUEADO!!!** <:requests_0010:726371183725117461>
+<:success:472908961176092702> Logro desbloqueado : __Request Advancer__ Description : `Solicitaste 10 niveles en diferentes servidores`
+
+<:requests_0050:726371181602799656> **LOGRO DESBLOQUEADO !!!** <:requests_0050:726371181602799656>
+<:success:472908961176092702> Logro desbloqueado : __Request Master__ Descripción : `Solicitaste 50 niveles en diferentes servidores`
+
+<:requests_0100:726371183108554774> **LOGRO DESBLOQUEADO !!!** <:requests_0100:726371183108554774>
+<:success:472908961176092702> Logro desbloqueado : __Request Challenger__ Descripción : `Solicitaste 100 niveles en diferentes servidores`
+
+<:reviewed_0001:726371164095512636> **LOGRO DESBLOQUEADO !!!** <:reviewed_0001:726371164095512636>
+<:success:472908961176092702> Logro desbloqueado : __The First Review__ Description : `Revisar tu primer nivel en un servidor`
+
+<:reviewed_0005:726371165861314582> **LOGRO DESBLOQUEADO !!!** <:reviewed_0005:726371165861314582>
+<:success:472908961176092702> Logro desbloqueado : __Review Beginner__ Descripción : `Revisaste 5 niveles en diferentes servidores`
+
+<:reviewed_0010:726371166859558994> **LOGRO DESBLOQUEADO !!!** <:reviewed_0010:726371166859558994>
+<:success:472908961176092702> Logro desbloqueado : __Review Advancer__ Descripción : `Revisaste 10 niveles en diferentes servidores`
+
+<:reviewed_0050:726371163399520287> **LOGRO DESBLOQUEADO !!!** <:reviewed_0050:726371163399520287>
+<:success:472908961176092702> Logro desbloqueado : __Review Master__ Descripción : `Revisaste 50 niveles en diferentes servidores`
+
+<:reviewed_0100:726371165924491344> **LOGRO DESBLOQUEADO !!!** <:reviewed_0100:726371165924491344>
+<:success:472908961176092702> Logro desbloqueado : __Review Challenger__ Description : `Has revisado 100 niveles en diferentes servidores`
+
+<:approved_0001:726371180986236948> **LOGRO DESBLOQUEADO !!!** <:approved_0001:726371180986236948>
+<:success:472908961176092702> Logro desbloqueado : __Tu primer like__ Description : `Has conseguido un nivel con una revisión aprobada`
+
+<:approved_0005:726371182575878165> **LOGRO DESBLOQUEADO !!!** <:approved_0005:726371182575878165>
+<:success:472908961176092702> Logro desbloqueado : __Super like__ Description : `Has conseguido 5 niveles con una revisión aprobada`
+
+<:approved_0010:726371183955804260> **LOGRO DESBLOQUEADO !!!** <:approved_0010:726371183955804260>
+<:success:472908961176092702> Logro desbloqueado : __Mega like__ Description : `Has conseguido 10 niveles con una revisión aprobada`
+
+<:approved_0050:726371182483603456> **LOGRO DESBLOQUEADO !!!** <:approved_0050:726371182483603456>
+<:success:472908961176092702> Logro desbloqueado : __Ultra like__ Description : `Has conseguido 50 niveles con una revisión aprobada`
+
+<:approved_0100:726371182856765451> **LOGRO DESBLOQUEADO !!!** <:approved_0100:726371182856765451>
+<:success:472908961176092702> Logro desbloqueado : __Extreme like__ Description : `Has conseguido 100 niveles con una revisión aprobada`
+
+<:unapproved_0001:726371182957297674> **LOGRO DESBLOQUEADO !!!** <:unapproved_0001:726371182957297674>
+<:success:472908961176092702> Logro desbloqueado : __Tu primer dislike__ Description : `Has conseguido un nivel con una revisión no aprobada`
+
+<:unapproved_0005:726371183678980116> **LOGRO DESBLOQUEADO !!!** <:unapproved_0005:726371183678980116>
+<:success:472908961176092702> Logro desbloqueado : __Super dislike__ Description : `Has conseguido 5 niveles con una revisión no aprobada`
+
+<:unapproved_0010:726371183687368815> **LOGRO DESBLOQUEADO !!!** <:unapproved_0010:726371183687368815>
+<:success:472908961176092702> Logro desbloqueado : __Mega dislike__ Description : `Has conseguido 10 niveles con una revisión no aprobada`
+
+<:unapproved_0050:726371182730936330> **LOGRO DESBLOQUEADO !!!** <:unapproved_0050:726371182730936330>
+<:success:472908961176092702> Logro desbloqueado : __Ultra dislike__ Description : `Has conseguido 50 niveles con una revisión no aprobada`
+
+<:unapproved_0100:726371183708078110> **LOGRO DESBLOQUEADO !!!** <:unapproved_0100:726371183708078110>
+<:success:472908961176092702> Logro desbloqueado : __Extreme dislike__ Description : `Has conseguido 100 niveles con una revisión no aprobada`
+
+<:modSend:726371184635150336> **LOGRO DESBLOQUEADO !!!** <:modSend:726371184635150336>
+<:success:472908961176092702> Logro desbloqueado : __Mod Sunshine__ Description : `Tu nivel ha sido enviado por un Moderador de Geometry Dash`
+
+<:suggestion:726371171242737696> **LOGRO DESBLOQUEADO !!!** <:suggestion:726371171242737696>
+<:success:472908961176092702> Logro desbloqueado : __Sugerente de ideas__ Description : `Has dado una idea en el bot`
+
+<:suggestionApproved:726371175449755698> **LOGRO DESBLOQUEADO !!!** <:suggestionApproved:726371175449755698>
+<:success:472908961176092702> Logro desbloqueado : __Ayudante Aprobado__ Description : `Tu idea ha sido aprobada en el bot`
+
+<:bugemote:726371177475342416> **LOGRO DESBLOQUEADO !!!** <:bugemote:726371177475342416>
+<:success:472908961176092702> Logro desbloqueado : __Cazaerrores__ Description : `Has reportado un bug en el bot`

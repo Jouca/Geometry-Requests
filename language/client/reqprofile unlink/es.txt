@@ -1,0 +1,8 @@
+<:info:472908656514433064> Cargando...
+Cargando... Por favor, espera un momento
+
+Error. <:error:472907618386575370>
+Tu cuenta de discord no está enlazada con el bot. Usa `req!profile sync` si quieres enlazar tu cuenta.
+
+Finalizado! <:success:472908961176092702>
+Tu cuenta de Discord ha sido desenlazada del bot con exito !

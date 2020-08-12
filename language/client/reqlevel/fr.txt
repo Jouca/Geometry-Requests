@@ -1,0 +1,19 @@
+Erreur. <:error:472907618386575370>
+L'ID du niveau est soit supprimé, non listé, ou invalide. Veuillez vérifier l'ID du niveau et réessayer.
+
+<:info:472908656514433064> Chargement...
+Chargement... Veuillez attendre un petit moment
+
+Vôtre compte n'est pas lié sur le bot et a besoin d'être lié pour utiliser cette commande, utiliser `req!profile link` pour lier vôtre compte.
+L'administrateur de ce serveur a besoin de configurer le rôle pour ReviewerRole.
+Ce niveau a déjà été envoyé sur ce serveur. Vous avez besoin d'attendre un évaluateur pour évaluer ce niveau et de le poster encore.
+L'administrateur de ce serveur a besoin de configurer le salon pour ReviewChannel.
+L'administrateur de ce serveur a besoin de configurer le selon pour RequestChannel.
+Vôtre requête doit être partagé dans
+Vous avez été banni car vous n'avez pas suivi les règles du bot, vous n'êtes plus capâble d'envoyer/d'évaluer/de rapporter des niveaux. Si ceci est une erreur, Merci de contacter le support à cette adresse email : joucagame@gmail.com.
+Ce niveau est sous liste noire sur le bot. Les raisons sont que ce niveau est contre les règles de Geometry Dash.
+Vous avez besoin de mettre une vidéo sur vôtre requête sur ce serveur.
+
+Succès! <:success:472908961176092702>
+par
+Envoie de la requête avec succès !

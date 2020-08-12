@@ -1,0 +1,8 @@
+<:info:472908656514433064> Chargement...
+Chargement... Veuillez patienter un petit moment
+
+Erreur. <:error:472907618386575370>
+Vôtre compte Discord n'est pas lié sur le bot. Utiliser `req!profile link` au lieu si vous voulez synchronisé vôtre compte.
+
+Succès ! <:success:472908961176092702>
+Vôtre compte Discord a été dissocié avec succès sur le bot !

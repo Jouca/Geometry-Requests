@@ -1,0 +1,13 @@
+<:info:472908656514433064> Cargando...
+Cargando... Por favor, espera un momento
+
+Error. <:error:472907618386575370>
+ID de Nivel
+no se encontró en la lista.
+Necesitas poner una ID de nivel o poner `all` si quieres borrar todas las solicitudes en la lista de tu servidor.
+Necesitas poner una ID de nivel después del comando.*
+No tienes acceso para usar este comando, necesitas permiso de Admin para ejecutar este comando.
+
+¡Completado! <:success:472908961176092702>
+¡Niveles exitosamente eliminados de la lista!
+¡Niveles exitosamente eliminados de la lista!

@@ -1,0 +1,19 @@
+Error. <:error:472907618386575370>
+The level ID is either deleted, unlisted, or invalid. Please check the level ID and try again.
+
+<:info:472908656514433064> Loading...
+Loading... Please wait a little moment
+
+Your account is not linked on the bot and need to be linked for use this command, use `req!profile link` for link your account.
+The admin of the server need to setup the role for ReviewerRole.
+This level have been already sent on this server. You need to wait a reviewer for review this level and post it again.
+The admin of the server need to setup the channel for ReviewChannel.
+The admin of the server need to setup the channel for RequestChannel.
+Your request need to be shared on
+You were banned because you didn't followed the bot rules, you will no longer be able to send/review/report levels. If this is an error, please contact support at this email address: joucagame@gmail.com.
+This level is blacklisted on the bot. The reasons are because this level is against the rules of Geometry Dash.
+You need to put a video on your request on this server.
+
+Success! <:success:472908961176092702>
+by
+successfully requested!

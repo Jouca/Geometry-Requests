@@ -1,0 +1,26 @@
+Configuraciones de Geometry Request
+Configuración del Server
+
+Sin rol
+Sin canal
+No
+Si
+
+Inglés (en)
+Francés (fr)
+Español (es)
+
+Nombre del Servidor =
+Reviewer Role =
+Rol Owner =
+RequestChannel =
+ReviewChannel =
+CheckedReviewChannel =
+AnnouncementBot =
+GDModChannel =
+TagReviewer =
+NeedVideo =
+Idioma =
+
+Error. <:error:472907618386575370>
+No tienes permisos de administrador para usar este comando.

@@ -1,0 +1,18 @@
+<:info:472908656514433064> Cargando...
+Cargando... Por favor, espera un momento
+
+Error. <:error:472907618386575370>
+Tu cuenta no está enlazada al bot y necesita estarlo si quieres usar este comando, usa `req!profile link` para enlazar tu cuenta.
+El administrador de este servidor necesita configurar el canal para CheckedReviewChannel.
+Necesitas seleccionar el comando con un 'yes' para decir que el nivel merece ser enviado o 'no' para decir que el nivel no merece ser enviado en tu revisión.
+Has sido baneado porque no has cumplido las reglas del bot, ya no podrás enviar/revisar/reportar niveles. Si crees que ha sido un error, por favor póngase en contacto con el soporte del bot con esta dirección de email: joucagame@gmail.com.
+No tienes el rol requerido para revisar niveles en este servidor.
+No hay niveles con esa ID
+encontrados en la lista.
+
+Tu nivel
+de
+ha sido revisado en
+
+Finalizado! <:success:472908961176092702>
+has revisado y anunciado el nivel en CheckedReviewChannel, GDModChannel y en los MD de el solicitante!

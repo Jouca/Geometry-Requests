@@ -1,0 +1,13 @@
+<:info:472908656514433064> Loading...
+Loading... Please wait a little moment
+
+Error. <:error:472907618386575370>
+Level ID
+not found on the queue.
+You need to put a level ID or to put `all` if you want to delete every requests on the queue of your server.
+You need to put a level ID after the command.*
+You don't have the access to use this command, you need to have Admin permission to execute this command.
+
+Completed! <:success:472908961176092702>
+Levels successfully removed from the queue!
+Level successfully removed from the queue!

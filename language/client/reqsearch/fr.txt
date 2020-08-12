@@ -1,0 +1,19 @@
+Erreur. <:error:472907618386575370>
+L'ID du niveau est soit supprimé, non listé, ou invalide. Veuillez vérifier l'ID du niveau et réessayer.
+
+<:info:472908656514433064> Résultat de la recherche
+par
+**Description:**
+Aucune
+Pièces
+Poids
+Jouer sur Newgrounds
+Télécharger le MP3
+Infos détaillés du compositeur de la musique
+**ID du niveau:**
+**Version du niveau:**
+**Version de GD minimum requis pour jouer ce niveau:**
+**Nombre d'objet:**
+**Ce niveau peut provoquer des lag sur les appareils bas de gamme**
+Lien vers YouTube
+**Cette musique est utilisé sur les Niveaux Officiels**

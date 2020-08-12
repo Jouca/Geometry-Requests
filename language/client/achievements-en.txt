@@ -1,0 +1,74 @@
+<:linkage:726371163730608169> **ACHIEVEMENT UNLOCKED !!!** <:linkage:726371163730608169>
+<:success:472908961176092702> Achievement unlocked : __A new comer !__ Description : `Have synced for the first time a discord account in the bot`
+
+<:requests_0001:726371183507013644> **ACHIEVEMENT UNLOCKED !!!** <:requests_0001:726371183507013644>
+<:success:472908961176092702> Achievement unlocked : __The First Request__ Description : `Have requested your first level on a server`
+
+<:requests_0005:726371183746088960> **ACHIEVEMENT UNLOCKED !!!** <:requests_0005:726371183746088960>
+<:success:472908961176092702> Achievement unlocked : __Request Beginner__ Description : `Have requested 5 levels on different servers`
+
+<:requests_0010:726371183725117461> **ACHIEVEMENT UNLOCKED !!!** <:requests_0010:726371183725117461>
+<:success:472908961176092702> Achievement unlocked : __Request Advancer__ Description : `Have requested 10 levels on different servers`
+
+<:requests_0050:726371181602799656> **ACHIEVEMENT UNLOCKED !!!** <:requests_0050:726371181602799656>
+<:success:472908961176092702> Achievement unlocked : __Request Master__ Description : `Have requested 50 levels on different servers`
+
+<:requests_0100:726371183108554774> **ACHIEVEMENT UNLOCKED !!!** <:requests_0100:726371183108554774>
+<:success:472908961176092702> Achievement unlocked : __Request Challenger__ Description : `Have requested 100 levels on different servers`
+
+<:reviewed_0001:726371164095512636> **ACHIEVEMENT UNLOCKED !!!** <:reviewed_0001:726371164095512636>
+<:success:472908961176092702> Achievement unlocked : __The First Review__ Description : `Have reviewed your first level on a server`
+
+<:reviewed_0005:726371165861314582> **ACHIEVEMENT UNLOCKED !!!** <:reviewed_0005:726371165861314582>
+<:success:472908961176092702> Achievement unlocked : __Review Beginner__ Description : `Have reviewed 5 levels on different servers`
+
+<:reviewed_0010:726371166859558994> **ACHIEVEMENT UNLOCKED !!!** <:reviewed_0010:726371166859558994>
+<:success:472908961176092702> Achievement unlocked : __Review Advancer__ Description : `Have reviewed 10 levels on different servers`
+
+<:reviewed_0050:726371163399520287> **ACHIEVEMENT UNLOCKED !!!** <:reviewed_0050:726371163399520287>
+<:success:472908961176092702> Achievement unlocked : __Review Master__ Description : `Have reviewed 50 levels on different servers`
+
+<:reviewed_0100:726371165924491344> **ACHIEVEMENT UNLOCKED !!!** <:reviewed_0100:726371165924491344>
+<:success:472908961176092702> Achievement unlocked : __Review Challenger__ Description : `Have reviewed 100 levels on different servers`
+
+<:approved_0001:726371180986236948> **ACHIEVEMENT UNLOCKED !!!** <:approved_0001:726371180986236948>
+<:success:472908961176092702> Achievement unlocked : __Your first like__ Description : `Got 1 levels reviewed with a approved review`
+
+<:approved_0005:726371182575878165> **ACHIEVEMENT UNLOCKED !!!** <:approved_0005:726371182575878165>
+<:success:472908961176092702> Achievement unlocked : __Super like__ Description : `Got 5 levels reviewed with a approved review`
+
+<:approved_0010:726371183955804260> **ACHIEVEMENT UNLOCKED !!!** <:approved_0010:726371183955804260>
+<:success:472908961176092702> Achievement unlocked : __Mega like__ Description : `Got 10 levels reviewed with a approved review`
+
+<:approved_0050:726371182483603456> **ACHIEVEMENT UNLOCKED !!!** <:approved_0050:726371182483603456>
+<:success:472908961176092702> Achievement unlocked : __Ultra like__ Description : `Got 50 levels reviewed with a approved review`
+
+<:approved_0100:726371182856765451> **ACHIEVEMENT UNLOCKED !!!** <:approved_0100:726371182856765451>
+<:success:472908961176092702> Achievement unlocked : __Extreme like__ Description : `Got 100 levels reviewed with a approved review`
+
+<:unapproved_0001:726371182957297674> **ACHIEVEMENT UNLOCKED !!!** <:unapproved_0001:726371182957297674>
+<:success:472908961176092702> Achievement unlocked : __Your first dislike__ Description : `Got 1 levels reviewed with a unapproved review`
+
+<:unapproved_0005:726371183678980116> **ACHIEVEMENT UNLOCKED !!!** <:unapproved_0005:726371183678980116>
+<:success:472908961176092702> Achievement unlocked : __Super dislike__ Description : `Got 5 levels reviewed with a unapproved review`
+
+<:unapproved_0010:726371183687368815> **ACHIEVEMENT UNLOCKED !!!** <:unapproved_0010:726371183687368815>
+<:success:472908961176092702> Achievement unlocked : __Mega dislike__ Description : `Got 10 levels reviewed with a unapproved review`
+
+<:unapproved_0050:726371182730936330> **ACHIEVEMENT UNLOCKED !!!** <:unapproved_0050:726371182730936330>
+<:success:472908961176092702> Achievement unlocked : __Ultra dislike__ Description : `Got 50 levels reviewed with a unapproved review`
+
+<:unapproved_0100:726371183708078110> **ACHIEVEMENT UNLOCKED !!!** <:unapproved_0100:726371183708078110>
+<:success:472908961176092702> Achievement unlocked : __Extreme dislike__ Description : `Got 100 levels reviewed with a unapproved review`
+
+<:modSend:726371184635150336> **ACHIEVEMENT UNLOCKED !!!** <:modSend:726371184635150336>
+<:success:472908961176092702> Achievement unlocked : __Mod Sunshine__ Description : `Got your level sent by a Geometry Dash Moderator`
+
+<:suggestion:726371171242737696> **ACHIEVEMENT UNLOCKED !!!** <:suggestion:726371171242737696>
+<:success:472908961176092702> Achievement unlocked : __Helper suggestion__ Description : `Have suggested a idea on the bot`
+
+<:suggestionApproved:726371175449755698> **ACHIEVEMENT UNLOCKED !!!** <:suggestionApproved:726371175449755698>
+<:success:472908961176092702> Achievement unlocked : __Helper Approved__ Description : `Have his idea approved on the bot`
+
+<:bugemote:726371177475342416> **ACHIEVEMENT UNLOCKED !!!** <:bugemote:726371177475342416>
+<:success:472908961176092702> Achievement unlocked : __Bug Finder__ Description : `Have reported a approved bug on the bot`

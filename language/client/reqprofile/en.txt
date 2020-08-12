@@ -1,0 +1,6 @@
+<:info:472908656514433064> Loading...
+Loading... Please wait a little moment
+
+Error. <:error:472907618386575370>
+Your account is not linked on the bot and need to be linked for use this command, use `req!profile link` for link your account.
+The profile you tried to get don't exist on our servers, if you want to get a profile, use a userid. Example : `req!profile 216708683290247168`

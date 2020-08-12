@@ -1,0 +1,11 @@
+<:info:472908656514433064> Cargando...
+Cargando... Porfavor espera un momento
+
+Error. <:error:472907618386575370>
+No tienes acceso para usar este comando.
+Este usuario ya está baneado del bot.
+Necesitas poner un userID (ID de usuario) de un usuario de Discord.
+
+Finalizado! <:success:472908961176092702>
+El usuario
+ha sido baneado de el bot.

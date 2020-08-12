@@ -1,0 +1,39 @@
+Ajustes de Geometry Request
+Características del servidor
+
+Sin rol
+Sin canal
+No
+Si
+
+Inglés (en)
+Francés (fr)
+Español (es)
+
+Nombre del servidor =
+Reviewer Role =
+Owner Role =
+RequestChannel =
+ReviewChannel =
+CheckedReviewChannel =
+AnnouncementBot =
+GDModChannel =
+TagReviewer =
+NeedVideo =
+Language =
+
+Error. <:error:472907618386575370>
+No tienes permisos de administrador para usar este comando.
+
+<:info:472908656514433064> Cargando...
+Cargando... Por favor, espera un momento
+
+Tu cuenta no está enlazada al bot y necesita estarlo si quieres usar este comando, usa `req!profile link` para enlazar tu cuenta.
+El rol seleccionado no existe en este servidor.
+El canal seleccionado no existe en este servidor.
+Necesitas poner la etiqueta del rol.
+Necesitas poner la etiqueta del canal.
+Este servidor necesita ser propiedad de un Moderador de Geometry dash para usar este ajuste.
+Necesitas poner un `1` o `0` en este ajuste.
+Necesitas poner un ajuste (Los ajustes están en 'req!help').
+El idioma que tú has seleccionado no existe o no está en el bot, los únicos idiomas añadidos por el momento son : (`en,fr,es`).

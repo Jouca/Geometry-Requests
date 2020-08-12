@@ -1,0 +1,23 @@
+Help command list
+`req!help` = Show every commands of Geometry Request.
+`req!about` = Showing the informations of Geometry Request + the official discord server + the discord bot invite link.
+`req!profile link` = Link your discord account to the database of the bot (necessary for use some commands).
+`req!profile unlink` = Unlink your discord account to the database of the bot (reset achievements progress + levels requested).
+`req!level (levelid)` = Sent the level to the reviewer(s) channel (need ReviewerChannel and RequestChannel configured)(need to be linked on the bot).
+`req!search (levelID/name)` = Show every details about a level on Geometry Dash Servers.
+`req!queue` = Show every levels submitted on this server.
+`req!myqueue` = Show every levels you submitted on every servers.
+`req!report` = Report a level to the Geometry Request Moderators if the level is against of Geometry Dash rules (Don't abuse of this command because if the report is false, you will be banned from the bot).
+`req!achievements` = Show every achievements on the bot + those you got (need to be linked on the bot).
+`req!profile (optionnal: discord_userid)` = Show the profile of a user.
+`req!settings profile` = Show every settings for the user.
+`req!setsettings profile (language/color1/color2/cubeid/glowoutline) (('fr'/'en'/'es')/colorID/colorID/cubeid/(1/0))` = Edit a setting in the profile settings.
+`req!review (levelid) (yes/no) (optionnal: feedback)` = Review the level from the queue (Require ReviewerRole, CheckedReviewChannel selected on the configs and the Reviewer Role permission). If it's a GD Mod server, please setup 'gdmodchannel'.
+`req!setconfig (reviewerrole/ownerrole/requestchannel/reviewchannel/checkedreviewchannel/announcementbot/gdmodchannel/tagreviewer/needvideo/language) (ID/(1/0 for tagreviewer and needvideo)/('fr'/'en'/'es'))` = Config the settings, you can use it for tag a channel or a role.
+`req!remove (levelid/all)` = Remove a level (or all levels) from the queue.
+`req!send (levelid) (star/featured) (number of stars) (optionnal: 1=Easy Demon, 2=Medium Demon, 3=Hard Demon, 4=Insane Demon, 5=Extreme Demon) (optionnal: screenshot image)` = Sent the level of your server queue (Require GD Mod permission).
+`req!mod approve (levelid)` = Make the reported level blacklisted (Require GR Mod permission).
+`req!mod unapprove (levelid)` = Make the reported level deleted on the report list (Require GR Mod permission).
+`req!mod ban (discord_userid)` = Make the user banned for using the bot (Require GR Mod permission).
+**IMPORTANT** : If you're new, we recommend you to see the examples of the commands here :
+[Link of the examples of the commands](http://clairfygdpsbyjoucacorpo.tk/geometry-requests/)

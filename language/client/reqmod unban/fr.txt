@@ -1,0 +1,10 @@
+<:info:472908656514433064> Chargement...
+Chargement... Veuillez patienter un petit moment
+
+Erreur. <:error:472907618386575370>
+Vous n'avez pas l'accès pour utiliser cette commande.
+Vous avez besoin de mettre un userID d'un utilisateur de Discord.
+
+Succès ! <:success:472908961176092702>
+L'utilisateur
+a été débanni du bot, il peut maintenant utiliser toute les commandes.

@@ -1,0 +1,6 @@
+Error. <:error:472907618386575370>
+You need to put texts for use this command.
+You don't have the access to use this command.
+
+Success! <:success:472908961176092702>
+The announcement has been dispatched on every servers who setupped `AnnouncementBot` !

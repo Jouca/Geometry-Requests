@@ -1,0 +1,12 @@
+<:info:472908656514433064> Cargando...
+Cargando... Porfavor espera un momento
+
+Error. <:error:472907618386575370>
+El ID de el nivel está borrado, oculto (unlisted) o es inválido. Por favor, comprueba la ID del nivel e inténtalo de nuevo.
+Este nivel ya ha sido enviado al equipo de moderadores.
+Necesitas seleccionar un ID de nivel para reportarlo.
+Has sido baneado porque no has cumplido las reglas del bot, ya no podrás enviar/revisar/reportar niveles. Si crees que ha sido un error, por favor póngase en contacto con el soporte del bot con esta dirección de email: joucagame@gmail.com.
+
+Finalizado! <:success:472908961176092702>
+de
+ha sido reportado con exito al equipo de moderación!

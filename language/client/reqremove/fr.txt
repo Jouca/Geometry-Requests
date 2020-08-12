@@ -1,0 +1,13 @@
+<:info:472908656514433064> Chargement...
+Chargement... Veuillez patienter un petit moment
+
+Erreur. <:error:472907618386575370>
+ID du niveau
+n'a pas été trouvé sur la liste.
+Vous avez besoin de mettre une ID de niveau ou de mettre `all` si vous voulez supprimer toute les requêtes sur la liste de vôtre serveur.
+Vous avez besoin de mettre une ID de niveau après la commande.*
+Vous n'avez pas l'accès pour utiliser cette commande, vous avez besoin d'avoir les permission Admin pour exécuter cette commande.
+
+Complété ! <:success:472908961176092702>
+Les niveaux sont enlevés avec succès de la liste !
+Niveau enlevé avec succès de la liste !

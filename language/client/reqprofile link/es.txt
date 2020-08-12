@@ -1,0 +1,8 @@
+<:info:472908656514433064> Cargando...
+Cargando... Por favor espere un momento
+
+Error. <:error:472907618386575370>
+Tu cuenta de Discord ya está vinculada con el bot.
+
+Finalizado! <:success:472908961176092702>
+Tu cuenta de Discord se ha vinculado exitosamente con el bot! Ahora puedes usar todos los comandos.

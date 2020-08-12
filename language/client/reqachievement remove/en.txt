@@ -1,0 +1,10 @@
+<:info:472908656514433064> Loading...
+Loading... Please wait a little moment
+
+Error. <:error:472907618386575370>
+You need to select a achievement to remove to a user.
+This user is not linked on the bot.
+You don't have the access to use this command.
+
+Success! <:success:472908961176092702>
+This user lost the achievement

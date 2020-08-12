@@ -1,0 +1,6 @@
+<:info:472908656514433064> Cargando...
+Cargando... Por favor espera un momento
+
+Error. <:error:472907618386575370>
+Tu cuenta no está vinculada al bot y necesita estar vinculada para usar este comando, usa `req!profile link` para vincular tu cuenta.
+El perfil que intentaste obtener no existe en nuestros servidores, si quieres conseguir un perfil usa una id de usuario (userID). Ejemplo: `req!profile 216708683290247168`

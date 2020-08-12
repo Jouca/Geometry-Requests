@@ -1,0 +1,14 @@
+<:info:472908656514433064> Loading...
+Loading... Please wait a little moment
+
+Error. <:error:472907618386575370>
+Your account is not linked on the bot and need to be linked for use this command, use `req!profile link` for link your account.
+You need to put with 'fr' or 'en' to change the language.
+You need to put a setting (settings are in 'req!settings profile').
+
+Success! <:success:472908961176092702>
+The setting have been updated !
+
+This color is not from Geometry Dash, please read the documentation on `req!settings profile`.
+This icon don't exist on Geometry Dash, please read the documentation on `req!settings profile`.
+You need to put with `1` or `0` in this setting.

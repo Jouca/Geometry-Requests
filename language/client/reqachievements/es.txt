@@ -1,0 +1,40 @@
+Error. <:error:472907618386575370>
+Tu cuenta no está vinculada al bot y necesita estar vinculada para usar este comando, usa `req!profile link` para vincular tu cuenta.
+
+Todos los logros de Geometry Requests
+en progreso
+Comando de logro
+Logros:
+Información
+Página
+Usa las reacciones para cambiar de página
+
+<:linkage:726371163730608169> __un recien llegado!__ `firstsync` (Se ha sincronizado por primera vez al bot con una cuenta de discord)
+<:requests_0001:726371183507013644> __¡La primera solicitud!__ `requestachievement1` (Has hecho tu primera solicitud en un servidor)
+<:requests_0005:726371183746088960> __Principiante en Solicitudes__ `requestachievement5` (Has solicitado 5 niveles en servidores)
+<:requests_0010:726371183725117461> __Avanzado en Solicitudes__ `requestachievement5` (Has solicitado 10 niveles en servidores)
+<:requests_0050:726371181602799656> __Maestro en Solicitudes__ `requestachievement5` (Has solicitado 50 niveles en servidores)
+<:requests_00100:726371183108554774> __Desafiante en Solicitudes__ `requestachievement100` (Has solicitado 100 niveles en servidores)
+
+<:reviewed_0001:726371164095512636> __La Primera Revisión__ `reviewachievement1` (Has revisado tu primer nivel en un servidor)
+<:reviewed_0005:726371165861314582> __Revisor Principiante__ `reviewachievement5` (Has revisado 5 niveles en servidores diferentes)
+<:reviewed_0010:726371166859558994> __Revisor Avanzado__ `reviewachievement10` (Has revisado 10 niveles en servidores diferentes)
+<:reviewed_0050:726371163399520287> __Revisor Maestro__ `reviewachievement50` (Has revisado 50 niveles en diferentes servidores)
+<:reviewed_0100:726371165924491344> __Revisor Desafiante__ `reviewachievement100` (Has revisado 100 niveles en diferentes servidores)
+
+<:approved_0001:726371180986236948> __Tu primer like__ `reviewapprovedachievement1` (Obtener un nivel con una revisión aprobada)
+<:approved_0005:726371182575878165> __Super like__ `reviewapprovedachievement5` (Obtener 5 niveles con una revisión aprobada)
+<:approved_0010:726371183955804260> __Mega like__ `reviewapprovedachievement10` (Obtener 10 niveles con una revisión aprobada)
+<:approved_0050:726371182483603456> __Ultra like__ `reviewapprovedachievement50` (Obtener 50 niveles con una revisión aprobada)
+<:approved_0100:726371182856765451> __Like Extremo__ `reviewapprovedachievement100` (Obtener 100 niveles con una revisión aprobada)
+
+<:unapproved_0001:726371182957297674> __Tu primer dislike__ `reviewunapprovedachievement1` (Obtener un nivel con una revisión no aprobada)
+<:unapproved_0005:726371183678980116> __Super dislike__ `reviewunapprovedachievement5` (Obtener 5 niveles con una revisión no aprobada)
+<:unapproved_0010:726371183687368815> __Mega dislike__ `reviewunapprovedachievement10` (Obtener 10 niveles con una revisión no aprobada)
+<:unapproved_0050:726371182730936330> __Ultra dislike__ `reviewunapprovedachievement50` (Obtener 50 niveles con una revisión no aprobada)
+<:unapproved_0100:726371183708078110> __Dislike Extremo__ `reviewunapprovedachievement100` (Obtener 100 niveles con una revisión no aprobada)
+
+<:modSend:726371184635150336> __Brillo de Mod__ `levelsentbygdmod` (Obtener un nivel enviado por un Moderador de Geometry Dash)
+<:suggestion:726371171242737696> __Sugerencia de Ayuda__ `suggestidea` (Haber sugerido una idea para el bot)
+<:suggestionApproved:726371175449755698> __Ayuda Aprobada__ `approvedidea` (Tener una idea aprobada para el bot)
+<:bugemote:726371177475342416> __Buscador de Bugs__ `approvedreport` (Obtener una aprobación en un reporte de bug en el bot)

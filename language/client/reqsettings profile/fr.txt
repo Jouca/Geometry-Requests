@@ -1,0 +1,13 @@
+Erreur. <:error:472907618386575370>
+Vôtre compte n'est pas lié sur le bot et a besoin d'être lié pour utiliser cette commande, utiliser `req!profile link` pour lier vôtre compte.
+
+Configuration du profil
+Information
+Pour éditer les configurations, utiliser `req!setsettings profile (setting) (value)`.
+
+Langage
+Anglais (en)
+Français (fr)
+Espagnol (es)
+
+Si vous voulez utiliser vôtre icone, lisez la documentation

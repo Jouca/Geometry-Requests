@@ -1,0 +1,9 @@
+<:info:472908656514433064> Cargando...
+Cargando... Por favor espera un momento
+
+Error. <:error:472907618386575370>
+No tienes acceso para usar este comando.
+Nivel no encontrado en los reportes.
+
+Finalizado! <:success:472908961176092702>
+¡El nivel ha sido añadido a la lista negra!

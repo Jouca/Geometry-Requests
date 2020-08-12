@@ -1,0 +1,18 @@
+<:info:472908656514433064> Chargement...
+Chargement... Veuillez patienter un petit moment
+
+Erreur. <:error:472907618386575370>
+Vôtre compte n'est pas lié sur le bot et a besoin d'être lié pour utiliser cette commande, utiliser `req!profile link` pour lier vôtre compte.
+L'administrateur de ce serveur a besoin de configurer le salon pour CheckedReviewChannel.
+Vous avez besoin de sélectionner sur la commande avec 'yes' pour dire que c'est bon pour envoyé ou 'no' pour dire que ceci n'est pas bon pour envoyé sur vôtre évaluation.
+Vous avez été banni car vous n'avez pas suivi les règles du bot, vous n'êtes plus capâble d'envoyer/d'évaluer/de rapporter des niveaux. Si ceci est une erreur, Merci de contacter le support à cette adresse email : joucagame@gmail.com.
+Vous n'avez pas le rôle requis pour évaluer des niveaux sur ce serveur.
+Aucun niveaux avec l'ID
+trouvé dans la liste.
+
+Vôtre niveau
+par
+a été évalué sur
+
+Succès ! <:success:472908961176092702>
+a été évalué avec succès et annoncé sur CheckedReviewChannel et dans les messages privés de l'envoyeur !

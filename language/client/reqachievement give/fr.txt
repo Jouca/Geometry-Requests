@@ -1,0 +1,10 @@
+<:info:472908656514433064> Chargement...
+Chargement... Veuiller patienter un petit moment
+
+Erreur. <:error:472907618386575370>
+Vous avez besoin de sélectionner un succès à donner à un utilisateur.
+Cette utilisateur n'est pas lié sur le bot.
+Vous n'avez pas la permission d'utiliser cette commande.
+
+Succès ! <:success:472908961176092702>
+Cette utilisateur a été récompensé avec le succès !

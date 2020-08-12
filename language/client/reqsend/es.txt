@@ -1,0 +1,16 @@
+<:info:472908656514433064> Cargando...
+Cargando... Por favor espere un momento
+
+Error. <:error:472907618386575370>
+No hay niveles con esa ID
+encontrados en la lista.
+Necesitas poner en el comando el número de estrellas (1 a 10) y/o el tipo de demon (1 a 5) en tu envío.
+Necesitas poner con 'star' o 'featured' para ejecutar este comando.
+Has sido baneado porque no has cumplido las reglas del bot, ya no podrás enviar/revisar/reportar niveles. Si crees que ha sido un error, por favor póngase en contacto con el soporte del bot con esta dirección de email: joucagame@gmail.com.
+Este nivel está en la lista negra del bot. Las razones se deben a que este nivel va en contra de las normas de Geometry Dash.
+No tienes permiso para ejecutar este comando.
+
+Finalizado! <:success:472908961176092702>
+El nivel
+de
+ha sido enviado con éxito al solicitante con estas caracteristicas
