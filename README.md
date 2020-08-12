@@ -1,4 +1,4 @@
-# Geometry-Requests
+# Geometry Requests
 
 ![GitHub release (latest by date)](https://img.shields.io/github/v/release/Jouca/Geometry-Requests)
 ![GitHub repo size](https://img.shields.io/github/repo-size/Jouca/Geometry-Requests)
