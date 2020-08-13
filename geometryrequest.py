@@ -16278,7 +16278,7 @@ async def on_message(message):
 
 				try:
 					level = args[1]
-				except TypeError:
+				except IndexError:
 					level = None
 				if message.author.guild_permissions.administrator:
 					if level is not None:
