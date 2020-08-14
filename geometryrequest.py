@@ -16272,9 +16272,9 @@ async def on_message(message):
 				errorlevelid = translate_messages[7]
 				errorpermission = translate_messages[8]
 
-				completed = translate_messages[9]
-				levelscompleted = translate_messages[10]
-				levelcompleted = translate_messages[11]
+				completed = translate_messages[10]
+				levelscompleted = translate_messages[11]
+				levelcompleted = translate_messages[12]
 
 				try:
 					level = args[1]
@@ -16296,7 +16296,7 @@ async def on_message(message):
 							embed = discord.Embed(title="", color=0x00ff00)
 							embed.add_field(name=f'{completed}', value=f'{levelscompleted}')
 							embed.set_footer(text=f"{message.guild.name} --- {message.author}")
-							await message.channel.send(embed=embed)
+							msg2 = await message.channel.send(embed=embed)
 							return
 						pogga = cursor.execute(f"SELECT levelid FROM levels WHERE server = {serverid} AND levelid = {level}")
 						try:
@@ -16317,7 +16317,7 @@ async def on_message(message):
 								embed = discord.Embed(title="", color=0x00ff00)
 								embed.add_field(name=f'{completed}', value=f'{levelcompleted}')
 								embed.set_footer(text=f"{message.guild.name} --- {message.author}")
-								await message.channel.send(embed=embed)
+								msg2 = await message.channel.send(embed=embed)
 								return
 							if number is None:
 								embed5 = discord.Embed(title="", color=0xff0000)
