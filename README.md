@@ -10,6 +10,9 @@
 
 **The bot is in development and not fully ready to be full released, so bugs and errors can happen.**
 
+__**There are for now no configs for the emotes, we are working on that!**__
+__**(You can still edit every emotes in the python program)**__
+
 ## What is Geometry Requests ?
 
 Geometry Request is a bot owned by Jouca and made for Geometry Dash players. The main purpose of this bot is to deliver level requests to Discord servers that will allow players 
