@@ -1,4 +1,4 @@
-import discord,json,asyncio,time,traceback,sys,os,base64,gd,io
+import discord,json,asyncio,time,traceback,sys,os,base64,gd,io,datetime,secrets,logging
 from discord.utils import *
 from itertools import chain
 from urllib.request import urlopen
@@ -6,27 +6,30 @@ import mysql.connector as MC
 from mysql.connector import errorcode
 from urllib.parse import unquote
 from re import search
+from PIL import Image,ImageFont,ImageDraw
 
 #########################
 
 # Configs for database :
 
-dbhost = ""
-dbdatabase = ""
-dbuser = ""
-dbpassword = ""
+dbhost = "host"
+dbdatabase = "database"
+dbuser = "username"
+dbpassword = "password"
 
 #########################
 
 # Configs in globally :
 
-language_default = "en" # Default language the bot will use
-pic_ext = ['.jpg','.png','.jpeg'] # Image format
+linkwebsite = "clarifygdps.com"
+language_default = "en"
+pic_ext = ['.jpg','.png','.jpeg']
 color_palette = ['0x7dff00','0x00ff01','0x00ff7e','0x01ffff','0x01c8ff','0x0000ff','0x0000ff','0x7d00ff','0xba00ff','0xff01ff','0xff007d','0xff007d','0xff0100','0xfe4b00','0xff7e01','0xffb900','0xffff02','0xffffff','0xafafaf','0x5a5a5a','0x000000','0x7d7d00','0x649600','0x4caf01','0x019600','0x00b04b','0x009563','0x007d7e','0x006496','0x004baf','0x000197','0x4b00af','0x630095','0x7d007c','0x960064','0xaf004b','0x970001','0x973200','0xaf4c00','0x966401','0xff7d7e','0x7cffb0','0x7d7dff','0xfeff7d','0x7fffff','0xff7dff']
-# Official Geometry Dash HEX colors
 
-TOKEN = "" # Discord bot Token
-prefix = "req!" #Prefix of the bot
+jouca = 216708683290247168
+
+TOKEN = "TOKEN of the Discord bot"
+prefix = "req!"
 
 #########################
 
@@ -37,7 +40,18 @@ right = '➡️'
 
 # When loading the bot :
 
-client = discord.Client()
+logger = logging.getLogger('discord')
+logger.setLevel(logging.INFO)
+handler = logging.FileHandler(filename='discord.log', encoding='utf-8', mode='w')
+handler.setFormatter(logging.Formatter('%(asctime)s:%(levelname)s:%(name)s: %(message)s'))
+logger.addHandler(handler)
+
+gdclient = gd.Client()
+client = discord.Client(
+	status="online",
+	shard_count=3,
+	chunk_guilds_at_startup=False,
+	heartbeat_timeout=60)
 
 try:
 	conn = MC.connect(host = dbhost, database = dbdatabase, user = dbuser, password = dbpassword)
@@ -58,14 +72,189 @@ finally:
 conn = MC.connect(host = dbhost, database = dbdatabase, user = dbuser, password = dbpassword)
 cursor = conn.cursor(buffered=True)
 
+#########################
+
 @client.event
 async def on_message(message):
 	try:
-		def levelfinder(levelid):
+		def levelfinder(levelid,var):
+			serveur = var
 			data = f"gameVersion=21&binaryVersion=35&gdw=0&type=0&str={levelid}&diff=-&len=-&page=0&total=0&secret=Wmfd2893gb7".encode()
 			result = urlopen("http://www.boomlings.com/database/getGJLevels21.php",data).read().decode()
 			if result == "-1":
-				cursor.execute(f"DELETE FROM levels WHERE levelid = {levelid}")
+				cursor.execute(f"DELETE FROM levels WHERE levelid = %s", (levelid, ))
+				conn.commit()
+				levelname = "~~Level Deleted~~"
+				creator = "__Restart the command req!queue__"
+				downloads = "0"
+				likes = "0"
+				rating = "0"
+				stars = "0"
+				featured = "0"
+				epic = "0"
+				demon = "0"
+				demondifficulty = "0"
+				objectplus = "0"
+				isAuto = "0"
+			elif result != "-1":
+				result = result.split(":")
+				levelname = result[3]
+				creator = convertinfo("u","n",result[7])
+				downloads = result[13]
+				likes = result[19]
+				rating = result[11]
+				stars = result[27]
+				featured = result[29]
+				epic = result[31]
+				demon = result[21]
+				demondifficulty = result[23]
+				objectplus = result[33]
+				isAuto = result[25]
+			ratingemote = None
+			if int(likes) >= 0:
+				likesemote = "<:like:472908805131337737>"
+			elif int(likes) < 0:
+				likesemote = "<:dislike:472907672744624128>"
+			if demon is not "1":
+				if int(stars) == 0:
+					if int(rating) == 0:
+						ratingemote = "<:icon_na:472908488406859776>"
+					elif int(rating) == 10:
+						ratingemote = "<:icon_easy:472908189059383296>"
+					elif int(rating) == 20:
+						ratingemote = "<:icon_normal:472908581319213056>"
+					elif int(rating) == 30:
+						ratingemote = "<:icon_hard:472908253408395296>"
+					elif int(rating) == 40:
+						ratingemote = "<:icon_harder:472908316301852683>"
+					elif int(rating) == 50:
+						ratingemote = "<:icon_insane:472908421209784320>"
+
+				if int(rating) == 0:
+					if int(featured) == 0:
+						ratingemote = "<:icon_na:472908488406859776>"
+					elif int(featured) > 0:
+						ratingemote = "<:icon_na_featured:472908513677541416>"
+					if int(epic) == 1:
+						ratingemote = "<:icon_na_epic:472908540726476850>"
+				elif int(rating) == 10:
+					if int(featured) == 0:
+						ratingemote = "<:icon_easy:472908189059383296>"
+					elif int(featured) > 0:
+						ratingemote = "<:icon_easy_featured:472908214766141471>"
+					if int(epic) == 1:
+						ratingemote = "<:icon_easy_epic:472908231803666432>"
+				elif int(rating) == 20:
+					if int(featured) == 0:
+						ratingemote = "<:icon_normal:472908581319213056>"
+					elif int(featured) > 0:
+						ratingemote = "<:icon_normal_featured:472908602613563392>"
+					if int(epic) == 1:
+						ratingemote = "<:icon_normal_epic:472908627158761473>"
+				elif int(rating) == 30:
+					if int(featured) == 0:
+						ratingemote = "<:icon_hard:472908253408395296>"
+					elif int(featured) > 0:
+						ratingemote = "<:icon_hard_featured:472908272781754369>"
+					if int(epic) == 1:
+						ratingemote = "<:icon_hard_epic:472908293837160459>"
+				elif int(rating) == 40:
+					if int(featured) == 0:
+						ratingemote = "<:icon_harder:472908316301852683>"
+					elif int(featured) > 0:
+						ratingemote = "<:icon_harder_featured:472908356928143370>"
+					if int(epic) == 1:
+						ratingemote = "<:icon_harder_epic:472908377991675914>"
+				elif int(rating) == 50:
+					if int(featured) == 0:
+						ratingemote = "<:icon_insane:472908421209784320>"
+					elif int(featured) > 0:
+						ratingemote = "<:icon_insane_featured:472908439958323211>"
+					if int(epic) == 1:
+						ratingemote = "<:icon_insane_epic:472908465761812490>"
+				try:
+					if int(isAuto) == 1:
+						if int(featured) == 0:
+							ratingemote = "<:icon_auto:472907799987486768>"
+						elif int(featured) > 0:
+							ratingemote = "<:icon_auto_featured:472907828185792532>"
+						if int(epic) == 1:
+							ratingemote = "<:icon_auto_epic:472907845915115541>"
+				except ValueError:
+					pass
+			elif int(demon) == 1:
+				if int(stars) == 0:
+					if int(demondifficulty) == 3:
+						ratingemote = "<:icon_demon_easy:472907861102559262>"
+					elif int(demondifficulty) == 4:
+						ratingemote = "<:icon_demon_medium:472908111053586433>"
+					elif int(demondifficulty) == 0:
+						ratingemote = "<:icon_demon_hard:472907978094411776>"
+					elif int(demondifficulty) == 5:
+						ratingemote = "<:icon_demon_insane:472908041960947712>"
+					elif int(demondifficulty) == 6:
+						ratingemote = "<:icon_demon_extreme:472907914110304267>"
+				if int(demondifficulty) == 3:
+					if int(featured) == 0:
+						ratingemote = "<:icon_demon_easy:472907861102559262>"
+					elif int(featured) > 0:
+						ratingemote = "<:icon_demon_easy_featured:472907878790070273>"
+					if int(epic) == 1:
+						ratingemote = "<:icon_demon_easy_epic:472907895114301440>"
+				elif int(demondifficulty) == 4:
+					if int(featured) == 0:
+						ratingemote = "<:icon_demon_medium:472908111053586433>"
+					elif int(featured) > 0:
+						ratingemote = "<:icon_demon_medium_featured:472908128472793089>"
+					if int(epic) == 1:
+						ratingemote = "<:icon_demon_medium_epic:472908148978745344>"
+				elif int(demondifficulty) == 0:
+					if int(featured) == 0:
+						ratingemote = "<:icon_demon_hard:472907978094411776>"
+					elif int(featured) > 0:
+						ratingemote = "<:icon_demon_hard_featured:472907996901408778>"
+					if int(epic) == 1:
+						ratingemote = "<:icon_demon_hard_epic:472908016149069835>"
+				elif int(demondifficulty) == 5:
+					if int(featured) == 0:
+						ratingemote = "<:icon_demon_insane:472908041960947712>"
+					elif int(featured) > 0:
+						ratingemote = "<:icon_demon_insane_featured:472908062269636640>"
+					if int(epic) == 1:
+						ratingemote = "<:icon_demon_insane_epic:472908084407173120>"
+				elif int(demondifficulty) == 6:
+					if int(featured) == 0:
+						ratingemote = "<:icon_demon_extreme:472907914110304267>"
+					elif int(featured) > 0:
+						ratingemote = "<:icon_demon_extreme_featured:472907934633033738>"
+					if int(epic) == 1:
+						ratingemote = "<:icon_demon_extreme_epic:472907957978398720>"
+			connect = MC.connect(host = dbhost, database = dbdatabase, user = dbuser, password = dbpassword)
+			cursor2 = connect.cursor(buffered=True)
+			query12 = f"SELECT * FROM setup WHERE serverid = {var}"
+			cursor2.execute(query12)
+			result123 = cursor2.fetchone()
+			removerated = result123[12]
+			if removerated == "1" and stars != "0":
+				cursor.execute(f"DELETE FROM levels WHERE levelid = %s", (levelid, ))
+				conn.commit()
+				levelname = "~~RemoveRated Bot~~"
+				creator = "__Restart the command req!queue__"
+				rating = "0"
+				stars = "0"
+				featured = "0"
+				epic = "0"
+				demon = "0"
+				demondifficulty = "0"
+				objectplus = "0"
+				isAuto = "0"
+			return stars,objectplus,levelname,creator,ratingemote,stars,downloads,likes,likesemote
+
+		def levelfinder2(levelid,var):
+			data = f"gameVersion=21&binaryVersion=35&gdw=0&type=0&str={levelid}&diff=-&len=-&page=0&total=0&secret=Wmfd2893gb7".encode()
+			result = urlopen("http://www.boomlings.com/database/getGJLevels21.php",data).read().decode()
+			if result == "-1":
+				cursor.execute(f"DELETE FROM levels WHERE levelid = %s", (levelid, ))
 				conn.commit()
 				levelname = "~~Level Deleted~~"
 				creator = "__Restart the command req!queue__"
@@ -219,28 +408,26 @@ async def on_message(message):
 			data = f"gameVersion=21&binaryVersion=35&gdw=0&type=0&str={level}&diff=-&len=-&page=0&total=0&secret=Wmfd2893gb7".encode()
 			result = urlopen("http://www.boomlings.com/database/getGJLevels21.php",data).read().decode()
 			result = result.split(":")
+			print(result)
 			idlevel = result[1]
-			data = f"gameVersion=21&binaryVersion=35&gdw=0&type=0&str={idlevel}&diff=-&len=-&page=0&total=0&secret=Wmfd2893gb7".encode()
-			result2 = urlopen("http://www.boomlings.com/database/getGJLevels21.php",data).read().decode()
-			result2 = result2.split(":")
-			version = result2[5]
-			gdversion2 = result2[17]
-			levelname = result2[3]
-			creator = convertinfo("u","n",result2[7])
-			description = result2[35]
-			downloads = result2[13]
-			likes = result2[19]
-			rating = result2[11]
-			stars = result2[27]
-			coins = result2[43]
-			verifiedcoins = result2[45]
-			length = result2[37]
-			isAuto = result2[25]
-			featured = result2[29]
-			epic = result2[31]
-			demon = result2[21]
-			demondifficulty = result2[23]
-			objectplus = result2[33]
+			version = result[5]
+			gdversion2 = result[17]
+			levelname = result[3]
+			creator = convertinfo("u","n",result[7])
+			description = result[35]
+			downloads = result[13]
+			likes = result[19]
+			rating = result[11]
+			stars = result[27]
+			coins = result[43]
+			verifiedcoins = result[45]
+			length = result[37]
+			isAuto = result[25]
+			featured = result[29]
+			epic = result[31]
+			demon = result[21]
+			demondifficulty = result[23]
+			objectplus = result[33]
 			ratingemote = None
 
 			if int(gdversion2) == 1:
@@ -525,140 +712,135 @@ async def on_message(message):
 				sizesong = result2[9]
 				songlink = result2[13]
 			except IndexError:
-				data = f"gameVersion=21&binaryVersion=35&gdw=0&type=0&str={idlevel}&diff=-&len=-&page=0&total=0&secret=Wmfd2893gb7".encode()
-				result3 = urlopen("http://www.boomlings.com/database/getGJLevels21.php",data).read().decode()
-				result3 = result3.split(":")
-				officialsong = result3[15]
+				officialsong = result[15]
 				if int(officialsong) == 0:
 					songname = "Stereo Madness"
 					songauthor = "ForeverBound"
 					songid = 500476
 					sizesong = "7.6"
-					songlink = "https://www.youtube.com/watch?v=JhKyKEDxo8Q"
+					songlink = "https://youtu.be/JhKyKEDxo8Q"
 				elif int(officialsong) == 1:
 					songname = "Back on Track"
 					songauthor = "DJVI"
 					songid = 522654
 					sizesong = "6.9"
-					songlink = "https://www.youtube.com/watch?v=N9vDTYZpqXM"
+					songlink = "https://youtu.be/N9vDTYZpqXM"
 				elif int(officialsong) == 2:
 					songname = "Polargeist"
 					songauthor = "Step"
 					songid = 523561
 					sizesong = "4.3"
-					songlink = "https://www.youtube.com/watch?v=4W28wWWxKuQ"
+					songlink = "https://youtu.be/HkFbziBbvy8"
 				elif int(officialsong) == 3:
 					songname = "Dry Out"
 					songauthor = "DJVI"
 					songid = 498543
 					sizesong = "6.2"
-					songlink = "https://www.youtube.com/watch?v=FnXabH2q2A0"
+					songlink = "https://youtu.be/FnXabH2q2A0"
 				elif int(officialsong) == 4:
 					songname = "Base After Base"
 					songauthor = "DJVI"
 					songid = 404997
 					sizesong = "5.9"
-					songlink = "https://www.youtube.com/watch?v=TZULkgQPHt0"
+					songlink = "https://youtu.be/TZULkgQPHt0"
 				elif int(officialsong) == 5:
-					songname = "Cant Let Go"
+					songname = "Can't Let Go"
 					songauthor = "DJVI"
 					songid = 485351
 					sizesong = "7.1"
-					songlink = "https://www.youtube.com/watch?v=fLnF-QnR1Zw"
+					songlink = "https://youtu.be/fLnF-QnR1Zw"
 				elif int(officialsong) == 6:
 					songname = "Jumper"
 					songauthor = "Waterflame"
 					songid = 168734
 					sizesong = "3"
-					songlink = "https://www.youtube.com/watch?v=ZXHO4AN_49Q"
+					songlink = "https://youtu.be/ZXHO4AN_49Q"
 				elif int(officialsong) == 7:
 					songname = "Time Machine"
 					songauthor = "Waterflame"
 					songid = 291458
 					sizesong = "6.3"
-					songlink = "https://www.youtube.com/watch?v=zZ1L9JD6l0g"
+					songlink = "https://youtu.be/zZ1L9JD6l0g"
 				elif int(officialsong) == 8:
 					songname = "Cycles"
 					songauthor = "DJVI"
 					songid = 529148
 					sizesong = "7.1"
-					songlink = "https://www.youtube.com/watch?v=KDdvGZn6Gfs"
+					songlink = "https://youtu.be/KDdvGZn6Gfs"
 				elif int(officialsong) == 9:
 					songname = "xStep"
 					songauthor = "DJVI"
 					songid = 516735
 					sizesong = "7.3"
-					songlink = "https://www.youtube.com/watch?v=PSvYfVGyQfw"
+					songlink = "https://youtu.be/PSvYfVGyQfw"
 				elif int(officialsong) == 10:
 					songname = "Clutterfunk"
 					songauthor = "Waterflame"
 					songid = 505816
 					sizesong = "9.7"
-					songlink = "https://www.youtube.com/watch?v=D5uJOpItgNg"
+					songlink = "https://youtu.be/D5uJOpItgNg"
 				elif int(officialsong) == 11:
 					songname = "Theory Of Everything"
 					songauthor = "DJ-Nate"
 					songid = 350290
 					sizesong = "6"
-					songlink = "https://www.youtube.com/watch?v=ZUGJ0vWqfis"
+					songlink = "https://youtu.be/ZUGJ0vWqfis"
 				elif int(officialsong) == 12:
 					songname = "Electroman Adventures"
 					songauthor = "Waterflame"
 					songid = 479319
 					sizesong = "5.8"
-					songlink = "https://www.youtube.com/watch?v=Pb6KyewC_Vg"
+					songlink = "https://youtu.be/Pb6KyewC_Vg"
 				elif int(officialsong) == 13:
 					songname = "Clubstep"
 					songauthor = "DJ-Nate"
 					songid = 396093
 					sizesong = "6.3"
-					songlink = "https://www.youtube.com/watch?v=7yFmhiRHeBA"
+					songlink = "https://youtu.be/T7Wff9xaqjc"
 				elif int(officialsong) == 14:
 					songname = "Electrodynamix"
 					songauthor = "DJ-Nate"
 					songid = 368392
 					sizesong = "7.8"
-					songlink = "https://www.youtube.com/watch?v=MWSzoIQ-0jk"
+					songlink = "https://youtu.be/HeQGcCtk4bc"
 				elif int(officialsong) == 15:
 					songname = "Hexagon Force"
 					songauthor = "Waterflame"
 					songid = 568699
 					sizesong = "9.7"
-					songlink = "https://www.youtube.com/watch?v=afwK743PL2Y"
+					songlink = "https://youtu.be/afwK743PL2Y"
 				elif int(officialsong) == 16:
 					songname = "Blast Processing"
 					songauthor = "Waterflame"
 					songid = 507560
 					sizesong = "10.7"
-					songlink = "https://www.youtube.com/watch?v=Z5RufkDHsdM"
+					songlink = "https://youtu.be/Z5RufkDHsdM"
 				elif int(officialsong) == 17:
 					songname = "Theory Of Everything 2"
 					songauthor = "DJ-Nate"
 					songid = 472925
 					sizesong = "3.9"
-					songlink = "https://www.youtube.com/watch?v=BastdO1o0cU"
+					songlink = "https://youtu.be/fn98711CEoI"
 				elif int(officialsong) == 18:
 					songname = "Geometrical Dominator"
 					songauthor = "Waterflame"
 					songid = 641172
 					sizesong = "4"
-					songlink = "https://www.youtube.com/watch?v=MQ7vI7cdYJY"
+					songlink = "https://youtu.be/8so76wQOioo"
 				elif int(officialsong) == 19:
 					songname = "Deadlocked"
 					songauthor = "F-777"
 					songid = 503731
 					sizesong = "7.9"
-					songlink = "https://www.youtube.com/watch?v=QRGkFkf2r0U"
+					songlink = "https://youtu.be/OPBECnDBiRQ"
 				elif int(officialsong) == 20:
 					songname = "Fingerdash"
 					songauthor = "MDK"
 					songid = 860287
 					sizesong = "2"
-					songlink = "https://www.youtube.com/watch?v=BuPmq7yjDnI"
+					songlink = "https://youtu.be/BuPmq7yjDnI"
 				return songname,songauthor,songid,sizesong,songlink,officialsong
 			return songname,songauthor,songid,sizesong,songlink
-			data = f"gameVersion=21&binaryVersion=35&gdw=0&&levelID={idlevel}&inc=0&extras=0&secret=Wmfd2893gb7".encode()
-			result = urlopen("http://www.boomlings.com/database/downloadGJLevel22.php",data).read().decode()
 
 		def reqsearch3(songid):
 			result = urlopen(f"http://www.boomlings.com/database/testSong.php?songID={songid}").read().decode()
@@ -672,6 +854,222 @@ async def on_message(message):
 			data = f"gameVersion=21&binaryVersion=35&gdw=0&type=0&str={level}&diff=-&len=-&page=0&total=0&secret=Wmfd2893gb7".encode()
 			result2 = urlopen("http://www.boomlings.com/database/getGJLevels21.php",data).read().decode()
 			return result2
+
+		def queuedecryptor(levels):
+			levels = ",".join(levels)
+			string = f"gameVersion=21&binaryVersion=35&gdw=0&type=10&str={levels}&diff=-&len=-&page=0&total=0&secret=Wmfd2893gb7".encode()
+			levels = urlopen(f"http://www.boomlings.com/database/getGJLevels21.php",string).read().decode()
+			return levels
+
+		def queueinfo(level):
+			result = level.split(":")
+			levelid = result[1]
+			levelname = result[3]
+			downloads = result[13]
+			likes = result[19]
+			rating = result[11]
+			stars = result[27]
+			featured = result[29]
+			epic = result[31]
+			demon = result[21]
+			demondifficulty = result[23]
+			objectplus = result[33]
+			isAuto = result[25]
+			ratingemote = None
+			if int(likes) >= 0:
+				likesemote = "<:like:472908805131337737>"
+			elif int(likes) < 0:
+				likesemote = "<:dislike:472907672744624128>"
+			if demon is not "1":
+				if int(stars) == 0:
+					if int(rating) == 0:
+						ratingemote = "<:icon_na:472908488406859776>"
+					elif int(rating) == 10:
+						ratingemote = "<:icon_easy:472908189059383296>"
+					elif int(rating) == 20:
+						ratingemote = "<:icon_normal:472908581319213056>"
+					elif int(rating) == 30:
+						ratingemote = "<:icon_hard:472908253408395296>"
+					elif int(rating) == 40:
+						ratingemote = "<:icon_harder:472908316301852683>"
+					elif int(rating) == 50:
+						ratingemote = "<:icon_insane:472908421209784320>"
+
+				if int(rating) == 0:
+					if int(featured) == 0:
+						ratingemote = "<:icon_na:472908488406859776>"
+					elif int(featured) > 0:
+						ratingemote = "<:icon_na_featured:472908513677541416>"
+					if int(epic) == 1:
+						ratingemote = "<:icon_na_epic:472908540726476850>"
+				elif int(rating) == 10:
+					if int(featured) == 0:
+						ratingemote = "<:icon_easy:472908189059383296>"
+					elif int(featured) > 0:
+						ratingemote = "<:icon_easy_featured:472908214766141471>"
+					if int(epic) == 1:
+						ratingemote = "<:icon_easy_epic:472908231803666432>"
+				elif int(rating) == 20:
+					if int(featured) == 0:
+						ratingemote = "<:icon_normal:472908581319213056>"
+					elif int(featured) > 0:
+						ratingemote = "<:icon_normal_featured:472908602613563392>"
+					if int(epic) == 1:
+						ratingemote = "<:icon_normal_epic:472908627158761473>"
+				elif int(rating) == 30:
+					if int(featured) == 0:
+						ratingemote = "<:icon_hard:472908253408395296>"
+					elif int(featured) > 0:
+						ratingemote = "<:icon_hard_featured:472908272781754369>"
+					if int(epic) == 1:
+						ratingemote = "<:icon_hard_epic:472908293837160459>"
+				elif int(rating) == 40:
+					if int(featured) == 0:
+						ratingemote = "<:icon_harder:472908316301852683>"
+					elif int(featured) > 0:
+						ratingemote = "<:icon_harder_featured:472908356928143370>"
+					if int(epic) == 1:
+						ratingemote = "<:icon_harder_epic:472908377991675914>"
+				elif int(rating) == 50:
+					if int(featured) == 0:
+						ratingemote = "<:icon_insane:472908421209784320>"
+					elif int(featured) > 0:
+						ratingemote = "<:icon_insane_featured:472908439958323211>"
+					if int(epic) == 1:
+						ratingemote = "<:icon_insane_epic:472908465761812490>"
+				try:
+					if int(isAuto) == 1:
+						if int(featured) == 0:
+							ratingemote = "<:icon_auto:472907799987486768>"
+						elif int(featured) > 0:
+							ratingemote = "<:icon_auto_featured:472907828185792532>"
+						if int(epic) == 1:
+							ratingemote = "<:icon_auto_epic:472907845915115541>"
+				except ValueError:
+					pass
+			elif int(demon) == 1:
+				if int(stars) == 0:
+					if int(demondifficulty) == 3:
+						ratingemote = "<:icon_demon_easy:472907861102559262>"
+					elif int(demondifficulty) == 4:
+						ratingemote = "<:icon_demon_medium:472908111053586433>"
+					elif int(demondifficulty) == 0:
+						ratingemote = "<:icon_demon_hard:472907978094411776>"
+					elif int(demondifficulty) == 5:
+						ratingemote = "<:icon_demon_insane:472908041960947712>"
+					elif int(demondifficulty) == 6:
+						ratingemote = "<:icon_demon_extreme:472907914110304267>"
+				if int(demondifficulty) == 3:
+					if int(featured) == 0:
+						ratingemote = "<:icon_demon_easy:472907861102559262>"
+					elif int(featured) > 0:
+						ratingemote = "<:icon_demon_easy_featured:472907878790070273>"
+					if int(epic) == 1:
+						ratingemote = "<:icon_demon_easy_epic:472907895114301440>"
+				elif int(demondifficulty) == 4:
+					if int(featured) == 0:
+						ratingemote = "<:icon_demon_medium:472908111053586433>"
+					elif int(featured) > 0:
+						ratingemote = "<:icon_demon_medium_featured:472908128472793089>"
+					if int(epic) == 1:
+						ratingemote = "<:icon_demon_medium_epic:472908148978745344>"
+				elif int(demondifficulty) == 0:
+					if int(featured) == 0:
+						ratingemote = "<:icon_demon_hard:472907978094411776>"
+					elif int(featured) > 0:
+						ratingemote = "<:icon_demon_hard_featured:472907996901408778>"
+					if int(epic) == 1:
+						ratingemote = "<:icon_demon_hard_epic:472908016149069835>"
+				elif int(demondifficulty) == 5:
+					if int(featured) == 0:
+						ratingemote = "<:icon_demon_insane:472908041960947712>"
+					elif int(featured) > 0:
+						ratingemote = "<:icon_demon_insane_featured:472908062269636640>"
+					if int(epic) == 1:
+						ratingemote = "<:icon_demon_insane_epic:472908084407173120>"
+				elif int(demondifficulty) == 6:
+					if int(featured) == 0:
+						ratingemote = "<:icon_demon_extreme:472907914110304267>"
+					elif int(featured) > 0:
+						ratingemote = "<:icon_demon_extreme_featured:472907934633033738>"
+					if int(epic) == 1:
+						ratingemote = "<:icon_demon_extreme_epic:472907957978398720>"
+			query12 = f"SELECT * FROM setup WHERE serverid = {var} LIMIT 1"
+			cursor.execute(query12)
+			result123 = cursor.fetchone()
+			removerated = result123[12]
+			if removerated == "1" and stars != "0":
+				cursor.execute(f"DELETE FROM levels WHERE levelid = {levelid} LIMIT 1")
+				conn.commit()
+				levelname = f"~~{levelname}~~"
+				rating = "0"
+				downloads = "`This level have been rated and removed by RemoveRated.`"
+				likes = "__Restart req!queue__"
+				stars = "0"
+				featured = "0"
+				epic = "0"
+				demon = "0"
+				demondifficulty = "0"
+				objectplus = "0"
+				isAuto = "0"
+			return stars,objectplus,levelname,ratingemote,stars,downloads,likes,likesemote
+			
+		def queueconstructor(embed,level,vid,number,levelid,pages,creatorplayer):
+			stars,objectplus,levelname,ratingemote,stars,downloads,likes,likesemote = queueinfo(level)
+			stars,objectplus,levelname,ratingemote,stars,downloads,likes,likesemote = str(stars),str(objectplus),str(levelname),str(ratingemote),str(stars),str(downloads),str(likes),str(likesemote)
+			video = vid
+			i = embed
+			if int(stars) == 0:
+				if int(objectplus) >= 40000:
+					if video is not None:
+						pages[i].add_field(name=f"#{number} `{levelid}` {levelname} {by} {creatorplayer} {ratingemote} <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"({video})", inline=False)
+					else:
+						pages[i].add_field(name=f"#{number} `{levelid}` {levelname} {by} {creatorplayer} {ratingemote} <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value="\u200b", inline=False)
+				elif int(objectplus) <= 39999:
+					if video is not None:
+						pages[i].add_field(name=f"#{number} `{levelid}` {levelname} {by} {creatorplayer} {ratingemote}\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"({video})", inline=False)
+					else:
+						pages[i].add_field(name=f"#{number} `{levelid}` {levelname} {by} {creatorplayer} {ratingemote}\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value="\u200b", inline=False)
+			elif int(stars) != 0:
+				if int(objectplus) >= 40000:
+					if video is not None:
+						pages[i].add_field(name=f"#{number} `{levelid}` {levelname} {by} {creatorplayer} {ratingemote} {stars}<:starrate:718204629858517003> <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"({video})", inline=False)
+					else:
+						pages[i].add_field(name=f"#{number} `{levelid}` {levelname} {by} {creatorplayer} {ratingemote} {stars}<:starrate:718204629858517003> <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value="\u200b", inline=False)
+				elif int(objectplus) <= 39999:
+					if video is not None:
+						pages[i].add_field(name=f"#{number} `{levelid}` {levelname} {by} {creatorplayer} {ratingemote} {stars}<:starrate:718204629858517003>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"({video})", inline=False)
+					else:
+						pages[i].add_field(name=f"#{number} `{levelid}` {levelname} {by} {creatorplayer} {ratingemote} {stars}<:starrate:718204629858517003>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value="\u200b", inline=False)				
+
+		def myqueueconstructor(embed,level,vid,number,levelid,pages,server,creatorplayer):
+			servername = client.get_guild(int(server))
+			stars,objectplus,levelname,ratingemote,stars,downloads,likes,likesemote = queueinfo(level)
+			stars,objectplus,levelname,ratingemote,stars,downloads,likes,likesemote = str(stars),str(objectplus),str(levelname),str(ratingemote),str(stars),str(downloads),str(likes),str(likesemote)
+			video = vid
+			i = embed
+			if int(stars) == 0:
+				if int(objectplus) >= 40000:
+					if video is not None:
+						pages[i].add_field(name=f"#{number} `{levelid}` {levelname} {by} {creatorplayer} {ratingemote} <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}\n__{requestedserver} {servername}__", value=f"({video})", inline=False)
+					else:
+						pages[i].add_field(name=f"#{number} `{levelid}` {levelname} {by} {creatorplayer} {ratingemote} <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}\n__{requestedserver} {servername}__", value="\u200b", inline=False)
+				elif int(objectplus) <= 39999:
+					if video is not None:
+						pages[i].add_field(name=f"#{number} `{levelid}` {levelname} {by} {creatorplayer} {ratingemote}\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}\n__{requestedserver} {servername}__", value=f"({video})", inline=False)
+					else:
+						pages[i].add_field(name=f"#{number} `{levelid}` {levelname} {by} {creatorplayer} {ratingemote}\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}\n__{requestedserver} {servername}__", value="\u200b", inline=False)
+			elif int(stars) != 0:
+				if int(objectplus) >= 40000:
+					if video is not None:
+						pages[i].add_field(name=f"#{number} `{levelid}` {levelname} {by} {creatorplayer} {ratingemote} {stars}<:starrate:718204629858517003> <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}\n__{requestedserver} {servername}__", value=f"({video})", inline=False)
+					else:
+						pages[i].add_field(name=f"#{number} `{levelid}` {levelname} {by} {creatorplayer} {ratingemote} {stars}<:starrate:718204629858517003> <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}\n__{requestedserver} {servername}__", value="\u200b", inline=False)
+				elif int(objectplus) <= 39999:
+					if video is not None:
+						pages[i].add_field(name=f"#{number} `{levelid}` {levelname} {by} {creatorplayer} {ratingemote} {stars}<:starrate:718204629858517003>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}\n__{requestedserver} {servername}__", value=f"({video})", inline=False)
+					else:
+						pages[i].add_field(name=f"#{number} `{levelid}` {levelname} {by} {creatorplayer} {ratingemote} {stars}<:starrate:718204629858517003>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}\n__{requestedserver} {servername}__", value="\u200b", inline=False)
 
 		def predicate(message, l, r):
 			def check(reaction, user):
@@ -720,7 +1118,7 @@ async def on_message(message):
 
 			embed5 = discord.Embed(title="", color=0x00ff0)
 			embed5.add_field(name=f'{achievementtitle}', value=f"{achievementdesc}")
-			embed5.set_thumbnail(url="http://clairfygdpsbyjoucacorpo.tk/geometry-requests/emojies/linkage.png")
+			embed5.set_thumbnail(url=f"http://clarifygdps.com/geometry-requests/emojies/linkage.png")
 			return embed5
 
 		def requestachievement1(author):
@@ -737,7 +1135,7 @@ async def on_message(message):
 
 			embed5 = discord.Embed(title="", color=0x00ff0)
 			embed5.add_field(name=f'{achievementtitle}', value=f"{achievementdesc}")
-			embed5.set_thumbnail(url="http://clairfygdpsbyjoucacorpo.tk/geometry-requests/emojies/requests_0001.png")
+			embed5.set_thumbnail(url="http://clarifygdps.com/geometry-requests/emojies/requests_0001.png")
 			return embed5
 
 		def requestachievement5(author):
@@ -754,7 +1152,7 @@ async def on_message(message):
 
 			embed5 = discord.Embed(title="", color=0x00ff0)
 			embed5.add_field(name=f'{achievementtitle}', value=f"{achievementdesc}")
-			embed5.set_thumbnail(url="http://clairfygdpsbyjoucacorpo.tk/geometry-requests/emojies/requests_0005.png")
+			embed5.set_thumbnail(url="http://clarifygdps.com/geometry-requests/emojies/requests_0005.png")
 			return embed5
 
 		def requestachievement10(author):
@@ -771,7 +1169,7 @@ async def on_message(message):
 
 			embed5 = discord.Embed(title="", color=0x00ff0)
 			embed5.add_field(name=f'{achievementtitle}', value=f"{achievementdesc}")
-			embed5.set_thumbnail(url="http://clairfygdpsbyjoucacorpo.tk/geometry-requests/emojies/requests_0010.png")
+			embed5.set_thumbnail(url="http://clarifygdps.com/geometry-requests/emojies/requests_0010.png")
 			return embed5
 
 		def requestachievement50(author):
@@ -788,7 +1186,7 @@ async def on_message(message):
 
 			embed5 = discord.Embed(title="", color=0x00ff0)
 			embed5.add_field(name=f'{achievementtitle}', value=f"{achievementdesc}")
-			embed5.set_thumbnail(url="http://clairfygdpsbyjoucacorpo.tk/geometry-requests/emojies/requests_0050.png")
+			embed5.set_thumbnail(url="http://clarifygdps.com/geometry-requests/emojies/requests_0050.png")
 			return embed5
 
 		def requestachievement100(author):
@@ -805,7 +1203,7 @@ async def on_message(message):
 
 			embed5 = discord.Embed(title="", color=0x00ff0)
 			embed5.add_field(name=f'{achievementtitle}', value=f"{achievementdesc}")
-			embed5.set_thumbnail(url="http://clairfygdpsbyjoucacorpo.tk/geometry-requests/emojies/requests_0100.png")
+			embed5.set_thumbnail(url="http://clarifygdps.com/geometry-requests/emojies/requests_0100.png")
 			return embed5
 
 		def reviewachievement1(author):
@@ -822,7 +1220,7 @@ async def on_message(message):
 
 			embed5 = discord.Embed(title="", color=0x00ff0)
 			embed5.add_field(name=f'{achievementtitle}', value=f"{achievementdesc}")
-			embed5.set_thumbnail(url="http://clairfygdpsbyjoucacorpo.tk/geometry-requests/emojies/reviewed_0001.png")
+			embed5.set_thumbnail(url="http://clarifygdps.com/geometry-requests/emojies/reviewed_0001.png")
 			return embed5
 
 		def reviewachievement5(author):
@@ -839,7 +1237,7 @@ async def on_message(message):
 
 			embed5 = discord.Embed(title="", color=0x00ff0)
 			embed5.add_field(name=f'{achievementtitle}', value=f"{achievementdesc}")
-			embed5.set_thumbnail(url="http://clairfygdpsbyjoucacorpo.tk/geometry-requests/emojies/reviewed_0005.png")
+			embed5.set_thumbnail(url="http://clarifygdps.com/geometry-requests/emojies/reviewed_0005.png")
 			return embed5
 
 		def reviewachievement10(author):
@@ -856,7 +1254,7 @@ async def on_message(message):
 
 			embed5 = discord.Embed(title="", color=0x00ff0)
 			embed5.add_field(name=f'{achievementtitle}', value=f"{achievementdesc}")
-			embed5.set_thumbnail(url="http://clairfygdpsbyjoucacorpo.tk/geometry-requests/emojies/reviewed_0010.png")
+			embed5.set_thumbnail(url="http://clarifygdps.com/geometry-requests/emojies/reviewed_0010.png")
 			return embed5
 
 		def reviewachievement50(author):
@@ -873,7 +1271,7 @@ async def on_message(message):
 
 			embed5 = discord.Embed(title="", color=0x00ff0)
 			embed5.add_field(name=f'{achievementtitle}', value=f"{achievementdesc}")
-			embed5.set_thumbnail(url="http://clairfygdpsbyjoucacorpo.tk/geometry-requests/emojies/reviewed_0050.png")
+			embed5.set_thumbnail(url="http://clarifygdps.com/geometry-requests/emojies/reviewed_0050.png")
 			return embed5
 
 		def reviewachievement100(author):
@@ -890,7 +1288,7 @@ async def on_message(message):
 
 			embed5 = discord.Embed(title="", color=0x00ff0)
 			embed5.add_field(name=f'{achievementtitle}', value=f"{achievementdesc}")
-			embed5.set_thumbnail(url="http://clairfygdpsbyjoucacorpo.tk/geometry-requests/emojies/reviewed_0100.png")
+			embed5.set_thumbnail(url="http://clarifygdps.com/geometry-requests/emojies/reviewed_0100.png")
 			return embed5
 
 		def reviewapprovedachievement1(user1):
@@ -907,7 +1305,7 @@ async def on_message(message):
 
 			embed5 = discord.Embed(title="", color=0x00ff0)
 			embed5.add_field(name=f'{achievementtitle}', value=f"{achievementdesc}")
-			embed5.set_thumbnail(url="http://clairfygdpsbyjoucacorpo.tk/geometry-requests/emojies/approved_0001.png")
+			embed5.set_thumbnail(url="http://clarifygdps.com/geometry-requests/emojies/approved_0001.png")
 			return embed5
 
 		def reviewapprovedachievement5(user1):
@@ -924,7 +1322,7 @@ async def on_message(message):
 
 			embed5 = discord.Embed(title="", color=0x00ff0)
 			embed5.add_field(name=f'{achievementtitle}', value=f"{achievementdesc}")
-			embed5.set_thumbnail(url="http://clairfygdpsbyjoucacorpo.tk/geometry-requests/emojies/approved_0005.png")
+			embed5.set_thumbnail(url="http://clarifygdps.com/geometry-requests/emojies/approved_0005.png")
 			return embed5
 
 		def reviewapprovedachievement10(user1):
@@ -941,7 +1339,7 @@ async def on_message(message):
 
 			embed5 = discord.Embed(title="", color=0x00ff0)
 			embed5.add_field(name=f'{achievementtitle}', value=f"{achievementdesc}")
-			embed5.set_thumbnail(url="http://clairfygdpsbyjoucacorpo.tk/geometry-requests/emojies/approved_0010.png")
+			embed5.set_thumbnail(url="http://clarifygdps.com/geometry-requests/emojies/approved_0010.png")
 			return embed5
 
 		def reviewapprovedachievement50(user1):
@@ -958,7 +1356,7 @@ async def on_message(message):
 
 			embed5 = discord.Embed(title="", color=0x00ff0)
 			embed5.add_field(name=f'{achievementtitle}', value=f"{achievementdesc}")
-			embed5.set_thumbnail(url="http://clairfygdpsbyjoucacorpo.tk/geometry-requests/emojies/approved_0050.png")
+			embed5.set_thumbnail(url="http://clarifygdps.com/geometry-requests/emojies/approved_0050.png")
 			return embed5
 
 		def reviewapprovedachievement100(user1):
@@ -975,7 +1373,7 @@ async def on_message(message):
 
 			embed5 = discord.Embed(title="", color=0x00ff0)
 			embed5.add_field(name=f'{achievementtitle}', value=f"{achievementdesc}")
-			embed5.set_thumbnail(url="http://clairfygdpsbyjoucacorpo.tk/geometry-requests/emojies/approved_0100.png")
+			embed5.set_thumbnail(url="http://clarifygdps.com/geometry-requests/emojies/approved_0100.png")
 			return embed5
 
 		def reviewunapprovedachievement1(user1):
@@ -992,7 +1390,7 @@ async def on_message(message):
 
 			embed5 = discord.Embed(title="", color=0x00ff0)
 			embed5.add_field(name=f'{achievementtitle}', value=f"{achievementdesc}")
-			embed5.set_thumbnail(url="http://clairfygdpsbyjoucacorpo.tk/geometry-requests/emojies/unapproved_0001.png")
+			embed5.set_thumbnail(url="http://clarifygdps.com/geometry-requests/emojies/unapproved_0001.png")
 			return embed5
 
 		def reviewunapprovedachievement5(user1):
@@ -1009,7 +1407,7 @@ async def on_message(message):
 
 			embed5 = discord.Embed(title="", color=0x00ff0)
 			embed5.add_field(name=f'{achievementtitle}', value=f"{achievementdesc}")
-			embed5.set_thumbnail(url="http://clairfygdpsbyjoucacorpo.tk/geometry-requests/emojies/unapproved_0005.png")
+			embed5.set_thumbnail(url="http://clarifygdps.com/geometry-requests/emojies/unapproved_0005.png")
 			return embed5
 
 		def reviewunapprovedachievement10(user1):
@@ -1026,7 +1424,7 @@ async def on_message(message):
 
 			embed5 = discord.Embed(title="", color=0x00ff0)
 			embed5.add_field(name=f'{achievementtitle}', value=f"{achievementdesc}")
-			embed5.set_thumbnail(url="http://clairfygdpsbyjoucacorpo.tk/geometry-requests/emojies/unapproved_0010.png")
+			embed5.set_thumbnail(url="http://clarifygdps.com/geometry-requests/emojies/unapproved_0010.png")
 			return embed5
 
 		def reviewunapprovedachievement50(user1):
@@ -1043,7 +1441,7 @@ async def on_message(message):
 
 			embed5 = discord.Embed(title="", color=0x00ff0)
 			embed5.add_field(name=f'{achievementtitle}', value=f"{achievementdesc}")
-			embed5.set_thumbnail(url="http://clairfygdpsbyjoucacorpo.tk/geometry-requests/emojies/unapproved_0050.png")
+			embed5.set_thumbnail(url="http://clarifygdps.com/geometry-requests/emojies/unapproved_0050.png")
 			return embed5
 
 		def reviewunapprovedachievement100(user1):
@@ -1060,7 +1458,7 @@ async def on_message(message):
 
 			embed5 = discord.Embed(title="", color=0x00ff0)
 			embed5.add_field(name=f'{achievementtitle}', value=f"{achievementdesc}")
-			embed5.set_thumbnail(url="http://clairfygdpsbyjoucacorpo.tk/geometry-requests/emojies/unapproved_0100.png")
+			embed5.set_thumbnail(url="http://clarifygdps.com/geometry-requests/emojies/unapproved_0100.png")
 			return embed5
 
 		def levelsentbygdmod(user1):
@@ -1077,7 +1475,7 @@ async def on_message(message):
 
 			embed5 = discord.Embed(title="", color=0x00ff0)
 			embed5.add_field(name=f'{achievementtitle}', value=f"{achievementdesc}")
-			embed5.set_thumbnail(url="http://clairfygdpsbyjoucacorpo.tk/geometry-requests/emojies/modSend.png")
+			embed5.set_thumbnail(url="http://clarifygdps.com/geometry-requests/emojies/modSend.png")
 			return embed5
 
 		def suggestidea(author):
@@ -1094,7 +1492,7 @@ async def on_message(message):
 
 			embed5 = discord.Embed(title="", color=0x00ff0)
 			embed5.add_field(name=f'{achievementtitle}', value=f"{achievementdesc}")
-			embed5.set_thumbnail(url="http://clairfygdpsbyjoucacorpo.tk/geometry-requests/emojies/suggestion.png")
+			embed5.set_thumbnail(url="http://clarifygdps.com/geometry-requests/emojies/suggestion.png")
 			return embed5
 
 		def approvedidea(author):
@@ -1111,7 +1509,7 @@ async def on_message(message):
 
 			embed5 = discord.Embed(title="", color=0x00ff0)
 			embed5.add_field(name=f'{achievementtitle}', value=f"{achievementdesc}")
-			embed5.set_thumbnail(url="http://clairfygdpsbyjoucacorpo.tk/geometry-requests/emojies/suggestionApproved.png")
+			embed5.set_thumbnail(url="http://clarifygdps.com/geometry-requests/emojies/suggestionApproved.png")
 			return embed5
 
 		def approvedreport(author):
@@ -1128,9 +1526,39 @@ async def on_message(message):
 
 			embed5 = discord.Embed(title="", color=0x00ff0)
 			embed5.add_field(name=f'{achievementtitle}', value=f"{achievementdesc}")
-			embed5.set_thumbnail(url="http://clairfygdpsbyjoucacorpo.tk/geometry-requests/emojies/bug.png")
+			embed5.set_thumbnail(url="http://clarifygdps.com/geometry-requests/emojies/bug.png")
 			return embed5
 
+		def cooldowncheck(author):
+			cursor.execute(f"SELECT cooldown FROM cooldowns WHERE userid = {author}")
+			try:
+				timecheck = cursor.fetchone()[0]
+			except TypeError:
+				timecheck1 = "2020-11-11 16:55:00"
+				timecheck = datetime.datetime.strptime(timecheck1,'%Y-%m-%d %H:%M:%S')
+			timecheck = timecheck.timestamp()
+			timern = time.time()
+			timern = round(timern,0)
+			if timern <= timecheck:
+				secondcooldown = timecheck-timern
+				alwayscooldown = 1
+				return alwayscooldown,secondcooldown
+			cursor.execute(f"DELETE FROM cooldowns WHERE userid = {author}")
+			conn.commit()
+			secondcooldown = 0
+			alwayscooldown = 0
+			return alwayscooldown,secondcooldown
+		
+		def checkmaintenance(action):
+			cursor.execute(f"SELECT {action} FROM maintenance")
+			check = cursor.fetchone()[0]
+			if check == 1:
+				return "yes"
+			else:
+				return "no"
+
+		await client.change_presence(activity=discord.Streaming(name="req!help | In "+str(len(client.guilds))+" servers!", url="https://www.twitch.tv/joucayt"))
+		
 		if message.author.id == client.user.id:
 			return
 
@@ -1139,6 +1567,11 @@ async def on_message(message):
 
 		msg = message.content.split(prefix)[1]
 		args = msg.split(" ")
+		
+		datetime_object = datetime.datetime.now()
+		args2 = prefix,' '.join(args)
+		channellog = client.get_channel(int(765611422389633064))
+		await channellog.send(f"<:requests:726371180508086283> **[{datetime_object}]** __{message.author}__ ({message.author.id}) used the command `{args2}`.")
 
 		if msg.startswith("help"):
 			try:
@@ -1157,6 +1590,17 @@ async def on_message(message):
 			else:
 				conn.cursor(buffered=True)
 				author = message.author.id
+
+				maincommand = "reqhelp"
+				checkmaintenance = checkmaintenance(maincommand)
+				if checkmaintenance == "yes":
+					embed = discord.Embed(title="", color=0xff0000)
+					embed.add_field(name=f'Error. <:error:472907618386575370>', value=f"**The command is under maintenance, please try again later.**")
+					msg2 = await message.channel.send(embed=embed)
+					time.sleep(5)
+					await msg2.delete()
+					return
+
 				cursor.execute(f"SELECT language FROM users WHERE userid = {author}")
 				try:
 					language = cursor.fetchone()[0]
@@ -1224,6 +1668,17 @@ async def on_message(message):
 			else:
 				conn.cursor(buffered=True)
 				author = message.author.id
+
+				maincommand = "reqabout"
+				checkmaintenance = checkmaintenance(maincommand)
+				if checkmaintenance == "yes":
+					embed = discord.Embed(title="", color=0xff0000)
+					embed.add_field(name=f'Error. <:error:472907618386575370>', value=f"**The command is under maintenance, please try again later.**")
+					msg2 = await message.channel.send(embed=embed)
+					time.sleep(5)
+					await msg2.delete()
+					return
+				
 				cursor.execute(f"SELECT language FROM users WHERE userid = {author}")
 				try:
 					language = cursor.fetchone()[0]
@@ -1242,9 +1697,10 @@ async def on_message(message):
 				about8 = translate_messages[7]
 				about9 = translate_messages[8]
 				about10 = translate_messages[9]
+				about11 = translate_messages[10]
 
 				servernumber = str(len(client.guilds))
-				msg = await message.channel.send(f"{about1}\n\n{about2}\n{about3}\n\n{about4}\n\n{about5}\n\n{about6}\n\n{about7}\n\n{about8}\n\n{about9}\n{about10}")
+				msg = await message.channel.send(f"{about1}\n\n{about2}\n{about3}\n\n{about4}\n\n{about5} {servernumber} {about6}\n\n{about7}\n\n{about8}\n\n{about9}\n\n{about10}\n{about11}")
 				return
 
 		if msg.startswith("setup"):
@@ -1266,42 +1722,53 @@ async def on_message(message):
 				server = message.guild.name
 				var = message.guild.id
 				author = message.author.id
+
+				maincommand = "reqsetup"
+				checkmaintenance = checkmaintenance(maincommand)
+				if checkmaintenance == "yes":
+					embed = discord.Embed(title="", color=0xff0000)
+					embed.add_field(name=f'Error. <:error:472907618386575370>', value=f"**The command is under maintenance, please try again later.**")
+					msg2 = await message.channel.send(embed=embed)
+					time.sleep(5)
+					await msg2.delete()
+					return
+				
+				cursor.execute(f"SELECT language FROM users WHERE userid = {author}")
+				try:
+					language = cursor.fetchone()[0]
+				except TypeError:
+					language = language_default
+				language2 = language
+				translate_messages = open(f"language/client/reqsetup/{language2}.txt").read().splitlines()
+
+				setupmaintitle = translate_messages[0]
+				serversettings = translate_messages[1]
+
+				norole = translate_messages[3]
+				nochannel = translate_messages[4]
+				notitle = translate_messages[5]
+				yestitle = translate_messages[6]
+
+				englishlanguage = translate_messages[8]
+				frenchlanguage = translate_messages[9]
+				spanishlanguage = translate_messages[10]
+
+				servernametitle = translate_messages[12]
+				reviewerroletitle = translate_messages[13]
+				ownerroletitle = translate_messages[14]
+				requestchanneltitle = translate_messages[15]
+				reviewchanneltitle = translate_messages[16]
+				checkedreviewchanneltitle = translate_messages[17]
+				announcementbottitle = translate_messages[18]
+				gdmodchanneltitle = translate_messages[19]
+				tagreviewertitle = translate_messages[20]
+				needvideotitle = translate_messages[21]
+				languagetitle = translate_messages[22]
+				removeratedtitle = translate_messages[23]
+
+				errormessage = translate_messages[25]
+				erroradmin = translate_messages[26]
 				if message.author.guild_permissions.administrator:
-					cursor.execute(f"SELECT language FROM users WHERE userid = {author}")
-					try:
-						language = cursor.fetchone()[0]
-					except TypeError:
-						language = language_default
-					language2 = language
-					translate_messages = open(f"language/client/reqsetup/{language2}.txt").read().splitlines()
-
-					setupmaintitle = translate_messages[0]
-					serversettings = translate_messages[1]
-
-					norole = translate_messages[3]
-					nochannel = translate_messages[4]
-					notitle = translate_messages[5]
-					yestitle = translate_messages[6]
-
-					englishlanguage = translate_messages[8]
-					frenchlanguage = translate_messages[9]
-					spanishlanguage = translate_messages[10]
-
-					servernametitle = translate_messages[12]
-					reviewerroletitle = translate_messages[13]
-					ownerroletitle = translate_messages[14]
-					requestchanneltitle = translate_messages[15]
-					reviewchanneltitle = translate_messages[16]
-					checkedreviewchanneltitle = translate_messages[17]
-					announcementbottitle = translate_messages[18]
-					gdmodchanneltitle = translate_messages[19]
-					tagreviewertitle = translate_messages[20]
-					needvideotitle = translate_messages[21]
-					languagetitle = translate_messages[22]
-
-					errormessage = translate_messages[24]
-					erroradmin = translate_messages[25]
-
 					cursor.execute(f"SELECT * FROM setup WHERE serverid = {var} LIMIT 1")
 					result = cursor.fetchone()
 					embed = discord.Embed(title=f"{setupmaintitle}", color=0x8E8E8E)
@@ -1348,6 +1815,11 @@ async def on_message(message):
 							embed.add_field(name=f"{gdmodchanneltitle}", value=f"{nochannel}", inline=False)
 						elif gdmodchannel is not None:
 							embed.add_field(name=f"{gdmodchanneltitle}", value=f"<#{gdmodchannel}>", inline=False)
+						gdmodcheckedchannel = result[13]
+						if gdmodcheckedchannel == None:
+							embed.add_field(name=f"GDModCheckedChannel", value=f"{nochannel}", inline=False)
+						elif gdmodcheckedchannel is not None:
+							embed.add_field(name=f"GDModCheckedChannel", value=f"<#{gdmodcheckedchannel}>", inline=False)
 					tagreviewer = result[9]
 					if tagreviewer == "0":
 						embed.add_field(name=f"{tagreviewertitle}", value=f"{notitle}", inline=False)
@@ -1365,6 +1837,12 @@ async def on_message(message):
 						embed.add_field(name=f"{languagetitle}", value=f"{frenchlanguage}", inline=False)
 					elif languagesetup == "es":
 						embed.add_field(name=f"{languagetitle}", value=f"{spanishlanguage}", inline=False)
+					removerated = result[12]
+					if removerated == "0":
+						embed.add_field(name=f"{removeratedtitle}", value=f"{notitle}", inline=False)
+					elif removerated == "1":
+						embed.add_field(name=f"{removeratedtitle}", value=f"{yestitle}", inline=False)
+                    
 					embed.set_footer(text=f"{message.guild.name} --- {message.author}")
 					await message.channel.send(embed=embed)
 					return
@@ -1392,6 +1870,19 @@ async def on_message(message):
 					return
 			else:
 				conn.cursor()
+
+				maincommand = "reqsetconfig"
+				checkmaintenance = checkmaintenance(maincommand)
+				if checkmaintenance == "yes":
+					embed = discord.Embed(title="", color=0xff0000)
+					embed.add_field(name=f'Error. <:error:472907618386575370>', value=f"**The command is under maintenance, please try again later.**")
+					msg2 = await message.channel.send(embed=embed)
+					time.sleep(5)
+					await msg2.delete()
+					return
+				
+				args = [x for ar in args for x in ar.split('\n')]
+
 				try:
 					description = args[1]
 				except IndexError as error:
@@ -1434,22 +1925,23 @@ async def on_message(message):
 				tagreviewertitle = translate_messages[20]
 				needvideotitle = translate_messages[21]
 				languagetitle = translate_messages[22]
+				removeratedtitle = translate_messages[23]
 
-				errormessage = translate_messages[24]
-				erroradmin = translate_messages[25]
+				errormessage = translate_messages[25]
+				erroradmin = translate_messages[26]
 
-				loadingtitle = translate_messages[27]
-				loadingdesc = translate_messages[28]
+				loadingtitle = translate_messages[28]
+				loadingdesc = translate_messages[29]
 
-				errorlink = translate_messages[30]
-				errorroledontexist = translate_messages[31]
-				errorchanneldontexist = translate_messages[32]
-				errorroletag = translate_messages[33]
-				errorchanneltag = translate_messages[34]
-				errorgdmod = translate_messages[35]
-				errorbinary = translate_messages[36]
-				errorsetting = translate_messages[37]
-				errorlanguage = translate_messages[38]
+				errorlink = translate_messages[31]
+				errorroledontexist = translate_messages[32]
+				errorchanneldontexist = translate_messages[33]
+				errorroletag = translate_messages[34]
+				errorchanneltag = translate_messages[35]
+				errorgdmod = translate_messages[36]
+				errorbinary = translate_messages[37]
+				errorsetting = translate_messages[38]
+				errorlanguage = translate_messages[39]
 
 				cursor.execute(f"SELECT userid FROM users WHERE userid = {author}")
 				linked = cursor.fetchone()
@@ -1469,6 +1961,7 @@ async def on_message(message):
 									valeur = valeur.replace('>', '')
 									valeur = valeur.replace('@', '')
 									valeur = valeur.replace('&', '')
+									valeur = valeur.replace('!', '')
 									roles = discord.utils.get(message.guild.roles)
 									role = discord.utils.get(message.guild.roles, id = int(valeur))
 									if role is None:
@@ -1482,7 +1975,7 @@ async def on_message(message):
 								embed3 = discord.Embed(title=f"{loadingtitle}", color=0xffce08)
 								embed3.add_field(name=f"{loadingdesc}", value="\u200b")
 								msg = await message.channel.send(embed=embed3)
-								cursor.execute(f"UPDATE setup SET ReviewerRole = '{valeur}' WHERE serverid = {var}")
+								cursor.execute(f"UPDATE setup SET ReviewerRole = %s WHERE serverid = {var}", (valeur, ))
 								conn.commit()
 								cursor.execute(f"SELECT * FROM setup WHERE serverid = {var} LIMIT 1")
 								result = cursor.fetchone()
@@ -1531,6 +2024,11 @@ async def on_message(message):
 										embed.add_field(name=f"{gdmodchanneltitle}", value=f"{nochannel}", inline=False)
 									elif gdmodchannel is not None:
 										embed.add_field(name=f"{gdmodchanneltitle}", value=f"<#{gdmodchannel}>", inline=False)
+									gdmodcheckedchannel = result[13]
+									if gdmodcheckedchannel == None:
+										embed.add_field(name=f"GDModCheckedChannel", value=f"{nochannel}", inline=False)
+									elif gdmodcheckedchannel is not None:
+										embed.add_field(name=f"GDModCheckedChannel", value=f"<#{gdmodcheckedchannel}>", inline=False)
 								tagreviewer = result[9]
 								if tagreviewer == "0":
 									embed.add_field(name=f"{tagreviewertitle}", value=f"{notitle}", inline=False)
@@ -1548,6 +2046,11 @@ async def on_message(message):
 									embed.add_field(name=f"{languagetitle}", value=f"{frenchlanguage}", inline=False)
 								elif languagesetup == "es":
 									embed.add_field(name=f"{languagetitle}", value=f"{frenchlanguage}", inline=False)
+								removerated = result[12]
+								if removerated == "0":
+									embed.add_field(name=f"{removeratedtitle}", value=f"{notitle}", inline=False)
+								elif removerated == "1":
+									embed.add_field(name=f"{removeratedtitle}", value=f"{yestitle}", inline=False)
 								embed.set_footer(text=f"{message.guild.name} --- {message.author}")
 								await message.channel.send(embed=embed)
 								return
@@ -1564,6 +2067,7 @@ async def on_message(message):
 									valeur = valeur.replace('>', '')
 									valeur = valeur.replace('@', '')
 									valeur = valeur.replace('&', '')
+									valeur = valeur.replace('!', '')
 									roles = discord.utils.get(message.guild.roles)
 									role = discord.utils.get(message.guild.roles, id = int(valeur))
 									if role is None:
@@ -1577,7 +2081,7 @@ async def on_message(message):
 								embed3 = discord.Embed(title=f"{loadingtitle}", color=0xffce08)
 								embed3.add_field(name=f"{loadingdesc}", value="\u200b")
 								msg = await message.channel.send(embed=embed3)
-								cursor.execute(f"UPDATE setup SET OwnerRole = '{valeur}' WHERE serverid = {var}")
+								cursor.execute(f"UPDATE setup SET OwnerRole = %s WHERE serverid = {var}", (valeur, ))
 								conn.commit()
 								cursor.execute(f"SELECT * FROM setup WHERE serverid = {var} LIMIT 1")
 								result = cursor.fetchone()
@@ -1626,6 +2130,11 @@ async def on_message(message):
 										embed.add_field(name=f"{gdmodchanneltitle}", value=f"{nochannel}", inline=False)
 									elif gdmodchannel is not None:
 										embed.add_field(name=f"{gdmodchanneltitle}", value=f"<#{gdmodchannel}>", inline=False)
+									gdmodcheckedchannel = result[13]
+									if gdmodcheckedchannel == None:
+										embed.add_field(name=f"GDModCheckedChannel", value=f"{nochannel}", inline=False)
+									elif gdmodcheckedchannel is not None:
+										embed.add_field(name=f"GDModCheckedChannel", value=f"<#{gdmodcheckedchannel}>", inline=False)
 								tagreviewer = result[9]
 								if tagreviewer == "0":
 									embed.add_field(name=f"{tagreviewertitle}", value=f"{notitle}", inline=False)
@@ -1643,6 +2152,11 @@ async def on_message(message):
 									embed.add_field(name=f"{languagetitle}", value=f"{frenchlanguage}", inline=False)
 								elif languagesetup == "es":
 									embed.add_field(name=f"{languagetitle}", value=f"{frenchlanguage}", inline=False)
+								removerated = result[12]
+								if removerated == "0":
+									embed.add_field(name=f"{removeratedtitle}", value=f"{notitle}", inline=False)
+								elif removerated == "1":
+									embed.add_field(name=f"{removeratedtitle}", value=f"{yestitle}", inline=False)
 								embed.set_footer(text=f"{message.guild.name} --- {message.author}")
 								await message.channel.send(embed=embed)
 								return
@@ -1670,7 +2184,7 @@ async def on_message(message):
 								embed3 = discord.Embed(title=f"{loadingtitle}", color=0xffce08)
 								embed3.add_field(name=f"{loadingdesc}", value="\u200b")
 								msg = await message.channel.send(embed=embed3)
-								cursor.execute(f"UPDATE setup SET RequestChannel = {valeur} WHERE serverid = {var}")
+								cursor.execute(f"UPDATE setup SET RequestChannel = %s WHERE serverid = {var}", (valeur, ))
 								conn.commit()
 								cursor.execute(f"SELECT * FROM setup WHERE serverid = {var} LIMIT 1")
 								result = cursor.fetchone()
@@ -1719,6 +2233,11 @@ async def on_message(message):
 										embed.add_field(name=f"{gdmodchanneltitle}", value=f"{nochannel}", inline=False)
 									elif gdmodchannel is not None:
 										embed.add_field(name=f"{gdmodchanneltitle}", value=f"<#{gdmodchannel}>", inline=False)
+									gdmodcheckedchannel = result[13]
+									if gdmodcheckedchannel == None:
+										embed.add_field(name=f"GDModCheckedChannel", value=f"{nochannel}", inline=False)
+									elif gdmodcheckedchannel is not None:
+										embed.add_field(name=f"GDModCheckedChannel", value=f"<#{gdmodcheckedchannel}>", inline=False)
 								tagreviewer = result[9]
 								if tagreviewer == "0":
 									embed.add_field(name=f"{tagreviewertitle}", value=f"{notitle}", inline=False)
@@ -1736,6 +2255,11 @@ async def on_message(message):
 									embed.add_field(name=f"{languagetitle}", value=f"{frenchlanguage}", inline=False)
 								elif languagesetup == "es":
 									embed.add_field(name=f"{languagetitle}", value=f"{frenchlanguage}", inline=False)
+								removerated = result[12]
+								if removerated == "0":
+									embed.add_field(name=f"{removeratedtitle}", value=f"{notitle}", inline=False)
+								elif removerated == "1":
+									embed.add_field(name=f"{removeratedtitle}", value=f"{yestitle}", inline=False)
 								embed.set_footer(text=f"{message.guild.name} --- {message.author}")
 								await message.channel.send(embed=embed)
 								return
@@ -1763,7 +2287,7 @@ async def on_message(message):
 								embed3 = discord.Embed(title=f"{loadingtitle}", color=0xffce08)
 								embed3.add_field(name=f"{loadingdesc}", value="\u200b")
 								msg = await message.channel.send(embed=embed3)
-								cursor.execute(f"UPDATE setup SET ReviewChannel = {valeur} WHERE serverid = {var}")
+								cursor.execute(f"UPDATE setup SET ReviewChannel = %s WHERE serverid = {var}", (valeur, ))
 								conn.commit()
 								cursor.execute(f"SELECT * FROM setup WHERE serverid = {var} LIMIT 1")
 								result = cursor.fetchone()
@@ -1812,6 +2336,11 @@ async def on_message(message):
 										embed.add_field(name=f"{gdmodchanneltitle}", value=f"{nochannel}", inline=False)
 									elif gdmodchannel is not None:
 										embed.add_field(name=f"{gdmodchanneltitle}", value=f"<#{gdmodchannel}>", inline=False)
+									gdmodcheckedchannel = result[13]
+									if gdmodcheckedchannel == None:
+										embed.add_field(name=f"GDModCheckedChannel", value=f"{nochannel}", inline=False)
+									elif gdmodcheckedchannel is not None:
+										embed.add_field(name=f"GDModCheckedChannel", value=f"<#{gdmodcheckedchannel}>", inline=False)
 								tagreviewer = result[9]
 								if tagreviewer == "0":
 									embed.add_field(name=f"{tagreviewertitle}", value=f"{notitle}", inline=False)
@@ -1829,6 +2358,11 @@ async def on_message(message):
 									embed.add_field(name=f"{languagetitle}", value=f"{frenchlanguage}", inline=False)
 								elif languagesetup == "es":
 									embed.add_field(name=f"{languagetitle}", value=f"{frenchlanguage}", inline=False)
+								removerated = result[12]
+								if removerated == "0":
+									embed.add_field(name=f"{removeratedtitle}", value=f"{notitle}", inline=False)
+								elif removerated == "1":
+									embed.add_field(name=f"{removeratedtitle}", value=f"{yestitle}", inline=False)
 								embed.set_footer(text=f"{message.guild.name} --- {message.author}")
 								await message.channel.send(embed=embed)
 								return
@@ -1856,7 +2390,7 @@ async def on_message(message):
 								embed3 = discord.Embed(title=f"{loadingtitle}", color=0xffce08)
 								embed3.add_field(name=f"{loadingdesc}", value="\u200b")
 								msg = await message.channel.send(embed=embed3)
-								cursor.execute(f"UPDATE setup SET CheckedReviewChannel = {valeur} WHERE serverid = {var}")
+								cursor.execute(f"UPDATE setup SET CheckedReviewChannel = %s WHERE serverid = {var}", (valeur, ))
 								conn.commit()
 								cursor.execute(f"SELECT * FROM setup WHERE serverid = {var} LIMIT 1")
 								result = cursor.fetchone()
@@ -1905,6 +2439,11 @@ async def on_message(message):
 										embed.add_field(name=f"{gdmodchanneltitle}", value=f"{nochannel}", inline=False)
 									elif gdmodchannel is not None:
 										embed.add_field(name=f"{gdmodchanneltitle}", value=f"<#{gdmodchannel}>", inline=False)
+									gdmodcheckedchannel = result[13]
+									if gdmodcheckedchannel == None:
+										embed.add_field(name=f"GDModCheckedChannel", value=f"{nochannel}", inline=False)
+									elif gdmodcheckedchannel is not None:
+										embed.add_field(name=f"GDModCheckedChannel", value=f"<#{gdmodcheckedchannel}>", inline=False)
 								tagreviewer = result[9]
 								if tagreviewer == "0":
 									embed.add_field(name=f"{tagreviewertitle}", value=f"{notitle}", inline=False)
@@ -1922,6 +2461,11 @@ async def on_message(message):
 									embed.add_field(name=f"{languagetitle}", value=f"{frenchlanguage}", inline=False)
 								elif languagesetup == "es":
 									embed.add_field(name=f"{languagetitle}", value=f"{frenchlanguage}", inline=False)
+								removerated = result[12]
+								if removerated == "0":
+									embed.add_field(name=f"{removeratedtitle}", value=f"{notitle}", inline=False)
+								elif removerated == "1":
+									embed.add_field(name=f"{removeratedtitle}", value=f"{yestitle}", inline=False)
 								embed.set_footer(text=f"{message.guild.name} --- {message.author}")
 								await message.channel.send(embed=embed)
 								return
@@ -1949,7 +2493,7 @@ async def on_message(message):
 								embed3 = discord.Embed(title=f"{loadingtitle}", color=0xffce08)
 								embed3.add_field(name=f"{loadingdesc}", value="\u200b")
 								msg = await message.channel.send(embed=embed3)
-								cursor.execute(f"UPDATE setup SET AnnouncementBot = {valeur} WHERE serverid = {var}")
+								cursor.execute(f"UPDATE setup SET AnnouncementBot = %s WHERE serverid = {var}", (valeur, ))
 								conn.commit()
 								cursor.execute(f"SELECT * FROM setup WHERE serverid = {var} LIMIT 1")
 								result = cursor.fetchone()
@@ -1998,6 +2542,11 @@ async def on_message(message):
 										embed.add_field(name=f"{gdmodchanneltitle}", value=f"{nochannel}", inline=False)
 									elif gdmodchannel is not None:
 										embed.add_field(name=f"{gdmodchanneltitle}", value=f"<#{gdmodchannel}>", inline=False)
+									gdmodcheckedchannel = result[13]
+									if gdmodcheckedchannel == None:
+										embed.add_field(name=f"GDModCheckedChannel", value=f"{nochannel}", inline=False)
+									elif gdmodcheckedchannel is not None:
+										embed.add_field(name=f"GDModCheckedChannel", value=f"<#{gdmodcheckedchannel}>", inline=False)
 								tagreviewer = result[9]
 								if tagreviewer == "0":
 									embed.add_field(name=f"{tagreviewertitle}", value=f"{notitle}", inline=False)
@@ -2015,6 +2564,11 @@ async def on_message(message):
 									embed.add_field(name=f"{languagetitle}", value=f"{frenchlanguage}", inline=False)
 								elif languagesetup == "es":
 									embed.add_field(name=f"{languagetitle}", value=f"{frenchlanguage}", inline=False)
+								removerated = result[12]
+								if removerated == "0":
+									embed.add_field(name=f"{removeratedtitle}", value=f"{notitle}", inline=False)
+								elif removerated == "1":
+									embed.add_field(name=f"{removeratedtitle}", value=f"{yestitle}", inline=False)
 								embed.set_footer(text=f"{message.guild.name} --- {message.author}")
 								await message.channel.send(embed=embed)
 								return
@@ -2046,7 +2600,7 @@ async def on_message(message):
 									embed3 = discord.Embed(title=f"{loadingtitle}", color=0xffce08)
 									embed3.add_field(name=f"{loadingdesc}", value="\u200b")
 									msg = await message.channel.send(embed=embed3)
-									cursor.execute(f"UPDATE setup SET GDModChannel = {valeur} WHERE serverid = {var}")
+									cursor.execute(f"UPDATE setup SET GDModChannel = %s WHERE serverid = {var}", (valeur, ))
 									conn.commit()
 									cursor.execute(f"SELECT * FROM setup WHERE serverid = {var} LIMIT 1")
 									result = cursor.fetchone()
@@ -2095,6 +2649,11 @@ async def on_message(message):
 											embed.add_field(name=f"{gdmodchanneltitle}", value=f"{nochannel}", inline=False)
 										elif gdmodchannel is not None:
 											embed.add_field(name=f"{gdmodchanneltitle}", value=f"<#{gdmodchannel}>", inline=False)
+										gdmodcheckedchannel = result[13]
+										if gdmodcheckedchannel == None:
+											embed.add_field(name=f"GDModCheckedChannel", value=f"{nochannel}", inline=False)
+										elif gdmodcheckedchannel is not None:
+											embed.add_field(name=f"GDModCheckedChannel", value=f"<#{gdmodcheckedchannel}>", inline=False)
 									tagreviewer = result[9]
 									if tagreviewer == "0":
 										embed.add_field(name=f"{tagreviewertitle}", value=f"{notitle}", inline=False)
@@ -2112,6 +2671,125 @@ async def on_message(message):
 										embed.add_field(name=f"{languagetitle}", value=f"{frenchlanguage}", inline=False)
 									elif languagesetup == "es":
 										embed.add_field(name=f"{languagetitle}", value=f"{frenchlanguage}", inline=False)
+									removerated = result[12]
+									if removerated == "0":
+										embed.add_field(name=f"{removeratedtitle}", value=f"{notitle}", inline=False)
+									elif removerated == "1":
+										embed.add_field(name=f"{removeratedtitle}", value=f"{yestitle}", inline=False)
+									embed.set_footer(text=f"{message.guild.name} --- {message.author}")
+									await message.channel.send(embed=embed)
+									return
+								embed = discord.Embed(title="", color=0xff0000)
+								embed.add_field(name=f'{errormessage}', value=f"{errorchanneltag}")
+								msg2 = await message.channel.send(embed=embed)
+								time.sleep(5)
+								await msg2.delete()
+								return
+							else:
+								embed = discord.Embed(title="", color=0xff0000)
+								embed.add_field(name=f'{errormessage}', value=f"{errorgdmod}")
+								msg2 = await message.channel.send(embed=embed)
+								time.sleep(5)
+								await msg2.delete()
+								return
+						if description == "gdmodcheckedchannel":
+							var = message.guild.id
+							pogya = cursor.execute(f"SELECT serverid FROM GDmoderators WHERE serverid = {var}")
+							gdmod1 = cursor.fetchone()
+							if gdmod1 is not None:
+								if valeur is not None:
+									if valeur.startswith("<"):
+										valeur = valeur.replace('<', '')
+										valeur = valeur.replace('>', '')
+										valeur = valeur.replace('#', '')
+										role = client.get_channel(int(valeur))
+										if role is None:
+											embed = discord.Embed(title="", color=0xff0000)
+											embed.add_field(name=f'{errormessage}', value=f"{errorchanneldontexist}")
+											msg2 = await message.channel.send(embed=embed)
+											time.sleep(5)
+											await msg2.delete()
+											return
+									var = message.guild.id
+									embed3 = discord.Embed(title=f"{loadingtitle}", color=0xffce08)
+									embed3.add_field(name=f"{loadingdesc}", value="\u200b")
+									msg = await message.channel.send(embed=embed3)
+									cursor.execute(f"UPDATE setup SET GDModCheckedChannel = %s WHERE serverid = {var}", (valeur, ))
+									conn.commit()
+									cursor.execute(f"SELECT * FROM setup WHERE serverid = {var} LIMIT 1")
+									result = cursor.fetchone()
+									await msg.delete()
+									embed = discord.Embed(title=f"{setupmaintitle}", color=0x8E8E8E)
+									embed.set_author(name=f"{serversettings}", icon_url="https://cdn.discordapp.com/emojis/472907599361212426.png?v=1")
+									embed.add_field(name=f"{servernametitle}", value=f"{server}", inline=False)
+									reviewerrole = result[2]
+									if reviewerrole == None:
+										embed.add_field(name=f"{reviewerroletitle}", value=f"{norole}", inline=False)
+									elif reviewerrole is not None:
+										embed.add_field(name=f"{reviewerroletitle}", value=f"<@&{reviewerrole}>", inline=False)
+									ownerrole = result[3]
+									if ownerrole == None:
+										embed.add_field(name=f"{ownerroletitle}", value=f"{norole}", inline=False)
+									elif ownerrole is not None:
+										embed.add_field(name=f"{ownerroletitle}", value=f"<@&{ownerrole}>", inline=False)
+									requestchannel = result[4]
+									if requestchannel == None:
+										embed.add_field(name=f"{requestchanneltitle}", value=f"{nochannel}", inline=False)
+									elif requestchannel is not None:
+										embed.add_field(name=f"{requestchanneltitle}", value=f"<#{requestchannel}>", inline=False)
+									reviewchannel = result[5]
+									if reviewchannel == None:
+										embed.add_field(name=f"{reviewchanneltitle}", value=f"{nochannel}", inline=False)
+									elif reviewchannel is not None:
+										embed.add_field(name=f"{reviewchanneltitle}", value=f"<#{reviewchannel}>", inline=False)
+									checkedreviewchannel = result[6]
+									if checkedreviewchannel == None:
+										embed.add_field(name=f"{checkedreviewchanneltitle}", value=f"{nochannel}", inline=False)
+									elif checkedreviewchannel is not None:
+										embed.add_field(name=f"{checkedreviewchanneltitle}", value=f"<#{checkedreviewchannel}>", inline=False)
+									announcementbot = result[7]
+									if announcementbot == None:
+										embed.add_field(name=f"{announcementbottitle}", value=f"{nochannel}", inline=False)
+									elif announcementbot is not None:
+										embed.add_field(name=f"{announcementbottitle}", value=f"<#{announcementbot}>", inline=False)
+									conn.commit()
+									pogya = cursor.execute(f"SELECT serverid FROM GDmoderators WHERE serverid = {var}")
+									gdmod1 = cursor.fetchone()
+									if gdmod1 is not None:
+										conn.commit()
+										cursor.execute(f"SELECT * FROM setup WHERE serverid = {var} LIMIT 1")
+										gdmodchannel = result[8]
+										if gdmodchannel == None:
+											embed.add_field(name=f"{gdmodchanneltitle}", value=f"{nochannel}", inline=False)
+										elif gdmodchannel is not None:
+											embed.add_field(name=f"{gdmodchanneltitle}", value=f"<#{gdmodchannel}>", inline=False)
+										gdmodcheckedchannel = result[13]
+										if gdmodcheckedchannel == None:
+											embed.add_field(name=f"GDModCheckedChannel", value=f"{nochannel}", inline=False)
+										elif gdmodcheckedchannel is not None:
+											embed.add_field(name=f"GDModCheckedChannel", value=f"<#{gdmodcheckedchannel}>", inline=False)
+									tagreviewer = result[9]
+									if tagreviewer == "0":
+										embed.add_field(name=f"{tagreviewertitle}", value=f"{notitle}", inline=False)
+									elif tagreviewer == "1":
+										embed.add_field(name=f"{tagreviewertitle}", value=f"{yestitle}", inline=False)
+									needvideo = result[10]
+									if needvideo == "0":
+										embed.add_field(name=f"{needvideotitle}", value=f"{notitle}", inline=False)
+									elif needvideo == "1":
+										embed.add_field(name=f"{needvideotitle}", value=f"{yestitle}", inline=False)
+									languagesetup = result[11]
+									if languagesetup == "en":
+										embed.add_field(name=f"{languagetitle}", value=f"{englishlanguage}", inline=False)
+									elif languagesetup == "fr":
+										embed.add_field(name=f"{languagetitle}", value=f"{frenchlanguage}", inline=False)
+									elif languagesetup == "es":
+										embed.add_field(name=f"{languagetitle}", value=f"{frenchlanguage}", inline=False)
+									removerated = result[12]
+									if removerated == "0":
+										embed.add_field(name=f"{removeratedtitle}", value=f"{notitle}", inline=False)
+									elif removerated == "1":
+										embed.add_field(name=f"{removeratedtitle}", value=f"{yestitle}", inline=False)
 									embed.set_footer(text=f"{message.guild.name} --- {message.author}")
 									await message.channel.send(embed=embed)
 									return
@@ -2134,7 +2812,7 @@ async def on_message(message):
 								embed3 = discord.Embed(title=f"{loadingtitle}", color=0xffce08)
 								embed3.add_field(name=f"{loadingdesc}", value="\u200b")
 								msg = await message.channel.send(embed=embed3)
-								cursor.execute(f"UPDATE setup SET TagReviewer = {valeur} WHERE serverid = {var}")
+								cursor.execute(f"UPDATE setup SET TagReviewer = %s WHERE serverid = {var}", (valeur, ))
 								conn.commit()
 								cursor.execute(f"SELECT * FROM setup WHERE serverid = {var} LIMIT 1")
 								result = cursor.fetchone()
@@ -2183,6 +2861,11 @@ async def on_message(message):
 										embed.add_field(name=f"{gdmodchanneltitle}", value=f"{nochannel}", inline=False)
 									elif gdmodchannel is not None:
 										embed.add_field(name=f"{gdmodchanneltitle}", value=f"<#{gdmodchannel}>", inline=False)
+									gdmodcheckedchannel = result[13]
+									if gdmodcheckedchannel == None:
+										embed.add_field(name=f"GDModCheckedChannel", value=f"{nochannel}", inline=False)
+									elif gdmodcheckedchannel is not None:
+										embed.add_field(name=f"GDModCheckedChannel", value=f"<#{gdmodcheckedchannel}>", inline=False)
 								tagreviewer = result[9]
 								if tagreviewer == "0":
 									embed.add_field(name=f"{tagreviewertitle}", value=f"{notitle}", inline=False)
@@ -2200,6 +2883,11 @@ async def on_message(message):
 									embed.add_field(name=f"{languagetitle}", value=f"{frenchlanguage}", inline=False)
 								elif languagesetup == "es":
 									embed.add_field(name=f"{languagetitle}", value=f"{frenchlanguage}", inline=False)
+								removerated = result[12]
+								if removerated == "0":
+									embed.add_field(name=f"{removeratedtitle}", value=f"{notitle}", inline=False)
+								elif removerated == "1":
+									embed.add_field(name=f"{removeratedtitle}", value=f"{yestitle}", inline=False)
 								embed.set_footer(text=f"{message.guild.name} --- {message.author}")
 								await message.channel.send(embed=embed)
 								return
@@ -2208,7 +2896,7 @@ async def on_message(message):
 								embed3 = discord.Embed(title=f"{loadingtitle}", color=0xffce08)
 								embed3.add_field(name=f"{loadingdesc}", value="\u200b")
 								msg = await message.channel.send(embed=embed3)
-								cursor.execute(f"UPDATE setup SET TagReviewer = {valeur} WHERE serverid = {var}")
+								cursor.execute(f"UPDATE setup SET TagReviewer = %s WHERE serverid = {var}", (valeur, ))
 								conn.commit()
 								cursor.execute(f"SELECT * FROM setup WHERE serverid = {var} LIMIT 1")
 								result = cursor.fetchone()
@@ -2257,6 +2945,11 @@ async def on_message(message):
 										embed.add_field(name=f"{gdmodchanneltitle}", value=f"{nochannel}", inline=False)
 									elif gdmodchannel is not None:
 										embed.add_field(name=f"{gdmodchanneltitle}", value=f"<#{gdmodchannel}>", inline=False)
+									gdmodcheckedchannel = result[13]
+									if gdmodcheckedchannel == None:
+										embed.add_field(name=f"GDModCheckedChannel", value=f"{nochannel}", inline=False)
+									elif gdmodcheckedchannel is not None:
+										embed.add_field(name=f"GDModCheckedChannel", value=f"<#{gdmodcheckedchannel}>", inline=False)
 								tagreviewer = result[9]
 								if tagreviewer == "0":
 									embed.add_field(name=f"{tagreviewertitle}", value=f"{notitle}", inline=False)
@@ -2274,6 +2967,11 @@ async def on_message(message):
 									embed.add_field(name=f"{languagetitle}", value=f"{frenchlanguage}", inline=False)
 								elif languagesetup == "es":
 									embed.add_field(name=f"{languagetitle}", value=f"{frenchlanguage}", inline=False)
+								removerated = result[12]
+								if removerated == "0":
+									embed.add_field(name=f"{removeratedtitle}", value=f"{notitle}", inline=False)
+								elif removerated == "1":
+									embed.add_field(name=f"{removeratedtitle}", value=f"{yestitle}", inline=False)
 								embed.set_footer(text=f"{message.guild.name} --- {message.author}")
 								await message.channel.send(embed=embed)
 								return
@@ -2289,7 +2987,7 @@ async def on_message(message):
 								embed3 = discord.Embed(title=f"{loadingtitle}", color=0xffce08)
 								embed3.add_field(name=f"{loadingdesc}", value="\u200b")
 								msg = await message.channel.send(embed=embed3)
-								cursor.execute(f"UPDATE setup SET NeedVideo = {valeur} WHERE serverid = {var}")
+								cursor.execute(f"UPDATE setup SET NeedVideo = %s WHERE serverid = {var}", (valeur, ))
 								conn.commit()
 								cursor.execute(f"SELECT * FROM setup WHERE serverid = {var} LIMIT 1")
 								result = cursor.fetchone()
@@ -2338,6 +3036,11 @@ async def on_message(message):
 										embed.add_field(name=f"{gdmodchanneltitle}", value=f"{nochannel}", inline=False)
 									elif gdmodchannel is not None:
 										embed.add_field(name=f"{gdmodchanneltitle}", value=f"<#{gdmodchannel}>", inline=False)
+									gdmodcheckedchannel = result[13]
+									if gdmodcheckedchannel == None:
+										embed.add_field(name=f"GDModCheckedChannel", value=f"{nochannel}", inline=False)
+									elif gdmodcheckedchannel is not None:
+										embed.add_field(name=f"GDModCheckedChannel", value=f"<#{gdmodcheckedchannel}>", inline=False)
 								tagreviewer = result[9]
 								if tagreviewer == "0":
 									embed.add_field(name=f"{tagreviewertitle}", value=f"{notitle}", inline=False)
@@ -2355,6 +3058,11 @@ async def on_message(message):
 									embed.add_field(name=f"{languagetitle}", value=f"{frenchlanguage}", inline=False)
 								elif languagesetup == "es":
 									embed.add_field(name=f"{languagetitle}", value=f"{frenchlanguage}", inline=False)
+								removerated = result[12]
+								if removerated == "0":
+									embed.add_field(name=f"{removeratedtitle}", value=f"{notitle}", inline=False)
+								elif removerated == "1":
+									embed.add_field(name=f"{removeratedtitle}", value=f"{yestitle}", inline=False)
 								embed.set_footer(text=f"{message.guild.name} --- {message.author}")
 								await message.channel.send(embed=embed)
 								return
@@ -2363,7 +3071,7 @@ async def on_message(message):
 								embed3 = discord.Embed(title=f"{loadingtitle}", color=0xffce08)
 								embed3.add_field(name=f"{loadingdesc}", value="\u200b")
 								msg = await message.channel.send(embed=embed3)
-								cursor.execute(f"UPDATE setup SET NeedVideo = {valeur} WHERE serverid = {var}")
+								cursor.execute(f"UPDATE setup SET NeedVideo = %s WHERE serverid = {var}", (valeur, ))
 								conn.commit()
 								cursor.execute(f"SELECT * FROM setup WHERE serverid = {var} LIMIT 1")
 								result = cursor.fetchone()
@@ -2412,6 +3120,11 @@ async def on_message(message):
 										embed.add_field(name=f"{gdmodchanneltitle}", value=f"{nochannel}", inline=False)
 									elif gdmodchannel is not None:
 										embed.add_field(name=f"{gdmodchanneltitle}", value=f"<#{gdmodchannel}>", inline=False)
+									gdmodcheckedchannel = result[13]
+									if gdmodcheckedchannel == None:
+										embed.add_field(name=f"GDModCheckedChannel", value=f"{nochannel}", inline=False)
+									elif gdmodcheckedchannel is not None:
+										embed.add_field(name=f"GDModCheckedChannel", value=f"<#{gdmodcheckedchannel}>", inline=False)
 								tagreviewer = result[9]
 								if tagreviewer == "0":
 									embed.add_field(name=f"{tagreviewertitle}", value=f"{notitle}", inline=False)
@@ -2429,6 +3142,11 @@ async def on_message(message):
 									embed.add_field(name=f"{languagetitle}", value=f"{frenchlanguage}", inline=False)
 								elif languagesetup == "es":
 									embed.add_field(name=f"{languagetitle}", value=f"{frenchlanguage}", inline=False)
+								removerated = result[12]
+								if removerated == "0":
+									embed.add_field(name=f"{removeratedtitle}", value=f"{notitle}", inline=False)
+								elif removerated == "1":
+									embed.add_field(name=f"{removeratedtitle}", value=f"{yestitle}", inline=False)
 								embed.set_footer(text=f"{message.guild.name} --- {message.author}")
 								await message.channel.send(embed=embed)
 								return
@@ -2493,6 +3211,11 @@ async def on_message(message):
 										embed.add_field(name=f"{gdmodchanneltitle}", value=f"{nochannel}", inline=False)
 									elif gdmodchannel is not None:
 										embed.add_field(name=f"{gdmodchanneltitle}", value=f"<#{gdmodchannel}>", inline=False)
+									gdmodcheckedchannel = result[13]
+									if gdmodcheckedchannel == None:
+										embed.add_field(name=f"GDModCheckedChannel", value=f"{nochannel}", inline=False)
+									elif gdmodcheckedchannel is not None:
+										embed.add_field(name=f"GDModCheckedChannel", value=f"<#{gdmodcheckedchannel}>", inline=False)
 								tagreviewer = result[9]
 								if tagreviewer == "0":
 									embed.add_field(name=f"{tagreviewertitle}", value=f"{notitle}", inline=False)
@@ -2510,6 +3233,11 @@ async def on_message(message):
 									embed.add_field(name=f"{languagetitle}", value=f"{frenchlanguage}", inline=False)
 								elif languagesetup == "es":
 									embed.add_field(name=f"{languagetitle}", value=f"{frenchlanguage}", inline=False)
+								removerated = result[12]
+								if removerated == "0":
+									embed.add_field(name=f"{removeratedtitle}", value=f"{notitle}", inline=False)
+								elif removerated == "1":
+									embed.add_field(name=f"{removeratedtitle}", value=f"{yestitle}", inline=False)
 								embed.set_footer(text=f"{message.guild.name} --- {message.author}")
 								await message.channel.send(embed=embed)
 								return
@@ -2567,6 +3295,11 @@ async def on_message(message):
 										embed.add_field(name=f"{gdmodchanneltitle}", value=f"{nochannel}", inline=False)
 									elif gdmodchannel is not None:
 										embed.add_field(name=f"{gdmodchanneltitle}", value=f"<#{gdmodchannel}>", inline=False)
+									gdmodcheckedchannel = result[13]
+									if gdmodcheckedchannel == None:
+										embed.add_field(name=f"GDModCheckedChannel", value=f"{nochannel}", inline=False)
+									elif gdmodcheckedchannel is not None:
+										embed.add_field(name=f"GDModCheckedChannel", value=f"<#{gdmodcheckedchannel}>", inline=False)
 								tagreviewer = result[9]
 								if tagreviewer == "0":
 									embed.add_field(name=f"{tagreviewertitle}", value=f"{notitle}", inline=False)
@@ -2584,6 +3317,11 @@ async def on_message(message):
 									embed.add_field(name=f"{languagetitle}", value=f"{frenchlanguage}", inline=False)
 								elif languagesetup == "es":
 									embed.add_field(name=f"{languagetitle}", value=f"{frenchlanguage}", inline=False)
+								removerated = result[12]
+								if removerated == "0":
+									embed.add_field(name=f"{removeratedtitle}", value=f"{notitle}", inline=False)
+								elif removerated == "1":
+									embed.add_field(name=f"{removeratedtitle}", value=f"{yestitle}", inline=False)
 								embed.set_footer(text=f"{message.guild.name} --- {message.author}")
 								await message.channel.send(embed=embed)
 								return
@@ -2641,6 +3379,11 @@ async def on_message(message):
 										embed.add_field(name=f"{gdmodchanneltitle}", value=f"{nochannel}", inline=False)
 									elif gdmodchannel is not None:
 										embed.add_field(name=f"{gdmodchanneltitle}", value=f"<#{gdmodchannel}>", inline=False)
+									gdmodcheckedchannel = result[13]
+									if gdmodcheckedchannel == None:
+										embed.add_field(name=f"GDModCheckedChannel", value=f"{nochannel}", inline=False)
+									elif gdmodcheckedchannel is not None:
+										embed.add_field(name=f"GDModCheckedChannel", value=f"<#{gdmodcheckedchannel}>", inline=False)
 								tagreviewer = result[9]
 								if tagreviewer == "0":
 									embed.add_field(name=f"{tagreviewertitle}", value=f"{notitle}", inline=False)
@@ -2658,6 +3401,11 @@ async def on_message(message):
 									embed.add_field(name=f"{languagetitle}", value=f"{frenchlanguage}", inline=False)
 								elif languagesetup == "es":
 									embed.add_field(name=f"{languagetitle}", value=f"{frenchlanguage}", inline=False)
+								removerated = result[12]
+								if removerated == "0":
+									embed.add_field(name=f"{removeratedtitle}", value=f"{notitle}", inline=False)
+								elif removerated == "1":
+									embed.add_field(name=f"{removeratedtitle}", value=f"{yestitle}", inline=False)
 								embed.set_footer(text=f"{message.guild.name} --- {message.author}")
 								await message.channel.send(embed=embed)
 								return
@@ -2668,6 +3416,181 @@ async def on_message(message):
 								time.sleep(5)
 								await msg2.delete()
 								return
+						if description == "removerated":
+							if valeur == "1":
+								var = message.guild.id
+								embed3 = discord.Embed(title=f"{loadingtitle}", color=0xffce08)
+								embed3.add_field(name=f"{loadingdesc}", value="\u200b")
+								msg = await message.channel.send(embed=embed3)
+								cursor.execute(f"UPDATE setup SET RemoveRated = %s WHERE serverid = {var}", (valeur, ))
+								conn.commit()
+								cursor.execute(f"SELECT * FROM setup WHERE serverid = {var} LIMIT 1")
+								result = cursor.fetchone()
+								await msg.delete()
+								embed = discord.Embed(title=f"{setupmaintitle}", color=0x8E8E8E)
+								embed.set_author(name=f"{serversettings}", icon_url="https://cdn.discordapp.com/emojis/472907599361212426.png?v=1")
+								embed.add_field(name=f"{servernametitle}", value=f"{server}", inline=False)
+								reviewerrole = result[2]
+								if reviewerrole == None:
+									embed.add_field(name=f"{reviewerroletitle}", value=f"{norole}", inline=False)
+								elif reviewerrole is not None:
+									embed.add_field(name=f"{reviewerroletitle}", value=f"<@&{reviewerrole}>", inline=False)
+								ownerrole = result[3]
+								if ownerrole == None:
+									embed.add_field(name=f"{ownerroletitle}", value=f"{norole}", inline=False)
+								elif ownerrole is not None:
+									embed.add_field(name=f"{ownerroletitle}", value=f"<@&{ownerrole}>", inline=False)
+								requestchannel = result[4]
+								if requestchannel == None:
+									embed.add_field(name=f"{requestchanneltitle}", value=f"{nochannel}", inline=False)
+								elif requestchannel is not None:
+									embed.add_field(name=f"{requestchanneltitle}", value=f"<#{requestchannel}>", inline=False)
+								reviewchannel = result[5]
+								if reviewchannel == None:
+									embed.add_field(name=f"{reviewchanneltitle}", value=f"{nochannel}", inline=False)
+								elif reviewchannel is not None:
+									embed.add_field(name=f"{reviewchanneltitle}", value=f"<#{reviewchannel}>", inline=False)
+								checkedreviewchannel = result[6]
+								if checkedreviewchannel == None:
+									embed.add_field(name=f"{checkedreviewchanneltitle}", value=f"{nochannel}", inline=False)
+								elif checkedreviewchannel is not None:
+									embed.add_field(name=f"{checkedreviewchanneltitle}", value=f"<#{checkedreviewchannel}>", inline=False)
+								announcementbot = result[7]
+								if announcementbot == None:
+									embed.add_field(name=f"{announcementbottitle}", value=f"{nochannel}", inline=False)
+								elif announcementbot is not None:
+									embed.add_field(name=f"{announcementbottitle}", value=f"<#{announcementbot}>", inline=False)
+								conn.commit()
+								pogya = cursor.execute(f"SELECT serverid FROM GDmoderators WHERE serverid = {var}")
+								gdmod1 = cursor.fetchone()
+								if gdmod1 is not None:
+									conn.commit()
+									cursor.execute(f"SELECT * FROM setup WHERE serverid = {var} LIMIT 1")
+									gdmodchannel = result[8]
+									if gdmodchannel == None:
+										embed.add_field(name=f"{gdmodchanneltitle}", value=f"{nochannel}", inline=False)
+									elif gdmodchannel is not None:
+										embed.add_field(name=f"{gdmodchanneltitle}", value=f"<#{gdmodchannel}>", inline=False)
+									gdmodcheckedchannel = result[13]
+									if gdmodcheckedchannel == None:
+										embed.add_field(name=f"GDModCheckedChannel", value=f"{nochannel}", inline=False)
+									elif gdmodcheckedchannel is not None:
+										embed.add_field(name=f"GDModCheckedChannel", value=f"<#{gdmodcheckedchannel}>", inline=False)
+								tagreviewer = result[9]
+								if tagreviewer == "0":
+									embed.add_field(name=f"{tagreviewertitle}", value=f"{notitle}", inline=False)
+								elif tagreviewer == "1":
+									embed.add_field(name=f"{tagreviewertitle}", value=f"{yestitle}", inline=False)
+								needvideo = result[10]
+								if needvideo == "0":
+									embed.add_field(name=f"{needvideotitle}", value=f"{notitle}", inline=False)
+								elif needvideo == "1":
+									embed.add_field(name=f"{needvideotitle}", value=f"{yestitle}", inline=False)
+								languagesetup = result[11]
+								if languagesetup == "en":
+									embed.add_field(name=f"{languagetitle}", value=f"{englishlanguage}", inline=False)
+								elif languagesetup == "fr":
+									embed.add_field(name=f"{languagetitle}", value=f"{frenchlanguage}", inline=False)
+								elif languagesetup == "es":
+									embed.add_field(name=f"{languagetitle}", value=f"{frenchlanguage}", inline=False)
+								removerated = result[12]
+								if removerated == "0":
+									embed.add_field(name=f"{removeratedtitle}", value=f"{notitle}", inline=False)
+								elif removerated == "1":
+									embed.add_field(name=f"{removeratedtitle}", value=f"{yestitle}", inline=False)
+								embed.set_footer(text=f"{message.guild.name} --- {message.author}")
+								await message.channel.send(embed=embed)
+								return
+							elif valeur == "0":
+								var = message.guild.id
+								embed3 = discord.Embed(title=f"{loadingtitle}", color=0xffce08)
+								embed3.add_field(name=f"{loadingdesc}", value="\u200b")
+								msg = await message.channel.send(embed=embed3)
+								cursor.execute(f"UPDATE setup SET RemoveRated = %s WHERE serverid = {var}", (valeur, ))
+								conn.commit()
+								cursor.execute(f"SELECT * FROM setup WHERE serverid = {var} LIMIT 1")
+								result = cursor.fetchone()
+								await msg.delete()
+								embed = discord.Embed(title=f"{setupmaintitle}", color=0x8E8E8E)
+								embed.set_author(name=f"{serversettings}", icon_url="https://cdn.discordapp.com/emojis/472907599361212426.png?v=1")
+								embed.add_field(name=f"{servernametitle}", value=f"{server}", inline=False)
+								reviewerrole = result[2]
+								if reviewerrole == None:
+									embed.add_field(name=f"{reviewerroletitle}", value=f"{norole}", inline=False)
+								elif reviewerrole is not None:
+									embed.add_field(name=f"{reviewerroletitle}", value=f"<@&{reviewerrole}>", inline=False)
+								ownerrole = result[3]
+								if ownerrole == None:
+									embed.add_field(name=f"{ownerroletitle}", value=f"{norole}", inline=False)
+								elif ownerrole is not None:
+									embed.add_field(name=f"{ownerroletitle}", value=f"<@&{ownerrole}>", inline=False)
+								requestchannel = result[4]
+								if requestchannel == None:
+									embed.add_field(name=f"{requestchanneltitle}", value=f"{nochannel}", inline=False)
+								elif requestchannel is not None:
+									embed.add_field(name=f"{requestchanneltitle}", value=f"<#{requestchannel}>", inline=False)
+								reviewchannel = result[5]
+								if reviewchannel == None:
+									embed.add_field(name=f"{reviewchanneltitle}", value=f"{nochannel}", inline=False)
+								elif reviewchannel is not None:
+									embed.add_field(name=f"{reviewchanneltitle}", value=f"<#{reviewchannel}>", inline=False)
+								checkedreviewchannel = result[6]
+								if checkedreviewchannel == None:
+									embed.add_field(name=f"{checkedreviewchanneltitle}", value=f"{nochannel}", inline=False)
+								elif checkedreviewchannel is not None:
+									embed.add_field(name=f"{checkedreviewchanneltitle}", value=f"<#{checkedreviewchannel}>", inline=False)
+								announcementbot = result[7]
+								if announcementbot == None:
+									embed.add_field(name=f"{announcementbottitle}", value=f"{nochannel}", inline=False)
+								elif announcementbot is not None:
+									embed.add_field(name=f"{announcementbottitle}", value=f"<#{announcementbot}>", inline=False)
+								conn.commit()
+								pogya = cursor.execute(f"SELECT serverid FROM GDmoderators WHERE serverid = {var}")
+								gdmod1 = cursor.fetchone()
+								if gdmod1 is not None:
+									conn.commit()
+									cursor.execute(f"SELECT * FROM setup WHERE serverid = {var} LIMIT 1")
+									gdmodchannel = result[8]
+									if gdmodchannel == None:
+										embed.add_field(name=f"{gdmodchanneltitle}", value=f"{nochannel}", inline=False)
+									elif gdmodchannel is not None:
+										embed.add_field(name=f"{gdmodchanneltitle}", value=f"<#{gdmodchannel}>", inline=False)
+									gdmodcheckedchannel = result[13]
+									if gdmodcheckedchannel == None:
+										embed.add_field(name=f"GDModCheckedChannel", value=f"{nochannel}", inline=False)
+									elif gdmodcheckedchannel is not None:
+										embed.add_field(name=f"GDModCheckedChannel", value=f"<#{gdmodcheckedchannel}>", inline=False)
+								tagreviewer = result[9]
+								if tagreviewer == "0":
+									embed.add_field(name=f"{tagreviewertitle}", value=f"{notitle}", inline=False)
+								elif tagreviewer == "1":
+									embed.add_field(name=f"{tagreviewertitle}", value=f"{yestitle}", inline=False)
+								needvideo = result[10]
+								if needvideo == "0":
+									embed.add_field(name=f"{needvideotitle}", value=f"{notitle}", inline=False)
+								elif needvideo == "1":
+									embed.add_field(name=f"{needvideotitle}", value=f"{yestitle}", inline=False)
+								languagesetup = result[11]
+								if languagesetup == "en":
+									embed.add_field(name=f"{languagetitle}", value=f"{englishlanguage}", inline=False)
+								elif languagesetup == "fr":
+									embed.add_field(name=f"{languagetitle}", value=f"{frenchlanguage}", inline=False)
+								elif languagesetup == "es":
+									embed.add_field(name=f"{languagetitle}", value=f"{frenchlanguage}", inline=False)
+								removerated = result[12]
+								if removerated == "0":
+									embed.add_field(name=f"{removeratedtitle}", value=f"{notitle}", inline=False)
+								elif removerated == "1":
+									embed.add_field(name=f"{removeratedtitle}", value=f"{yestitle}", inline=False)
+								embed.set_footer(text=f"{message.guild.name} --- {message.author}")
+								await message.channel.send(embed=embed)
+								return
+							embed = discord.Embed(title="", color=0xff0000)
+							embed.add_field(name=f'{errormessage}', value=f"{errorbinary}")
+							msg2 = await message.channel.send(embed=embed)
+							time.sleep(5)
+							await msg2.delete()
+							return
 						else:
 							embed = discord.Embed(title="", color=0xff0000)
 							embed.add_field(name=f'{errormessage}', value=f"{errorsetting}")
@@ -2706,6 +3629,19 @@ async def on_message(message):
 					return
 			else:
 				conn.cursor(buffered=True)
+
+				maincommand = "reqsearch"
+				checkmaintenance = checkmaintenance(maincommand)
+				if checkmaintenance == "yes":
+					embed = discord.Embed(title="", color=0xff0000)
+					embed.add_field(name=f'Error. <:error:472907618386575370>', value=f"**The command is under maintenance, please try again later.**")
+					msg2 = await message.channel.send(embed=embed)
+					time.sleep(5)
+					await msg2.delete()
+					return
+				
+				args = [x for ar in args for x in ar.split('\n')]
+
 				try:
 					level = args[1:]
 				except IndexError as error:
@@ -2744,20 +3680,40 @@ async def on_message(message):
 				lagtitleobject = translate_messages[16]
 				youtubelink = translate_messages[17]
 				officialsongtitle = translate_messages[18]
-
-				reqsearchfirst(level)
+				
+				translate_cooldown_messages = open(f"language/client/cooldown-{language2}.txt").read().splitlines()
+				errorcooldown1 = translate_cooldown_messages[0]
+				errorcooldown2 = translate_cooldown_messages[1]
+				
+				#cooldowncheck(author)
+				alwayscooldown,secondcooldown = cooldowncheck(author)
+				
+				if alwayscooldown == 1:
+					embed = discord.Embed(title="", color=0xff0000)
+					embed.add_field(name=f'{errormessage}', value=f"{errorcooldown1} {secondcooldown} {errorcooldown2}")
+					msg2 = await message.channel.send(embed=embed)
+					time.sleep(5)
+					await msg2.delete()
+					return
+				sql = "INSERT INTO cooldowns (userid, cooldown) VALUES (%s, %s)"
+				datetime_object_cooldown = datetime_object + datetime.timedelta(seconds=30)
+				val = (author, datetime_object_cooldown)
+				cursor.execute(sql,val)
+				conn.commit()
+				
+				#reqsearchfirst(level)
 				result2 = reqsearchfirst(level)
 
-				if result2 == "-1":
+				try:
+					stars,objectplus,levelname,creator,ratingemote,stars,downloads,likes,likesemote,description,coins,verifiedcoins,lengthvalue,idlevel,version,gdversion,color = reqsearch(level)
+				except:
 					embed = discord.Embed(title="", color=0xff0000)
 					embed.add_field(name=f'{errormessage}', value=f"{errorlevel}")
 					msg2 = await message.channel.send(embed=embed)
 					time.sleep(5)
 					await msg2.delete()
 					return
-				reqsearch(level)
-				stars,objectplus,levelname,creator,ratingemote,stars,downloads,likes,likesemote,description,coins,verifiedcoins,lengthvalue,idlevel,version,gdversion,color = reqsearch(level)
-
+					
 				embed = discord.Embed(title=f"{searchresult}", color=color)
 
 				description += '=' * (-len(description) % 4)
@@ -2796,21 +3752,21 @@ async def on_message(message):
 
 				embed.add_field(name=f'{coinstitle}: {coinsvalue}', value=f"<:downloads:472907713727430658> `{downloads}`\n{likesemote} `{likes}`\n<:length:472908680459976704> `{lengthvalue}`\n", inline=False)
 
-				reqsearch2(level)
+				#reqsearch2(level)
 				try:
 					songname,songauthor,songid,sizesong,songlink,officialsong = reqsearch2(level)
 				except ValueError:
 					songname,songauthor,songid,sizesong,songlink = reqsearch2(level)
 
 				songlink2 = unquote(f"{songlink}")
-				'''if author == 216708683290247168:
-					reqsearch3(songid)
+				'''if author == jouca:
+					#reqsearch3(songid)
 					songartist,artistscouted,artistwhitelisted = reqsearch3(songid)'''
 				try:
 					officialsong2 = int(officialsong)
 				except UnboundLocalError:
 					embed.add_field(name=f':musical_note:  __{songname}__ {by} {songauthor}', value=f"SongID: {songid} - {sizetitle}: {sizesong}MB\n<:play:472908887859789835> [{newgroundsplay}](https://newgrounds.com/audio/load/{songid}) <:download_song:472907696685711370> [{downloadsong}]({songlink2})", inline=False)
-					'''if author == 216708683290247168:
+					'''if author == jouca:
 						embed.add_field(name=f'<:diamond:472907644638855168> {detailledsong}', value=f"**{songartist}**\n**{artistwhitelisted}**\n**{artistscouted}**", inline=False)'''
 					if int(objectplus) >= 40000:
 						if int(objectplus) >= 65535:
@@ -2823,7 +3779,7 @@ async def on_message(message):
 					return
 				else:
 					embed.add_field(name=f':musical_note: :white_check_mark:   __**{songname}**__ {by} {songauthor}', value=f"SongID: {songid} - {sizetitle}: {sizesong}MB\n<:play:472908887859789835> [{newgroundsplay}](https://newgrounds.com/audio/load/{songid}) <:download_song:472907696685711370> [{youtubelink}]({songlink2})", inline=False)
-					'''if author == 216708683290247168:
+					'''if author == jouca:
 						embed.add_field(name=f'<:diamond:472907644638855168> {detailledsong}', value=f"**{songartist}**\n**{artistwhitelisted}**\n**{artistscouted}**", inline=False)'''
 					if int(objectplus) >= 40000:
 						if int(objectplus) >= 65535:
@@ -2850,19 +3806,31 @@ async def on_message(message):
 					print(err)
 					return
 			else:
-				conn.cursor()
+				conn.cursor(buffered=True)
 				jaj = message.author.id
 				room = message.channel.id
 				serveur = message.guild.id
 
+				maincommand = "reqlevel"
+				checkmaintenance = checkmaintenance(maincommand)
+				if checkmaintenance == "yes":
+					embed = discord.Embed(title="", color=0xff0000)
+					embed.add_field(name=f'Error. <:error:472907618386575370>', value=f"**The command is under maintenance, please try again later.**")
+					msg2 = await message.channel.send(embed=embed)
+					time.sleep(5)
+					await msg2.delete()
+					return
+
+				args = [x for ar in args for x in ar.split('\n')]
+
 				author = message.author.id
-				cursor.execute(f"SELECT language FROM users WHERE userid = {author}")
+				cursor.execute(f"SELECT language FROM users WHERE userid = {author} LIMIT 1")
 				try:
 					language = cursor.fetchone()[0]
 				except TypeError:
 					language = language_default
 				language2 = language
-				cursor.execute(f"SELECT language FROM setup WHERE serverid = {serveur}")
+				cursor.execute(f"SELECT language FROM setup WHERE serverid = {serveur} LIMIT 1")
 				try:
 					language_serveur = cursor.fetchone()[0]
 				except TypeError:
@@ -2886,14 +3854,55 @@ async def on_message(message):
 				errorban = translate_messages[12]
 				errorblacklist = translate_messages[13]
 				errorvideo = translate_messages[14]
+				errorremoverated = translate_messages[15]
+				errormaxrequest = translate_messages[16]
 
-				successtitle = translate_messages[16]
-				by = translate_messages[17]
-				successrequested = translate_messages[18]
+				successtitle = translate_messages[18]
+				by = translate_messages[19]
+				successrequested = translate_messages[20]
 
 				newlevelreq = translate_messages_server[0]
 				byserver = translate_messages_server[1]
+				
+				translate_messages_search = open(f"language/client/reqsearch/{language2}.txt").read().splitlines()
 
+				searchresult = translate_messages_search[3]
+				by = translate_messages_search[4]
+				desc = translate_messages_search[5]
+				none = translate_messages_search[6]
+				coinstitle = translate_messages_search[7]
+				sizetitle = translate_messages_search[8]
+				newgroundsplay = translate_messages_search[9]
+				downloadsong = translate_messages_search[10]
+				detailledsong = translate_messages_search[11]
+				idleveltitle = translate_messages_search[12]
+				levelversiontitle = translate_messages_search[13]
+				minimumgdver = translate_messages_search[14]
+				objectcount = translate_messages_search[15]
+				lagtitleobject = translate_messages_search[16]
+				youtubelink = translate_messages_search[17]
+				officialsongtitle = translate_messages_search[18]
+				
+				translate_cooldown_messages = open(f"language/client/cooldown-{language2}.txt").read().splitlines()
+				errorcooldown1 = translate_cooldown_messages[0]
+				errorcooldown2 = translate_cooldown_messages[1]
+				
+				#cooldowncheck(author)
+				alwayscooldown,secondcooldown = cooldowncheck(author)
+				
+				if alwayscooldown == 1:
+					embed = discord.Embed(title="", color=0xff0000)
+					embed.add_field(name=f'{errormessage}', value=f"{errorcooldown1} {secondcooldown} {errorcooldown2}")
+					msg2 = await message.channel.send(embed=embed)
+					time.sleep(5)
+					await msg2.delete()
+					return
+				sql = "INSERT INTO cooldowns (userid, cooldown) VALUES (%s, %s)"
+				datetime_object_cooldown = datetime_object + datetime.timedelta(seconds=30)
+				val = (author, datetime_object_cooldown)
+				cursor.execute(sql,val)
+				conn.commit()
+				
 				substring = "https://"
 				try:
 					level = args[1]
@@ -2934,6 +3943,20 @@ async def on_message(message):
 						time.sleep(5)
 						await msg2.delete()
 						return
+					cursor.execute(f"SELECT RemoveRated FROM setup WHERE serverid = {serveur} LIMIT 1")
+					try:
+						removerated = cursor.fetchone()[0]
+					except:
+						removerated = 0
+					#reqsearch(level)
+					stars,objectplus,levelname,creator,ratingemote,stars,downloads,likes,likesemote,description,coins,verifiedcoins,lengthvalue,idlevel,version,gdversion,color = reqsearch(level)
+					if stars != "0" and removerated == "1":
+						embed = discord.Embed(title="", color=0xff0000)
+						embed.add_field(name=f'{errormessage}', value=f"{errorremoverated}")
+						msg2 = await message.channel.send(embed=embed)
+						time.sleep(5)
+						await msg2.delete()
+						return
 					embed = discord.Embed(title=f"{loadingtitle}", color=0xffce08)
 					embed.add_field(name=f'{loadingdesc}', value="\u200b")
 					msg = await message.channel.send(embed=embed)
@@ -2948,14 +3971,25 @@ async def on_message(message):
 						time.sleep(5)
 						await msg2.delete()
 						return
+					
+					cursor.execute(f"SELECT COUNT(levelid) AS NumberOfLevelIDs FROM levels WHERE server = {serveur} AND reviewed = 'no'")
+					count = cursor.fetchone()[0]
+					if count >= 100:
+						await msg.delete()
+						embed = discord.Embed(title="", color=0xff0000)
+						embed.add_field(name=f'{errormessage}', value=f"{errormaxrequest}")
+						msg2 = await message.channel.send(embed=embed)
+						time.sleep(5)
+						await msg2.delete()
+						return
 
 					result = result.split(":")
 					levelname = result[3]
 					creator = convertinfo("u","n",result[7])
-					poggery = cursor.execute(f"SELECT isBlacklist FROM reports WHERE levelid = {level} LIMIT 1")
+					poggery = cursor.execute(f"SELECT isBlacklist FROM reports WHERE levelid = %s LIMIT 1", (idlevel, ))
 					maybe_number2 = cursor.fetchone()
 					if maybe_number2 is None:
-						poggare = cursor.execute(f"SELECT userid FROM banned WHERE userid = {jaj} LIMIT 1")
+						poggare = cursor.execute(f"SELECT userid FROM banned WHERE userid = %s LIMIT 1", (jaj, ))
 						maybe_number3 = cursor.fetchone()
 						if maybe_number3 is None:
 							conn.commit()
@@ -2977,7 +4011,7 @@ async def on_message(message):
 									except TypeError:
 										maybe_number6 = None
 									if maybe_number6 is not None:
-										pogagygi = cursor.execute(f"SELECT levelid FROM levels WHERE server = {serveur} AND levelid = {level} LIMIT 1")
+										pogagygi = cursor.execute(f"SELECT levelid FROM levels WHERE server = {serveur} AND levelid = %s LIMIT 1", (level, ))
 										try:
 											zebi = cursor.fetchone()[0]
 										except TypeError:
@@ -2993,32 +4027,90 @@ async def on_message(message):
 										else:
 											conn.commit()
 											reviewed = 'no'
-											sql = "INSERT INTO levels (levelid, requester, server, video, reviewed) VALUES (%s, %s, %s, %s, %s)"
-											val = (level, message.author.id, message.guild.id, video2, reviewed)
+											sql = "INSERT INTO levels (levelid, requester, server, video, reviewed, messageid) VALUES (%s, %s, %s, %s, %s, %s)"
+											val = (idlevel, message.author.id, message.guild.id, video2, reviewed, 0)
 											cursor.execute(sql, val)
 											conn.commit()
+											embed3 = discord.Embed(title=f'{newlevelreq}', color=0x00ff00)
+											embed3.add_field(name=f'`{idlevel}` (**{levelname}** {byserver} **{creator}**)', value='\u200b')
+											embed3.set_footer(text=f"{message.guild.name} --- {message.author}")
 											if video is not None:
-												cursor.execute(f"UPDATE levels SET video = '{video}' WHERE requester = {jaj} AND levelid = {level}")
+												cursor.execute(f"UPDATE levels SET video = %s WHERE requester = %s AND levelid = %s AND server = %s", (video, jaj, idlevel, serveur))
 												conn.commit()
+												embed3.add_field(name=f'\nVideo :', value=f"{video}", inline=False)
 											await msg.delete()
 
 											embed = discord.Embed(title=f'{successtitle}', color=0x00ff00)
-											embed.add_field(name=f'`{level}` (**{levelname}** {by} **{creator}**) {successrequested}', value='\u200b')
+											embed.add_field(name=f'`{idlevel}` (**{levelname}** {by} **{creator}**) {successrequested}', value='\u200b')
 											embed.set_footer(text=f"{message.guild.name} --- {message.author}")
 											msg100 = await message.channel.send(embed=embed)
-											embed3 = discord.Embed(title=f'{newlevelreq}', color=0x00ff00)
-											embed3.add_field(name=f'`{level}` (**{levelname}** {byserver} **{creator}**)', value='\u200b')
-											embed3.set_footer(text=f"{message.guild.name} --- {message.author}")
+											
+											#reqsearch(level)
+											stars,objectplus,levelname,creator,ratingemote,stars,downloads,likes,likesemote,description,coins,verifiedcoins,lengthvalue,idlevel,version,gdversion,color = reqsearch(level)
+											description += '=' * (-len(description) % 4)
+											base64_bytes = description.encode('ascii')
+											print(base64_bytes)
+											message_bytes = base64.urlsafe_b64decode(base64_bytes)
+											descbase64 = message_bytes.decode('ascii')
+
+											embed3.set_thumbnail(url=f"{ratingemote}")
+											if int(objectplus) >= 40000:
+												embed3.add_field(name=f'<:play:472908887859789835> __{levelname}__ {by} {creator} <:object_overflow:472908865953071115>', value=f"{desc} {descbase64}", inline=False)
+											elif int(objectplus) <= 39999:
+												embed3.add_field(name=f'<:play:472908887859789835> __{levelname}__ {by} {creator}', value=f"{desc} {descbase64}", inline=False)
+
+											if int(coins) == 0:
+												coinsvalue = f"{none}"
+											elif int(coins) == 1:
+												coinsvalue = "<:user_coin_unverified:472908993832943631>"
+											elif int(coins) == 2:
+												coinsvalue = "<:user_coin_unverified:472908993832943631> <:user_coin_unverified:472908993832943631>"
+											elif int(coins) == 3:
+												coinsvalue = "<:user_coin_unverified:472908993832943631> <:user_coin_unverified:472908993832943631> <:user_coin_unverified:472908993832943631>"
+
+											try:
+												if int(verifiedcoins) == 1:
+													if int(coins) == 0:
+														coinsvalue = f"{none}"
+													elif int(coins) == 1:
+														coinsvalue = "<:user_coin:472908993711308800>"
+													elif int(coins) == 2:
+														coinsvalue = "<:user_coin:472908993711308800> <:user_coin:472908993711308800>"
+													elif int(coins) == 3:
+														coinsvalue = "<:user_coin:472908993711308800> <:user_coin:472908993711308800> <:user_coin:472908993711308800>"
+											except ValueError:
+												pass
+
+											embed3.add_field(name=f'{coinstitle}: {coinsvalue}', value=f"<:downloads:472907713727430658> `{downloads}`\n{likesemote} `{likes}`\n<:length:472908680459976704> `{lengthvalue}`\n", inline=False)
+
+											#reqsearch2(level)
+											try:
+												songname,songauthor,songid,sizesong,songlink,officialsong = reqsearch2(level)
+											except ValueError:
+												songname,songauthor,songid,sizesong,songlink = reqsearch2(level)
+
+											songlink2 = unquote(f"{songlink}")
+											try:
+												officialsong2 = int(officialsong)
+											except UnboundLocalError:
+												embed3.add_field(name=f':musical_note:  __{songname}__ {by} {songauthor}', value=f"SongID: {songid} - {sizetitle}: {sizesong}MB\n<:play:472908887859789835> [{newgroundsplay}](https://newgrounds.com/audio/load/{songid}) <:download_song:472907696685711370> [{downloadsong}]({songlink2})", inline=False)
+											else:
+												embed3.add_field(name=f':musical_note: :white_check_mark:   __**{songname}**__ {by} {songauthor}', value=f"SongID: {songid} - {sizetitle}: {sizesong}MB\n<:play:472908887859789835> [{newgroundsplay}](https://newgrounds.com/audio/load/{songid}) <:download_song:472907696685711370> [{youtubelink}]({songlink2})", inline=False)
+											
 											channel2 = client.get_channel(int(maybe_number5))
 											pogagaga = cursor.execute(f"SELECT TagReviewer FROM setup WHERE serverid = {serveur} LIMIT 1")
 											tagreviewer = cursor.fetchone()[0]
 											if tagreviewer == "1":
-												await channel2.send(f"<@&{maybe_number6}>",embed=embed3)
-												return
-											await channel2.send(embed=embed3)
+												msgqueue = await channel2.send(f"<@&{maybe_number6}>",embed=embed3)
+											elif tagreviewer == "0":
+												msgqueue = await channel2.send(embed=embed3)
+											msgid = msgqueue.id
+											cursor.execute(f"UPDATE levels SET messageid = %s WHERE requester = %s AND levelid = %s AND server = %s", (msgid, jaj, idlevel, serveur))
+											conn.commit()
+											
 											cursor.execute(f"SELECT levelrequestedcount FROM users WHERE userid = {jaj}")
 											counted = cursor.fetchone()[0]
-											counted += 1
+											counted = counted + 1
 											cursor.execute(f'UPDATE users SET levelrequestedcount = {counted} WHERE userid = {jaj}')
 											conn.commit()
 											if counted >= 1:
@@ -3027,7 +4119,7 @@ async def on_message(message):
 												if yesvalue == "no":
 													cursor.execute(f'UPDATE users SET requestachievement1 = "yes" WHERE userid = {jaj}')
 													conn.commit()
-													requestachievement1(author)
+													#requestachievement1(author)
 													embed5 = requestachievement1(author)
 													username = client.get_user(int(jaj))
 													channel = await username.create_dm()
@@ -3041,7 +4133,7 @@ async def on_message(message):
 												if yesvalue == "no":
 													cursor.execute(f'UPDATE users SET requestachievement5 = "yes" WHERE userid = {jaj}')
 													conn.commit()
-													requestachievement5(author)
+													#requestachievement5(author)
 													embed5 = requestachievement5(author)
 													username = client.get_user(int(jaj))
 													channel = await username.create_dm()
@@ -3055,7 +4147,7 @@ async def on_message(message):
 												if yesvalue == "no":
 													cursor.execute(f'UPDATE users SET requestachievement10 = "yes" WHERE userid = {jaj}')
 													conn.commit()
-													requestachievement10(author)
+													#requestachievement10(author)
 													embed5 = requestachievement10(author)
 													username = client.get_user(int(jaj))
 													channel = await username.create_dm()
@@ -3069,7 +4161,7 @@ async def on_message(message):
 												if yesvalue == "no":
 													cursor.execute(f'UPDATE users SET requestachievement50 = "yes" WHERE userid = {jaj}')
 													conn.commit()
-													requestachievement50(author)
+													#requestachievement50(author)
 													embed5 = requestachievement50(author)
 													username = client.get_user(int(jaj))
 													channel = await username.create_dm()
@@ -3083,7 +4175,7 @@ async def on_message(message):
 												if yesvalue == "no":
 													cursor.execute(f'UPDATE users SET requestachievement100 = "yes" WHERE userid = {jaj}')
 													conn.commit()
-													requestachievement100(author)
+													#requestachievement100(author)
 													embed5 = requestachievement100(author)
 													username = client.get_user(int(jaj))
 													channel = await username.create_dm()
@@ -3157,7 +4249,7 @@ async def on_message(message):
 										except TypeError:
 											maybe_number6 = None
 										if maybe_number6 is not None:
-											pogagygi = cursor.execute(f"SELECT levelid FROM levels WHERE server = {serveur} AND levelid = {level} LIMIT 1")
+											pogagygi = cursor.execute(f"SELECT levelid FROM levels WHERE server = {serveur} AND levelid = %s LIMIT 1", (idlevel, ))
 											try:
 												zebi = cursor.fetchone()[0]
 											except TypeError:
@@ -3173,32 +4265,91 @@ async def on_message(message):
 											else:
 												conn.commit()
 												reviewed = 'no'
-												sql = "INSERT INTO levels (levelid, requester, server, video, reviewed) VALUES (%s, %s, %s, %s, %s)"
-												val = (level, message.author.id, message.guild.id, video2, reviewed)
+												sql = "INSERT INTO levels (levelid, requester, server, video, reviewed, messageid) VALUES (%s, %s, %s, %s, %s, %s)"
+												val = (idlevel, message.author.id, message.guild.id, video2, reviewed, 0)
 												cursor.execute(sql, val)
 												conn.commit()
+												embed3 = discord.Embed(title=f'{newlevelreq}', color=0x00ff00)
+												embed3.add_field(name=f'`{idlevel}` (**{levelname}** {byserver} **{creator}**)', value='\u200b')
+												embed3.set_footer(text=f"{message.guild.name} --- {message.author}")
 												if video is not None:
-													cursor.execute(f"UPDATE levels SET video = '{video}' WHERE requester = {jaj} AND levelid = {level}")
+													cursor.execute(f"UPDATE levels SET video = %s WHERE requester = %s AND levelid = %s AND server = %s", (video, jaj, idlevel, serveur))
 													conn.commit()
+													embed3.add_field(name=f'\nVideo :', value=f"{video}", inline=False)
 												await msg.delete()
 
 												embed = discord.Embed(title=f'{successtitle}', color=0x00ff00)
-												embed.add_field(name=f'`{level}` (**{levelname}** {by} **{creator}**) {successrequested}', value='\u200b')
+												embed.add_field(name=f'`{idlevel}` (**{levelname}** {by} **{creator}**) {successrequested}', value='\u200b')
 												embed.set_footer(text=f"{message.guild.name} --- {message.author}")
 												msg100 = await message.channel.send(embed=embed)
-												embed3 = discord.Embed(title=f'{newlevelreq}', color=0x00ff00)
-												embed3.add_field(name=f'`{level}` (**{levelname}** {byserver} **{creator}**)', value='\u200b')
-												embed3.set_footer(text=f"{message.guild.name} --- {message.author}")
+												
+												#reqsearch(level)
+												stars,objectplus,levelname,creator,ratingemote,stars,downloads,likes,likesemote,description,coins,verifiedcoins,lengthvalue,idlevel,version,gdversion,color = reqsearch(level)
+												description += '=' * (-len(description) % 4)
+												base64_bytes = description.encode('ascii')
+												print(base64_bytes)
+												message_bytes = base64.urlsafe_b64decode(base64_bytes)
+												descbase64 = message_bytes.decode('ascii')
+
+												embed3.set_thumbnail(url=f"{ratingemote}")
+												if int(objectplus) >= 40000:
+													embed3.add_field(name=f'<:play:472908887859789835> __{levelname}__ {by} {creator} <:object_overflow:472908865953071115>', value=f"{desc} {descbase64}", inline=False)
+												elif int(objectplus) <= 39999:
+													embed3.add_field(name=f'<:play:472908887859789835> __{levelname}__ {by} {creator}', value=f"{desc} {descbase64}", inline=False)
+
+												if int(coins) == 0:
+													coinsvalue = f"{none}"
+												elif int(coins) == 1:
+													coinsvalue = "<:user_coin_unverified:472908993832943631>"
+												elif int(coins) == 2:
+													coinsvalue = "<:user_coin_unverified:472908993832943631> <:user_coin_unverified:472908993832943631>"
+												elif int(coins) == 3:
+													coinsvalue = "<:user_coin_unverified:472908993832943631> <:user_coin_unverified:472908993832943631> <:user_coin_unverified:472908993832943631>"
+
+												try:
+													if int(verifiedcoins) == 1:
+														if int(coins) == 0:
+															coinsvalue = f"{none}"
+														elif int(coins) == 1:
+															coinsvalue = "<:user_coin:472908993711308800>"
+														elif int(coins) == 2:
+															coinsvalue = "<:user_coin:472908993711308800> <:user_coin:472908993711308800>"
+														elif int(coins) == 3:
+															coinsvalue = "<:user_coin:472908993711308800> <:user_coin:472908993711308800> <:user_coin:472908993711308800>"
+												except ValueError:
+													pass
+
+												embed3.add_field(name=f'{coinstitle}: {coinsvalue}', value=f"<:downloads:472907713727430658> `{downloads}`\n{likesemote} `{likes}`\n<:length:472908680459976704> `{lengthvalue}`\n", inline=False)
+
+												#reqsearch2(level)
+												try:
+													songname,songauthor,songid,sizesong,songlink,officialsong = reqsearch2(level)
+												except ValueError:
+													songname,songauthor,songid,sizesong,songlink = reqsearch2(level)
+
+												songlink2 = unquote(f"{songlink}")
+												try:
+													officialsong2 = int(officialsong)
+												except UnboundLocalError:
+													embed3.add_field(name=f':musical_note:  __{songname}__ {by} {songauthor}', value=f"SongID: {songid} - {sizetitle}: {sizesong}MB\n<:play:472908887859789835> [{newgroundsplay}](https://newgrounds.com/audio/load/{songid}) <:download_song:472907696685711370> [{downloadsong}]({songlink2})", inline=False)
+												else:
+													embed3.add_field(name=f':musical_note: :white_check_mark:   __**{songname}**__ {by} {songauthor}', value=f"SongID: {songid} - {sizetitle}: {sizesong}MB\n<:play:472908887859789835> [{newgroundsplay}](https://newgrounds.com/audio/load/{songid}) <:download_song:472907696685711370> [{youtubelink}]({songlink2})", inline=False)
+												
 												channel2 = client.get_channel(int(maybe_number5))
 												pogagaga = cursor.execute(f"SELECT TagReviewer FROM setup WHERE serverid = {serveur} LIMIT 1")
 												tagreviewer = cursor.fetchone()[0]
 												if tagreviewer == "1":
-													await channel2.send(f"<@&{maybe_number6}>",embed=embed3)
-													return
-												await channel2.send(embed=embed3)
+													msgqueue = await channel2.send(f"<@&{maybe_number6}>",embed=embed3)
+												elif tagreviewer == "0":
+													msgqueue = await channel2.send(embed=embed3)
+												msgid = msgqueue.id
+												msgid = msgqueue.id
+												cursor.execute(f"UPDATE levels SET messageid = %s WHERE requester = %s AND levelid = %s AND server = %s", (msgid, jaj, idlevel, serveur))
+												conn.commit()
+												
 												cursor.execute(f"SELECT levelrequestedcount FROM users WHERE userid = {jaj}")
 												counted = cursor.fetchone()[0]
-												counted += 1
+												counted = counted + 1
 												cursor.execute(f'UPDATE users SET levelrequestedcount = {counted} WHERE userid = {jaj}')
 												conn.commit()
 												if counted >= 1:
@@ -3207,7 +4358,7 @@ async def on_message(message):
 													if yesvalue == "no":
 														cursor.execute(f'UPDATE users SET requestachievement1 = "yes" WHERE userid = {jaj}')
 														conn.commit()
-														requestachievement1(author)
+														#requestachievement1(author)
 														embed5 = requestachievement1(author)
 														username = client.get_user(int(jaj))
 														channel = await username.create_dm()
@@ -3221,7 +4372,7 @@ async def on_message(message):
 													if yesvalue == "no":
 														cursor.execute(f'UPDATE users SET requestachievement5 = "yes" WHERE userid = {jaj}')
 														conn.commit()
-														requestachievement5(author)
+														#requestachievement5(author)
 														embed5 = requestachievement5(author)
 														username = client.get_user(int(jaj))
 														channel = await username.create_dm()
@@ -3235,7 +4386,7 @@ async def on_message(message):
 													if yesvalue == "no":
 														cursor.execute(f'UPDATE users SET requestachievement10 = "yes" WHERE userid = {jaj}')
 														conn.commit()
-														requestachievement10(author)
+														#requestachievement10(author)
 														embed5 = requestachievement10(author)
 														username = client.get_user(int(jaj))
 														channel = await username.create_dm()
@@ -3249,7 +4400,7 @@ async def on_message(message):
 													if yesvalue == "no":
 														cursor.execute(f'UPDATE users SET requestachievement50 = "yes" WHERE userid = {jaj}')
 														conn.commit()
-														requestachievement50(author)
+														#requestachievement50(author)
 														embed5 = requestachievement50(author)
 														username = client.get_user(int(jaj))
 														channel = await username.create_dm()
@@ -3263,7 +4414,7 @@ async def on_message(message):
 													if yesvalue == "no":
 														cursor.execute(f'UPDATE users SET requestachievement100 = "yes" WHERE userid = {jaj}')
 														conn.commit()
-														requestachievement100(author)
+														#requestachievement100(author)
 														embed5 = requestachievement100(author)
 														username = client.get_user(int(jaj))
 														channel = await username.create_dm()
@@ -3335,6 +4486,20 @@ async def on_message(message):
 						time.sleep(5)
 						await msg2.delete()
 						return
+					cursor.execute(f"SELECT RemoveRated FROM setup WHERE serverid = {serveur} LIMIT 1")
+					try:
+						removerated = cursor.fetchone()[0]
+					except:
+						removerated = 0
+					#reqsearch(level)
+					stars,objectplus,levelname,creator,ratingemote,stars,downloads,likes,likesemote,description,coins,verifiedcoins,lengthvalue,idlevel,version,gdversion,color = reqsearch(level)
+					if stars != "0" and removerated == "1":
+						embed = discord.Embed(title="", color=0xff0000)
+						embed.add_field(name=f'{errormessage}', value=f"{errorremoverated}")
+						msg2 = await message.channel.send(embed=embed)
+						time.sleep(5)
+						await msg2.delete()
+						return
 					embed = discord.Embed(title=f"{loadingtitle}", color=0xffce08)
 					embed.add_field(name=f'{loadingdesc}', value="\u200b")
 					msg = await message.channel.send(embed=embed)
@@ -3349,6 +4514,17 @@ async def on_message(message):
 						time.sleep(5)
 						await msg2.delete()
 						return
+						
+					cursor.execute(f"SELECT COUNT(levelid) AS NumberOfLevelIDs FROM levels WHERE server = {serveur} AND reviewed = 'no'")
+					count = cursor.fetchone()[0]
+					if count >= 100:
+						await msg.delete()
+						embed = discord.Embed(title="", color=0xff0000)
+						embed.add_field(name=f'{errormessage}', value=f"{errormaxrequest}")
+						msg2 = await message.channel.send(embed=embed)
+						time.sleep(5)
+						await msg2.delete()
+						return
 
 					result = result.split(":")
 					levelname = result[3]
@@ -3356,7 +4532,7 @@ async def on_message(message):
 					cursor.execute(f"SELECT NeedVideo FROM setup WHERE serverid = {serveur} LIMIT 1")
 					needvideo = cursor.fetchone()[0]
 					if needvideo == "0":
-						poggery = cursor.execute(f"SELECT isBlacklist FROM reports WHERE levelid = {level} LIMIT 1")
+						poggery = cursor.execute(f"SELECT isBlacklist FROM reports WHERE levelid = %s LIMIT 1", (idlevel, ))
 						maybe_number2 = cursor.fetchone()
 						if maybe_number2 is None:
 							poggare = cursor.execute(f"SELECT userid FROM banned WHERE userid = {jaj} LIMIT 1")
@@ -3381,7 +4557,7 @@ async def on_message(message):
 										except TypeError:
 											maybe_number6 = None
 										if maybe_number6 is not None:
-											pogagygi = cursor.execute(f"SELECT levelid FROM levels WHERE server = {serveur} AND levelid = {level} LIMIT 1")
+											pogagygi = cursor.execute(f"SELECT levelid FROM levels WHERE server = {serveur} AND levelid = %s LIMIT 1", (idlevel, ))
 											try:
 												zebi = cursor.fetchone()[0]
 											except TypeError:
@@ -3397,29 +4573,86 @@ async def on_message(message):
 											else:
 												conn.commit()
 												reviewed = 'no'
-												sql = "INSERT INTO levels (levelid, requester, server, video, reviewed) VALUES (%s, %s, %s, %s, %s)"
-												val = (level, message.author.id, message.guild.id, video2, reviewed)
+												sql = "INSERT INTO levels (levelid, requester, server, video, reviewed, messageid) VALUES (%s, %s, %s, %s, %s, %s)"
+												val = (idlevel, message.author.id, message.guild.id, video2, reviewed, 0)
 												cursor.execute(sql, val)
 												conn.commit()
 												await msg.delete()
 
 												embed = discord.Embed(title=f'{successtitle}', color=0x00ff00)
-												embed.add_field(name=f'`{level}` (**{levelname}** {by} **{creator}**) {successrequested}', value='\u200b')
+												embed.add_field(name=f'`{idlevel}` (**{levelname}** {by} **{creator}**) {successrequested}', value='\u200b')
 												embed.set_footer(text=f"{message.guild.name} --- {message.author}")
-												msg100 = await message.channel.send(embed=embed)
 												embed3 = discord.Embed(title=f'{newlevelreq}', color=0x00ff00)
-												embed3.add_field(name=f'`{level}` (**{levelname}** {byserver} **{creator}**)', value='\u200b')
+												embed3.add_field(name=f'`{idlevel}` (**{levelname}** {byserver} **{creator}**)', value='\u200b')
 												embed3.set_footer(text=f"{message.guild.name} --- {message.author}")
+												msg100 = await message.channel.send(embed=embed)
+												
+												#reqsearch(level)
+												stars,objectplus,levelname,creator,ratingemote,stars,downloads,likes,likesemote,description,coins,verifiedcoins,lengthvalue,idlevel,version,gdversion,color = reqsearch(level)
+												description += '=' * (-len(description) % 4)
+												base64_bytes = description.encode('ascii')
+												print(base64_bytes)
+												message_bytes = base64.urlsafe_b64decode(base64_bytes)
+												descbase64 = message_bytes.decode('ascii')
+
+												embed3.set_thumbnail(url=f"{ratingemote}")
+												if int(objectplus) >= 40000:
+													embed3.add_field(name=f'<:play:472908887859789835> __{levelname}__ {by} {creator} <:object_overflow:472908865953071115>', value=f"{desc} {descbase64}", inline=False)
+												elif int(objectplus) <= 39999:
+													embed3.add_field(name=f'<:play:472908887859789835> __{levelname}__ {by} {creator}', value=f"{desc} {descbase64}", inline=False)
+
+												if int(coins) == 0:
+													coinsvalue = f"{none}"
+												elif int(coins) == 1:
+													coinsvalue = "<:user_coin_unverified:472908993832943631>"
+												elif int(coins) == 2:
+													coinsvalue = "<:user_coin_unverified:472908993832943631> <:user_coin_unverified:472908993832943631>"
+												elif int(coins) == 3:
+													coinsvalue = "<:user_coin_unverified:472908993832943631> <:user_coin_unverified:472908993832943631> <:user_coin_unverified:472908993832943631>"
+
+												try:
+													if int(verifiedcoins) == 1:
+														if int(coins) == 0:
+															coinsvalue = f"{none}"
+														elif int(coins) == 1:
+															coinsvalue = "<:user_coin:472908993711308800>"
+														elif int(coins) == 2:
+															coinsvalue = "<:user_coin:472908993711308800> <:user_coin:472908993711308800>"
+														elif int(coins) == 3:
+															coinsvalue = "<:user_coin:472908993711308800> <:user_coin:472908993711308800> <:user_coin:472908993711308800>"
+												except ValueError:
+													pass
+
+												embed3.add_field(name=f'{coinstitle}: {coinsvalue}', value=f"<:downloads:472907713727430658> `{downloads}`\n{likesemote} `{likes}`\n<:length:472908680459976704> `{lengthvalue}`\n", inline=False)
+
+												#reqsearch2(level)
+												try:
+													songname,songauthor,songid,sizesong,songlink,officialsong = reqsearch2(level)
+												except ValueError:
+													songname,songauthor,songid,sizesong,songlink = reqsearch2(level)
+
+												songlink2 = unquote(f"{songlink}")
+												try:
+													officialsong2 = int(officialsong)
+												except UnboundLocalError:
+													embed3.add_field(name=f':musical_note:  __{songname}__ {by} {songauthor}', value=f"SongID: {songid} - {sizetitle}: {sizesong}MB\n<:play:472908887859789835> [{newgroundsplay}](https://newgrounds.com/audio/load/{songid}) <:download_song:472907696685711370> [{downloadsong}]({songlink2})", inline=False)
+												else:
+													embed3.add_field(name=f':musical_note: :white_check_mark:   __**{songname}**__ {by} {songauthor}', value=f"SongID: {songid} - {sizetitle}: {sizesong}MB\n<:play:472908887859789835> [{newgroundsplay}](https://newgrounds.com/audio/load/{songid}) <:download_song:472907696685711370> [{youtubelink}]({songlink2})", inline=False)
+												
 												channel2 = client.get_channel(int(maybe_number5))
 												pogagaga = cursor.execute(f"SELECT TagReviewer FROM setup WHERE serverid = {serveur} LIMIT 1")
 												tagreviewer = cursor.fetchone()[0]
 												if tagreviewer == "1":
-													await channel2.send(f"<@&{maybe_number6}>",embed=embed3)
-													return
-												await channel2.send(embed=embed3)
+													msgqueue = await channel2.send(f"<@&{maybe_number6}>",embed=embed3)
+												elif tagreviewer == "0":
+													msgqueue = await channel2.send(embed=embed3)
+												msgid = msgqueue.id
+												cursor.execute(f"UPDATE levels SET messageid = %s WHERE requester = %s AND levelid = %s AND server = %s", (msgid, jaj, idlevel, serveur))
+												conn.commit()
+												
 												cursor.execute(f"SELECT levelrequestedcount FROM users WHERE userid = {jaj}")
 												counted = cursor.fetchone()[0]
-												counted += 1
+												counted = counted + 1
 												cursor.execute(f'UPDATE users SET levelrequestedcount = {counted} WHERE userid = {jaj}')
 												conn.commit()
 												if counted >= 1:
@@ -3428,7 +4661,7 @@ async def on_message(message):
 													if yesvalue == "no":
 														cursor.execute(f'UPDATE users SET requestachievement1 = "yes" WHERE userid = {jaj}')
 														conn.commit()
-														requestachievement1(author)
+														#requestachievement1(author)
 														embed5 = requestachievement1(author)
 														username = client.get_user(int(jaj))
 														channel = await username.create_dm()
@@ -3442,7 +4675,7 @@ async def on_message(message):
 													if yesvalue == "no":
 														cursor.execute(f'UPDATE users SET requestachievement5 = "yes" WHERE userid = {jaj}')
 														conn.commit()
-														requestachievement5(author)
+														#requestachievement5(author)
 														embed5 = requestachievement5(author)
 														username = client.get_user(int(jaj))
 														channel = await username.create_dm()
@@ -3456,7 +4689,7 @@ async def on_message(message):
 													if yesvalue == "no":
 														cursor.execute(f'UPDATE users SET requestachievement10 = "yes" WHERE userid = {jaj}')
 														conn.commit()
-														requestachievement10(author)
+														#requestachievement10(author)
 														embed5 = requestachievement10(author)
 														username = client.get_user(int(jaj))
 														channel = await username.create_dm()
@@ -3470,7 +4703,7 @@ async def on_message(message):
 													if yesvalue == "no":
 														cursor.execute(f'UPDATE users SET requestachievement50 = "yes" WHERE userid = {jaj}')
 														conn.commit()
-														requestachievement50(author)
+														#requestachievement50(author)
 														embed5 = requestachievement50(author)
 														username = client.get_user(int(jaj))
 														channel = await username.create_dm()
@@ -3484,7 +4717,7 @@ async def on_message(message):
 													if yesvalue == "no":
 														cursor.execute(f'UPDATE users SET requestachievement100 = "yes" WHERE userid = {jaj}')
 														conn.commit()
-														requestachievement100(author)
+														#requestachievement100(author)
 														embed5 = requestachievement100(author)
 														username = client.get_user(int(jaj))
 														channel = await username.create_dm()
@@ -3558,7 +4791,7 @@ async def on_message(message):
 											except TypeError:
 												maybe_number6 = None
 											if maybe_number6 is not None:
-												pogagygi = cursor.execute(f"SELECT levelid FROM levels WHERE server = {serveur} AND levelid = {level} LIMIT 1")
+												pogagygi = cursor.execute(f"SELECT levelid FROM levels WHERE server = {serveur} AND levelid = %s LIMIT 1", (idlevel, ))
 												try:
 													zebi = cursor.fetchone()[0]
 												except TypeError:
@@ -3574,32 +4807,90 @@ async def on_message(message):
 												else:
 													conn.commit()
 													reviewed = 'no'
-													sql = "INSERT INTO levels (levelid, requester, server, video, reviewed) VALUES (%s, %s, %s, %s, %s)"
-													val = (level, message.author.id, message.guild.id, video2, reviewed)
+													sql = "INSERT INTO levels (levelid, requester, server, video, reviewed, messageid) VALUES (%s, %s, %s, %s, %s, %s)"
+													val = (idlevel, message.author.id, message.guild.id, video2, reviewed, 0)
 													cursor.execute(sql, val)
 													conn.commit()
+													embed3 = discord.Embed(title=f'{newlevelreq}', color=0x00ff00)
+													embed3.add_field(name=f'`{idlevel}` (**{levelname}** {byserver} **{creator}**)', value='\u200b')
+													embed3.set_footer(text=f"{message.guild.name} --- {message.author}")
 													if video is not None:
-														cursor.execute(f"UPDATE levels SET video = '{video}' WHERE requester = {jaj} AND levelid = {level}")
+														cursor.execute(f"UPDATE levels SET video = %s WHERE requester = %s AND levelid = %s AND server = %s", (video, jaj, idlevel, serveur))
 														conn.commit()
+														embed3.add_field(name=f'\nVideo :', value=f"{video}", inline=False)
 													await msg.delete()
 
 													embed = discord.Embed(title=f'{successtitle}', color=0x00ff00)
-													embed.add_field(name=f'`{level}` (**{levelname}** {by} **{creator}**) {successrequested}', value='\u200b')
+													embed.add_field(name=f'`{idlevel}` (**{levelname}** {by} **{creator}**) {successrequested}', value='\u200b')
 													embed.set_footer(text=f"{message.guild.name} --- {message.author}")
 													msg100 = await message.channel.send(embed=embed)
-													embed3 = discord.Embed(title=f'{newlevelreq}', color=0x00ff00)
-													embed3.add_field(name=f'`{level}` (**{levelname}** {byserver} **{creator}**)', value='\u200b')
-													embed3.set_footer(text=f"{message.guild.name} --- {message.author}")
+													
+													#reqsearch(level)
+													stars,objectplus,levelname,creator,ratingemote,stars,downloads,likes,likesemote,description,coins,verifiedcoins,lengthvalue,idlevel,version,gdversion,color = reqsearch(level)
+													description += '=' * (-len(description) % 4)
+													base64_bytes = description.encode('ascii')
+													print(base64_bytes)
+													message_bytes = base64.urlsafe_b64decode(base64_bytes)
+													descbase64 = message_bytes.decode('ascii')
+
+													embed3.set_thumbnail(url=f"{ratingemote}")
+													if int(objectplus) >= 40000:
+														embed3.add_field(name=f'<:play:472908887859789835> __{levelname}__ {by} {creator} <:object_overflow:472908865953071115>', value=f"{desc} {descbase64}", inline=False)
+													elif int(objectplus) <= 39999:
+														embed3.add_field(name=f'<:play:472908887859789835> __{levelname}__ {by} {creator}', value=f"{desc} {descbase64}", inline=False)
+
+													if int(coins) == 0:
+														coinsvalue = f"{none}"
+													elif int(coins) == 1:
+														coinsvalue = "<:user_coin_unverified:472908993832943631>"
+													elif int(coins) == 2:
+														coinsvalue = "<:user_coin_unverified:472908993832943631> <:user_coin_unverified:472908993832943631>"
+													elif int(coins) == 3:
+														coinsvalue = "<:user_coin_unverified:472908993832943631> <:user_coin_unverified:472908993832943631> <:user_coin_unverified:472908993832943631>"
+
+													try:
+														if int(verifiedcoins) == 1:
+															if int(coins) == 0:
+																coinsvalue = f"{none}"
+															elif int(coins) == 1:
+																coinsvalue = "<:user_coin:472908993711308800>"
+															elif int(coins) == 2:
+																coinsvalue = "<:user_coin:472908993711308800> <:user_coin:472908993711308800>"
+															elif int(coins) == 3:
+																coinsvalue = "<:user_coin:472908993711308800> <:user_coin:472908993711308800> <:user_coin:472908993711308800>"
+													except ValueError:
+														pass
+
+													embed3.add_field(name=f'{coinstitle}: {coinsvalue}', value=f"<:downloads:472907713727430658> `{downloads}`\n{likesemote} `{likes}`\n<:length:472908680459976704> `{lengthvalue}`\n", inline=False)
+
+													#reqsearch2(level)
+													try:
+														songname,songauthor,songid,sizesong,songlink,officialsong = reqsearch2(level)
+													except ValueError:
+														songname,songauthor,songid,sizesong,songlink = reqsearch2(level)
+
+													songlink2 = unquote(f"{songlink}")
+													try:
+														officialsong2 = int(officialsong)
+													except UnboundLocalError:
+														embed3.add_field(name=f':musical_note:  __{songname}__ {by} {songauthor}', value=f"SongID: {songid} - {sizetitle}: {sizesong}MB\n<:play:472908887859789835> [{newgroundsplay}](https://newgrounds.com/audio/load/{songid}) <:download_song:472907696685711370> [{downloadsong}]({songlink2})", inline=False)
+													else:
+														embed3.add_field(name=f':musical_note: :white_check_mark:   __**{songname}**__ {by} {songauthor}', value=f"SongID: {songid} - {sizetitle}: {sizesong}MB\n<:play:472908887859789835> [{newgroundsplay}](https://newgrounds.com/audio/load/{songid}) <:download_song:472907696685711370> [{youtubelink}]({songlink2})", inline=False)
+
 													channel2 = client.get_channel(int(maybe_number5))
 													pogagaga = cursor.execute(f"SELECT TagReviewer FROM setup WHERE serverid = {serveur} LIMIT 1")
 													tagreviewer = cursor.fetchone()[0]
 													if tagreviewer == "1":
-														await channel2.send(f"<@&{maybe_number6}>",embed=embed3)
-														return
-													await channel2.send(embed=embed3)
+														msgqueue = await channel2.send(f"<@&{maybe_number6}>",embed=embed3)
+													elif tagreviewer == "0":
+														msgqueue = await channel2.send(embed=embed3)
+													msgid = msgqueue.id
+													cursor.execute(f"UPDATE levels SET messageid = %s WHERE requester = %s AND levelid = %s AND server = %s", (msgid, jaj, idlevel, serveur))
+													conn.commit()
+													
 													cursor.execute(f"SELECT levelrequestedcount FROM users WHERE userid = {jaj}")
 													counted = cursor.fetchone()[0]
-													counted += 1
+													counted = counted + 1
 													cursor.execute(f'UPDATE users SET levelrequestedcount = {counted} WHERE userid = {jaj}')
 													conn.commit()
 													if counted >= 1:
@@ -3608,7 +4899,7 @@ async def on_message(message):
 														if yesvalue == "no":
 															cursor.execute(f'UPDATE users SET requestachievement1 = "yes" WHERE userid = {jaj}')
 															conn.commit()
-															requestachievement1(author)
+															#requestachievement1(author)
 															embed5 = requestachievement1(author)
 															username = client.get_user(int(jaj))
 															channel = await username.create_dm()
@@ -3622,7 +4913,7 @@ async def on_message(message):
 														if yesvalue == "no":
 															cursor.execute(f'UPDATE users SET requestachievement5 = "yes" WHERE userid = {jaj}')
 															conn.commit()
-															requestachievement5(author)
+															#requestachievement5(author)
 															embed5 = requestachievement5(author)
 															username = client.get_user(int(jaj))
 															channel = await username.create_dm()
@@ -3636,7 +4927,7 @@ async def on_message(message):
 														if yesvalue == "no":
 															cursor.execute(f'UPDATE users SET requestachievement10 = "yes" WHERE userid = {jaj}')
 															conn.commit()
-															requestachievement10(author)
+															#requestachievement10(author)
 															embed5 = requestachievement10(author)
 															username = client.get_user(int(jaj))
 															channel = await username.create_dm()
@@ -3650,7 +4941,7 @@ async def on_message(message):
 														if yesvalue == "no":
 															cursor.execute(f'UPDATE users SET requestachievement50 = "yes" WHERE userid = {jaj}')
 															conn.commit()
-															requestachievement50(author)
+															#requestachievement50(author)
 															embed5 = requestachievement50(author)
 															username = client.get_user(int(jaj))
 															channel = await username.create_dm()
@@ -3664,7 +4955,7 @@ async def on_message(message):
 														if yesvalue == "no":
 															cursor.execute(f'UPDATE users SET requestachievement100 = "yes" WHERE userid = {jaj}')
 															conn.commit()
-															requestachievement100(author)
+															#requestachievement100(author)
 															embed5 = requestachievement100(author)
 															username = client.get_user(int(jaj))
 															channel = await username.create_dm()
@@ -3735,7 +5026,7 @@ async def on_message(message):
 		if msg.startswith("queue"):
 			try:
 				conn = MC.connect(host = dbhost, database = dbdatabase, user = dbuser, password = dbpassword)
-				cursor = conn.cursor()
+				cursor = conn.cursor(buffered=True)
 			except MC.Error as err:
 				if err.errno == errorcode.ER_ACCESS_DENIED_ERROR:
 					print("Something is not right with your username or your password")
@@ -3747,9 +5038,19 @@ async def on_message(message):
 					print(err)
 					return
 			else:
-				conn.cursor()
-
 				author = message.author.id
+				serverid = message.guild.id
+
+				maincommand = "reqqueue"
+				checkmaintenance = checkmaintenance(maincommand)
+				if checkmaintenance == "yes":
+					embed = discord.Embed(title="", color=0xff0000)
+					embed.add_field(name=f'Error. <:error:472907618386575370>', value=f"**The command is under maintenance, please try again later.**")
+					msg2 = await message.channel.send(embed=embed)
+					time.sleep(5)
+					await msg2.delete()
+					return
+				
 				cursor.execute(f"SELECT language FROM users WHERE userid = {author}")
 				try:
 					language = cursor.fetchone()[0]
@@ -3767,3915 +5068,201 @@ async def on_message(message):
 				information = translate_messages[6]
 				page = translate_messages[7]
 				scrollpage = translate_messages[8]
+				totallevels = translate_messages[9]
+				
+				translate_cooldown_messages = open(f"language/client/cooldown-{language2}.txt").read().splitlines()
+				errorcooldown1 = translate_cooldown_messages[0]
+				errorcooldown2 = translate_cooldown_messages[1]
+				errormessage = translate_cooldown_messages[3]
+				
+				#cooldowncheck(author)
+				alwayscooldown,secondcooldown = cooldowncheck(author)
+				
+				if alwayscooldown == 1:
+					embed = discord.Embed(title="", color=0xff0000)
+					embed.add_field(name=f'{errormessage}', value=f"{errorcooldown1} {secondcooldown} {errorcooldown2}")
+					msg2 = await message.channel.send(embed=embed)
+					time.sleep(5)
+					await msg2.delete()
+					return
+				sql = "INSERT INTO cooldowns (userid, cooldown) VALUES (%s, %s)"
+				datetime_object_cooldown = datetime_object + datetime.timedelta(seconds=30)
+				val = (author, datetime_object_cooldown)
+				cursor.execute(sql,val)
+				conn.commit()
 
 				embed = discord.Embed(title=f"{loadingtitle}", color=0xffce08)
 				embed.add_field(name=f'{loadingdesc}', value="\u200b")
 				msg = await message.channel.send(embed=embed)
 
 				var = message.guild.id
-				cursor.execute("SELECT levelid,video FROM levels WHERE server = {} AND reviewed = 'no' ORDER BY ID ASC LIMIT 5".format(var))
-				row = cursor.fetchone()
 
-				embed = discord.Embed(title=f"{queuetitle} "+str(message.guild.name), color=0x00ff00)
-				embed.add_field(name=f'{queuedesc}', value="\u200b", inline=False)
+				cursor.execute("SELECT COUNT(*) FROM levels WHERE server = {} AND reviewed = 'no' ORDER BY ID ASC LIMIT 100".format(var))
+				totallevelsresult = cursor.fetchone()[0]
+
+				embed1 = discord.Embed(title=f"{queuetitle} "+str(message.guild.name), color=0x00ff00)
+				embed1.add_field(name=f'{queuedesc}', value="\u200b", inline=False)
+				embed1.add_field(name=f'{totallevels} {totallevelsresult}', value="\u200b", inline=False)
 				embed2 = discord.Embed(title=f"{queuetitle} "+str(message.guild.name), color=0x00ff00)
 				embed2.add_field(name=f'{queuedesc}', value="\u200b", inline=False)
+				embed2.add_field(name=f'{totallevels} {totallevelsresult}', value="\u200b", inline=False)
 				embed3 = discord.Embed(title=f"{queuetitle} "+str(message.guild.name), color=0x00ff00)
 				embed3.add_field(name=f'{queuedesc}', value="\u200b", inline=False)
+				embed3.add_field(name=f'{totallevels} {totallevelsresult}', value="\u200b", inline=False)
 				embed4 = discord.Embed(title=f"{queuetitle} "+str(message.guild.name), color=0x00ff00)
 				embed4.add_field(name=f'{queuedesc}', value="\u200b", inline=False)
+				embed4.add_field(name=f'{totallevels} {totallevelsresult}', value="\u200b", inline=False)
 				embed5 = discord.Embed(title=f"{queuetitle} "+str(message.guild.name), color=0x00ff00)
 				embed5.add_field(name=f'{queuedesc}', value="\u200b", inline=False)
+				embed5.add_field(name=f'{totallevels} {totallevelsresult}', value="\u200b", inline=False)
 				embed6 = discord.Embed(title=f"{queuetitle} "+str(message.guild.name), color=0x00ff00)
 				embed6.add_field(name=f'{queuedesc}', value="\u200b", inline=False)
+				embed6.add_field(name=f'{totallevels} {totallevelsresult}', value="\u200b", inline=False)
 				embed7 = discord.Embed(title=f"{queuetitle} "+str(message.guild.name), color=0x00ff00)
 				embed7.add_field(name=f'{queuedesc}', value="\u200b", inline=False)
+				embed7.add_field(name=f'{totallevels} {totallevelsresult}', value="\u200b", inline=False)
 				embed8 = discord.Embed(title=f"{queuetitle} "+str(message.guild.name), color=0x00ff00)
 				embed8.add_field(name=f'{queuedesc}', value="\u200b", inline=False)
+				embed8.add_field(name=f'{totallevels} {totallevelsresult}', value="\u200b", inline=False)
 				embed9 = discord.Embed(title=f"{queuetitle} "+str(message.guild.name), color=0x00ff00)
 				embed9.add_field(name=f'{queuedesc}', value="\u200b", inline=False)
+				embed9.add_field(name=f'{totallevels} {totallevelsresult}', value="\u200b", inline=False)
 				embed10 = discord.Embed(title=f"{queuetitle} "+str(message.guild.name), color=0x00ff00)
 				embed10.add_field(name=f'{queuedesc}', value="\u200b", inline=False)
+				embed10.add_field(name=f'{totallevels} {totallevelsresult}', value="\u200b", inline=False)
 				embed11 = discord.Embed(title=f"{queuetitle} "+str(message.guild.name), color=0x00ff00)
 				embed11.add_field(name=f'{queuedesc}', value="\u200b", inline=False)
+				embed11.add_field(name=f'{totallevels} {totallevelsresult}', value="\u200b", inline=False)
 				embed12 = discord.Embed(title=f"{queuetitle} "+str(message.guild.name), color=0x00ff00)
 				embed12.add_field(name=f'{queuedesc}', value="\u200b", inline=False)
+				embed12.add_field(name=f'{totallevels} {totallevelsresult}', value="\u200b", inline=False)
 				embed13 = discord.Embed(title=f"{queuetitle} "+str(message.guild.name), color=0x00ff00)
 				embed13.add_field(name=f'{queuedesc}', value="\u200b", inline=False)
+				embed13.add_field(name=f'{totallevels} {totallevelsresult}', value="\u200b", inline=False)
 				embed14 = discord.Embed(title=f"{queuetitle} "+str(message.guild.name), color=0x00ff00)
 				embed14.add_field(name=f'{queuedesc}', value="\u200b", inline=False)
+				embed14.add_field(name=f'{totallevels} {totallevelsresult}', value="\u200b", inline=False)
 				embed15 = discord.Embed(title=f"{queuetitle} "+str(message.guild.name), color=0x00ff00)
 				embed15.add_field(name=f'{queuedesc}', value="\u200b", inline=False)
+				embed15.add_field(name=f'{totallevels} {totallevelsresult}', value="\u200b", inline=False)
 				embed16 = discord.Embed(title=f"{queuetitle} "+str(message.guild.name), color=0x00ff00)
 				embed16.add_field(name=f'{queuedesc}', value="\u200b", inline=False)
+				embed16.add_field(name=f'{totallevels} {totallevelsresult}', value="\u200b", inline=False)
 				embed17 = discord.Embed(title=f"{queuetitle} "+str(message.guild.name), color=0x00ff00)
 				embed17.add_field(name=f'{queuedesc}', value="\u200b", inline=False)
+				embed17.add_field(name=f'{totallevels} {totallevelsresult}', value="\u200b", inline=False)
 				embed18 = discord.Embed(title=f"{queuetitle} "+str(message.guild.name), color=0x00ff00)
 				embed18.add_field(name=f'{queuedesc}', value="\u200b", inline=False)
+				embed18.add_field(name=f'{totallevels} {totallevelsresult}', value="\u200b", inline=False)
 				embed19 = discord.Embed(title=f"{queuetitle} "+str(message.guild.name), color=0x00ff00)
 				embed19.add_field(name=f'{queuedesc}', value="\u200b", inline=False)
+				embed19.add_field(name=f'{totallevels} {totallevelsresult}', value="\u200b", inline=False)
 				embed20 = discord.Embed(title=f"{queuetitle} "+str(message.guild.name), color=0x00ff00)
 				embed20.add_field(name=f'{queuedesc}', value="\u200b", inline=False)
+				embed20.add_field(name=f'{totallevels} {totallevelsresult}', value="\u200b", inline=False)
 
 				iconprofile = message.guild.icon_url
-				embed.set_thumbnail(url=(iconprofile))
+				embed1.set_thumbnail(url=(iconprofile))	
 
-				number = 0
-				while row is not None:
-					number += 1
-					levelid = row[0]
-					video = row[1]
-					levelfinder(levelid)
-					stars,objectplus,levelname,creator,ratingemote,stars,downloads,likes,likesemote = levelfinder(levelid)
-					print("OK")
+				pages = [embed1,embed2,embed3,embed4,embed5,embed6,embed7,embed8,embed9,embed10,embed11,embed12,embed13,embed14,embed15,embed16,embed17,embed18,embed19,embed20]
+				
+				cursor.execute("SELECT levelid,video FROM levels WHERE server = {} AND reviewed = 'no' ORDER BY ID ASC LIMIT 100".format(var))
+				datas = cursor.fetchall()
+				levels = []
+				creators = []
 
-					if int(stars) == 0:
-						if int(objectplus) >= 40000:
-							if video is not None:
-								embed.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"({video})", inline=False)
-							else:
-								embed.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value="\u200b", inline=False)
-						elif int(objectplus) <= 39999:
-							if video is not None:
-								embed.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote}\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"({video})", inline=False)
-							else:
-								embed.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote}\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value="\u200b", inline=False)
-					elif stars is not "0":
-						if int(objectplus) >= 40000:
-							if video is not None:
-								embed.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003> <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"({video})", inline=False)
-							else:
-								embed.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003> <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value="\u200b", inline=False)
-						elif int(objectplus) <= 39999:
-							if video is not None:
-								embed.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"({video})", inline=False)
-							else:
-								embed.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value="\u200b", inline=False)
-					row = cursor.fetchone()
+				for k in range(len(datas)):
+					levels.append(str(datas[k][0]))
+
+				result = queuedecryptor(levels)
+
+				minpage = 0
+				maxpage = len(result)/5
+
+				pageselect = 0
+				current = 1
+				maxshow = 5
+
+				if result == "-1":
+					await msg.delete()
+					msg1 = await message.channel.send(embed=embed1)
+					return
+
+				# Getting level datas
+				levels = []
+				result = result.split("#")
+				result1 = result[0]
+				#Getting Username
+				result2 = result[1]
+				result = result1.split("|")
+
+				result2 = result2.split("|")
+
+				for g in range(len(result)):
+					levelids = result[g]
+					levelids = levelids.split(":")
+					levels.append(levelids[1])
+					for k in range(len(result2)):
+						accountid = result2[k]
+						accountid = accountid.split(":")
+						if levelids[7] == accountid[0]:
+							creatornamed = result2[k]
+							creatornamed = creatornamed.split(":")
+							creators.append(creatornamed[1])
+							break
+				
+				for h in range(len(result)):
+					video = datas[h][1]
+					if current > maxshow:
+						maxshow += 5
+						pageselect += 1
+						pages[pageselect].set_thumbnail(url=(iconprofile))	
+					current += 1
+					queueconstructor(pageselect,result[h],video,h+1,levels[h],pages,creators[h])
+
+				def check(reaction, user):
+					return user == message.author
+
+				i = 0
+				reaction = None
+
 				await msg.delete()
+				msg1 = await message.channel.send(embed=embed1)
 
-				cursor.execute(f"SELECT COUNT(levelid) AS NumberOfLevelIDs FROM levels WHERE server = {var} AND reviewed = 'no'")
-				count = cursor.fetchone()[0]
-				if count <= 5:
-					embed.add_field(name=f"{information}", value=f"{page} 1/1", inline=False)
-					await message.channel.send(embed=embed)
+				if pageselect <= 1:
 					return
-				elif count >= 6 and count <= 10:
-					messages = (embed, embed2)
 
-					terminated = "no"
-
-					index = 0
-					inferior = 1
-					superior = 5
-					msg = None
-
-					embed.add_field(name=f"{information}", value=f"{page} 1/2 - {scrollpage}", inline=False)
-
-					action = message.channel.send
-					while True:
-						res = await action(embed=messages[index])
-						if res is not None:
-							msg = res
-						l = index != 0
-						r = index != len(messages) - 1
-						j = index == 1
-						k = index == 0
-						if j:
-							await msg.clear_reaction(right)
-						if k:
-							await msg.clear_reaction(left)
-						if l:
-							await msg.add_reaction(left)
-						if r:
-							await msg.add_reaction(right)
-						try:
-							react, user = await client.wait_for('reaction_add', check=predicate(msg, l, r), timeout=30)
-						except Exception:
-							print("BROKE")
-							break
-
-						if react.emoji == left:
-							inferior -= 5
-							superior -= 5
-							index -= 1
-						elif react.emoji == right:
-							inferior += 5
-							superior += 5
-							index += 1
-							if terminated == "no":
-								embed400 = discord.Embed(title=f"{loadingtitle}", color=0xffce08)
-								embed400.add_field(name=f'{loadingdesc}', value="\u200b")
-								msg400 = await message.channel.send(embed=embed400)
-
-								cursor.execute(f"SELECT ID FROM levels WHERE server = {var} AND reviewed = 'no' ORDER BY ID ASC")
-								many2 = cursor.fetchall()
-								print(many2)
-								try:
-									manyinferior2 = many2[inferior]
-								except IndexError:
-									manyinferior2 = many2[inferior-1]
-
-								try:
-									manysuperior2 = many2[superior]
-								except IndexError:
-									try:
-										manysuperior2 = many2[superior-1]
-									except IndexError:
-										try:
-											manysuperior2 = many2[superior-2]
-										except IndexError:
-											try:
-												manysuperior2 = many2[superior-3]
-											except IndexError:
-												try:
-													manysuperior2 = many2[superior-4]
-												except IndexError:
-													manysuperior2 = many2[superior-5]
-
-								manyinferior = manyinferior2[0]
-								manysuperior = manysuperior2[0]
-								var = message.guild.id
-								cursor.execute(f"SELECT levelid,video FROM levels WHERE server = {var} AND reviewed = 'no' AND ID BETWEEN {manyinferior} AND {manysuperior} ORDER BY ID ASC LIMIT 5")
-								row2 = cursor.fetchone()
-								print(row2)
-
-								iconprofile = message.guild.icon_url
-								embed2.set_thumbnail(url=(iconprofile))
-
-								while row2 is not None:
-									number += 1
-									levelid = row2[0]
-									video = row2[1]
-									levelfinder(levelid)
-									stars,objectplus,levelname,creator,ratingemote,stars,downloads,likes,likesemote = levelfinder(levelid)
-									print("OK")
-
-									if int(stars) == 0:
-										if int(objectplus) >= 40000:
-											if video is not None:
-												embed2.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"({video})", inline=False)
-											else:
-												embed2.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value="\u200b", inline=False)
-										elif int(objectplus) <= 39999:
-											if video is not None:
-												embed2.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote}\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"({video})", inline=False)
-											else:
-												embed2.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote}\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value="\u200b", inline=False)
-									elif stars is not "0":
-										if int(objectplus) >= 40000:
-											if video is not None:
-												embed2.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003> <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"({video})", inline=False)
-											else:
-												embed2.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003> <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value="\u200b", inline=False)
-										elif int(objectplus) <= 39999:
-											if video is not None:
-												embed2.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"({video})", inline=False)
-											else:
-												embed2.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value="\u200b", inline=False)
-									row2 = cursor.fetchone()
-								await msg400.delete()
-								embed2.add_field(name=f"{information}", value=f"{page} 2/2 - {scrollpage}", inline=False)
-								terminated = "yes"
-						action = msg.edit
-					return
-				elif count >= 11 and count <= 15:
-					messages = (embed, embed2, embed3)
-
-					terminated = "no"
-					terminated2 = "no"
-
-					index = 0
-					inferior = 1
-					superior = 5
-					msg = None
-
-					embed.add_field(name=f"{information}", value=f"{page} 1/3 - {scrollpage}", inline=False)
-
-					action = message.channel.send
-					while True:
-						res = await action(embed=messages[index])
-						if res is not None:
-							msg = res
-						l = index != 0
-						r = index != len(messages) - 1
-						j = index == 2
-						k = index == 0
-						if j:
-							await msg.clear_reaction(right)
-						if k:
-							await msg.clear_reaction(left)
-						if l:
-							await msg.add_reaction(left)
-						if r:
-							await msg.add_reaction(right)
-						try:
-							react, user = await client.wait_for('reaction_add', check=predicate(msg, l, r), timeout=30)
-						except Exception:
-							print("BROKE")
-							break
-
-						if react.emoji == left:
-							inferior -= 5
-							superior -= 5
-							index -= 1
-
-						elif react.emoji == right:
-							inferior += 5
-							superior += 5
-							index += 1
-							if index == 1:
-								if terminated == "no":
-									embed400 = discord.Embed(title=f"{loadingtitle}", color=0xffce08)
-									embed400.add_field(name=f'{loadingdesc}', value="\u200b")
-									msg400 = await message.channel.send(embed=embed400)
-
-									cursor.execute(f"SELECT ID FROM levels WHERE server = {var} AND reviewed = 'no' ORDER BY ID ASC")
-									many2 = cursor.fetchall()
-									print(many2)
-									try:
-										manyinferior2 = many2[inferior]
-									except IndexError:
-										manyinferior2 = many2[inferior-1]
-
-									try:
-										manysuperior2 = many2[superior]
-									except IndexError:
-										try:
-											manysuperior2 = many2[superior-1]
-										except IndexError:
-											try:
-												manysuperior2 = many2[superior-2]
-											except IndexError:
-												try:
-													manysuperior2 = many2[superior-3]
-												except IndexError:
-													try:
-														manysuperior2 = many2[superior-4]
-													except IndexError:
-														manysuperior2 = many2[superior-5]
-
-									manyinferior = manyinferior2[0]
-									manysuperior = manysuperior2[0]
-									var = message.guild.id
-									cursor.execute(f"SELECT levelid,video FROM levels WHERE server = {var} AND reviewed = 'no' AND ID BETWEEN {manyinferior} AND {manysuperior} ORDER BY ID ASC LIMIT 5")
-									row2 = cursor.fetchone()
-									print(row2)
-
-									iconprofile = message.guild.icon_url
-									embed2.set_thumbnail(url=(iconprofile))
-
-									while row2 is not None:
-										number += 1
-										levelid = row2[0]
-										video = row2[1]
-										levelfinder(levelid)
-										stars,objectplus,levelname,creator,ratingemote,stars,downloads,likes,likesemote = levelfinder(levelid)
-										print("OK")
-
-										if int(stars) == 0:
-											if int(objectplus) >= 40000:
-												if video is not None:
-													embed2.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"({video})", inline=False)
-												else:
-													embed2.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value="\u200b", inline=False)
-											elif int(objectplus) <= 39999:
-												if video is not None:
-													embed2.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote}\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"({video})", inline=False)
-												else:
-													embed2.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote}\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value="\u200b", inline=False)
-										elif stars is not "0":
-											if int(objectplus) >= 40000:
-												if video is not None:
-													embed2.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003> <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"({video})", inline=False)
-												else:
-													embed2.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003> <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value="\u200b", inline=False)
-											elif int(objectplus) <= 39999:
-												if video is not None:
-													embed2.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"({video})", inline=False)
-												else:
-													embed2.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value="\u200b", inline=False)
-										row2 = cursor.fetchone()
-									await msg400.delete()
-									embed2.add_field(name=f"{information}", value=f"{page} 2/3 - {scrollpage}", inline=False)
-									terminated = "yes"
-							if index == 2:
-								if terminated2 == "no":
-									embed400 = discord.Embed(title=f"{loadingtitle}", color=0xffce08)
-									embed400.add_field(name=f'{loadingdesc}', value="\u200b")
-									msg400 = await message.channel.send(embed=embed400)
-
-									cursor.execute(f"SELECT ID FROM levels WHERE server = {var} AND reviewed = 'no' ORDER BY ID ASC")
-									many3 = cursor.fetchall()
-									print(many3)
-									try:
-										manyinferior3 = many3[inferior]
-									except IndexError:
-										manyinferior3 = many3[inferior-1]
-
-									try:
-										manysuperior3 = many3[superior]
-									except IndexError:
-										try:
-											manysuperior3 = many3[superior-1]
-										except IndexError:
-											try:
-												manysuperior3 = many2[superior-2]
-											except IndexError:
-												try:
-													manysuperior3 = many2[superior-3]
-												except IndexError:
-													try:
-														manysuperior3 = many2[superior-4]
-													except IndexError:
-														manysuperior3 = many2[superior-5]
-
-									manyinferior = manyinferior3[0]
-									manysuperior = manysuperior3[0]
-									var = message.guild.id
-									cursor.execute(f"SELECT levelid,video FROM levels WHERE server = {var} AND reviewed = 'no' AND ID BETWEEN {manyinferior} AND {manysuperior} ORDER BY ID ASC LIMIT 5")
-									row3 = cursor.fetchone()
-									print(row3)
-
-									iconprofile = message.guild.icon_url
-									embed3.set_thumbnail(url=(iconprofile))
-
-									while row3 is not None:
-										number += 1
-										levelid = row3[0]
-										video = row3[1]
-										levelfinder(levelid)
-										stars,objectplus,levelname,creator,ratingemote,stars,downloads,likes,likesemote = levelfinder(levelid)
-										print("OK")
-
-										if int(stars) == 0:
-											if int(objectplus) >= 40000:
-												if video is not None:
-													embed3.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"({video})", inline=False)
-												else:
-													embed3.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value="\u200b", inline=False)
-											elif int(objectplus) <= 39999:
-												if video is not None:
-													embed3.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote}\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"({video})", inline=False)
-												else:
-													embed3.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote}\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value="\u200b", inline=False)
-										elif stars is not "0":
-											if int(objectplus) >= 40000:
-												if video is not None:
-													embed3.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003> <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"({video})", inline=False)
-												else:
-													embed3.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003> <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value="\u200b", inline=False)
-											elif int(objectplus) <= 39999:
-												if video is not None:
-													embed3.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"({video})", inline=False)
-												else:
-													embed3.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value="\u200b", inline=False)
-										row3 = cursor.fetchone()
-									await msg400.delete()
-									embed3.add_field(name=f"{information}", value=f"{page} 3/3 - {scrollpage}", inline=False)
-									terminated2 = "yes"
-						action = msg.edit
-					return
-				elif count >= 16 and count <= 20:
-					messages = (embed, embed2, embed3, embed4)
-
-					terminated = "no"
-					terminated2 = "no"
-					terminated3 = "no"
-
-					index = 0
-					inferior = 1
-					superior = 5
-					msg = None
-
-					embed.add_field(name=f"{information}", value=f"{page} 1/4 - {scrollpage}", inline=False)
-
-					res = await message.channel.send(embed=messages[index])
-					while True:
-						if res is not None:
-							msg = res
-						res = await msg.edit(embed=messages[index])
-						l = index != 0
-						r = index != len(messages) - 1
-						j = index == 3
-						k = index == 0
-						if j:
-							await msg.clear_reaction(right)
-						if k:
-							await msg.clear_reaction(left)
-						if l:
-							await msg.add_reaction(left)
-						if r:
-							await msg.add_reaction(right)
-						try:
-							react, user = await client.wait_for('reaction_add', check=predicate(msg, l, r), timeout=30)
-						except Exception:
-							print("BROKE")
-							break
-
-						if react.emoji == left:
-							inferior -= 5
-							superior -= 5
-							index -= 1
-						elif react.emoji == right:
-							inferior += 5
-							superior += 5
-							index += 1
-							if index == 1:
-								if terminated == "no":
-									embed400 = discord.Embed(title=f"{loadingtitle}", color=0xffce08)
-									embed400.add_field(name=f'{loadingdesc}', value="\u200b")
-									msg400 = await message.channel.send(embed=embed400)
-
-									cursor.execute(f"SELECT ID FROM levels WHERE server = {var} AND reviewed = 'no' ORDER BY ID ASC")
-									many2 = cursor.fetchall()
-									print(many2)
-									try:
-										manyinferior2 = many2[inferior]
-									except IndexError:
-										manyinferior2 = many2[inferior-1]
-
-									try:
-										manysuperior2 = many2[superior]
-									except IndexError:
-										try:
-											manysuperior2 = many2[superior-1]
-										except IndexError:
-											try:
-												manysuperior2 = many2[superior-2]
-											except IndexError:
-												try:
-													manysuperior2 = many2[superior-3]
-												except IndexError:
-													try:
-														manysuperior2 = many2[superior-4]
-													except IndexError:
-														manysuperior2 = many2[superior-5]
-
-									manyinferior = manyinferior2[0]
-									manysuperior = manysuperior2[0]
-									var = message.guild.id
-									cursor.execute(f"SELECT levelid,video FROM levels WHERE server = {var} AND reviewed = 'no' AND ID BETWEEN {manyinferior} AND {manysuperior} ORDER BY ID ASC LIMIT 5")
-									row2 = cursor.fetchone()
-									print(row2)
-
-									iconprofile = message.guild.icon_url
-									embed2.set_thumbnail(url=(iconprofile))
-
-									while row2 is not None:
-										number += 1
-										levelid = row2[0]
-										video = row2[1]
-										levelfinder(levelid)
-										stars,objectplus,levelname,creator,ratingemote,stars,downloads,likes,likesemote = levelfinder(levelid)
-										print("OK")
-
-										if int(stars) == 0:
-											if int(objectplus) >= 40000:
-												if video is not None:
-													embed2.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"({video})", inline=False)
-												else:
-													embed2.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value="\u200b", inline=False)
-											elif int(objectplus) <= 39999:
-												if video is not None:
-													embed2.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote}\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"({video})", inline=False)
-												else:
-													embed2.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote}\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value="\u200b", inline=False)
-										elif stars is not "0":
-											if int(objectplus) >= 40000:
-												if video is not None:
-													embed2.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003> <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"({video})", inline=False)
-												else:
-													embed2.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003> <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value="\u200b", inline=False)
-											elif int(objectplus) <= 39999:
-												if video is not None:
-													embed2.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"({video})", inline=False)
-												else:
-													embed2.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value="\u200b", inline=False)
-										row2 = cursor.fetchone()
-									await msg400.delete()
-									embed2.add_field(name=f"{information}", value=f"{page} 2/4 - {scrollpage}", inline=False)
-									terminated = "yes"
-							if index == 2:
-								if terminated2 == "no":
-									embed400 = discord.Embed(title=f"{loadingtitle}", color=0xffce08)
-									embed400.add_field(name=f'{loadingdesc}', value="\u200b")
-									msg400 = await message.channel.send(embed=embed400)
-
-									cursor.execute(f"SELECT ID FROM levels WHERE server = {var} AND reviewed = 'no' ORDER BY ID ASC")
-									many3 = cursor.fetchall()
-									print(many3)
-									try:
-										manyinferior3 = many3[inferior]
-									except IndexError:
-										manyinferior3 = many3[inferior-1]
-
-									try:
-										manysuperior3 = many3[superior]
-									except IndexError:
-										try:
-											manysuperior3 = many3[superior-1]
-										except IndexError:
-											try:
-												manysuperior3 = many2[superior-2]
-											except IndexError:
-												try:
-													manysuperior3 = many2[superior-3]
-												except IndexError:
-													try:
-														manysuperior3 = many2[superior-4]
-													except IndexError:
-														manysuperior3 = many2[superior-5]
-
-									manyinferior = manyinferior3[0]
-									manysuperior = manysuperior3[0]
-									var = message.guild.id
-									cursor.execute(f"SELECT levelid,video FROM levels WHERE server = {var} AND reviewed = 'no' AND ID BETWEEN {manyinferior} AND {manysuperior} ORDER BY ID ASC LIMIT 5")
-									row3 = cursor.fetchone()
-									print(row3)
-
-									iconprofile = message.guild.icon_url
-									embed3.set_thumbnail(url=(iconprofile))
-
-									while row3 is not None:
-										number += 1
-										levelid = row3[0]
-										video = row3[1]
-										levelfinder(levelid)
-										stars,objectplus,levelname,creator,ratingemote,stars,downloads,likes,likesemote = levelfinder(levelid)
-										print("OK")
-
-										if int(stars) == 0:
-											if int(objectplus) >= 40000:
-												if video is not None:
-													embed3.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"({video})", inline=False)
-												else:
-													embed3.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value="\u200b", inline=False)
-											elif int(objectplus) <= 39999:
-												if video is not None:
-													embed3.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote}\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"({video})", inline=False)
-												else:
-													embed3.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote}\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value="\u200b", inline=False)
-										elif stars is not "0":
-											if int(objectplus) >= 40000:
-												if video is not None:
-													embed3.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003> <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"({video})", inline=False)
-												else:
-													embed3.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003> <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value="\u200b", inline=False)
-											elif int(objectplus) <= 39999:
-												if video is not None:
-													embed3.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"({video})", inline=False)
-												else:
-													embed3.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value="\u200b", inline=False)
-										row3 = cursor.fetchone()
-									await msg400.delete()
-									embed3.add_field(name=f"{information}", value=f"{page} 3/4 - {scrollpage}", inline=False)
-									terminated2 = "yes"
-							if index == 3:
-								if terminated3 == "no":
-									embed400 = discord.Embed(title=f"{loadingtitle}", color=0xffce08)
-									embed400.add_field(name=f'{loadingdesc}', value="\u200b")
-									msg400 = await message.channel.send(embed=embed400)
-
-									cursor.execute(f"SELECT ID FROM levels WHERE server = {var} AND reviewed = 'no' ORDER BY ID ASC")
-									many3 = cursor.fetchall()
-									print(many3)
-									try:
-										manyinferior3 = many3[inferior]
-									except IndexError:
-										manyinferior3 = many3[inferior-1]
-
-									try:
-										manysuperior3 = many3[superior]
-									except IndexError:
-										try:
-											manysuperior3 = many3[superior-1]
-										except IndexError:
-											try:
-												manysuperior3 = many2[superior-2]
-											except IndexError:
-												try:
-													manysuperior3 = many2[superior-3]
-												except IndexError:
-													try:
-														manysuperior3 = many2[superior-4]
-													except IndexError:
-														manysuperior3 = many2[superior-5]
-
-									manyinferior = manyinferior3[0]
-									manysuperior = manysuperior3[0]
-									var = message.guild.id
-									cursor.execute(f"SELECT levelid,video FROM levels WHERE server = {var} AND reviewed = 'no' AND ID BETWEEN {manyinferior} AND {manysuperior} ORDER BY ID ASC LIMIT 5")
-									row3 = cursor.fetchone()
-									print(row3)
-
-									iconprofile = message.guild.icon_url
-									embed4.set_thumbnail(url=(iconprofile))
-
-									while row3 is not None:
-										number += 1
-										levelid = row3[0]
-										video = row3[1]
-										levelfinder(levelid)
-										stars,objectplus,levelname,creator,ratingemote,stars,downloads,likes,likesemote = levelfinder(levelid)
-										print("OK")
-
-										if int(stars) == 0:
-											if int(objectplus) >= 40000:
-												if video is not None:
-													embed4.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"({video})", inline=False)
-												else:
-													embed4.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value="\u200b", inline=False)
-											elif int(objectplus) <= 39999:
-												if video is not None:
-													embed4.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote}\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"({video})", inline=False)
-												else:
-													embed4.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote}\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value="\u200b", inline=False)
-										elif stars is not "0":
-											if int(objectplus) >= 40000:
-												if video is not None:
-													embed4.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003> <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"({video})", inline=False)
-												else:
-													embed4.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003> <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value="\u200b", inline=False)
-											elif int(objectplus) <= 39999:
-												if video is not None:
-													embed4.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"({video})", inline=False)
-												else:
-													embed4.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value="\u200b", inline=False)
-										row3 = cursor.fetchone()
-									await msg400.delete()
-									embed4.add_field(name=f"{information}", value=f"{page} 4/4 - {scrollpage}", inline=False)
-									terminated3 = "yes"
-						action = msg.edit()
-					return
-				elif count >= 21 and count <= 25:
-					messages = (embed, embed2, embed3, embed4, embed5)
-
-					terminated = "no"
-					terminated2 = "no"
-					terminated3 = "no"
-					terminated4 = "no"
-
-					index = 0
-					inferior = 1
-					superior = 5
-					msg = None
-
-					embed.add_field(name=f"{information}", value=f"{page} 1/5 - {scrollpage}", inline=False)
-
-					res = await message.channel.send(embed=messages[index])
-					while True:
-						if res is not None:
-							msg = res
-						res = await msg.edit(embed=messages[index])
-						l = index != 0
-						r = index != len(messages) - 1
-						j = index == 4
-						k = index == 0
-						if j:
-							await msg.clear_reaction(right)
-						if k:
-							await msg.clear_reaction(left)
-						if l:
-							await msg.add_reaction(left)
-						if r:
-							await msg.add_reaction(right)
-						try:
-							react, user = await client.wait_for('reaction_add', check=predicate(msg, l, r), timeout=30)
-						except Exception:
-							print("BROKE")
-							break
-
-						if react.emoji == left:
-							inferior -= 5
-							superior -= 5
-							index -= 1
-						elif react.emoji == right:
-							inferior += 5
-							superior += 5
-							index += 1
-							if index == 1:
-								if terminated == "no":
-									embed400 = discord.Embed(title=f"{loadingtitle}", color=0xffce08)
-									embed400.add_field(name=f'{loadingdesc}', value="\u200b")
-									msg400 = await message.channel.send(embed=embed400)
-
-									cursor.execute(f"SELECT ID FROM levels WHERE server = {var} AND reviewed = 'no' ORDER BY ID ASC")
-									many2 = cursor.fetchall()
-									print(many2)
-									try:
-										manyinferior2 = many2[inferior]
-									except IndexError:
-										manyinferior2 = many2[inferior-1]
-
-									try:
-										manysuperior2 = many2[superior]
-									except IndexError:
-										try:
-											manysuperior2 = many2[superior-1]
-										except IndexError:
-											try:
-												manysuperior2 = many2[superior-2]
-											except IndexError:
-												try:
-													manysuperior2 = many2[superior-3]
-												except IndexError:
-													try:
-														manysuperior2 = many2[superior-4]
-													except IndexError:
-														manysuperior2 = many2[superior-5]
-
-									manyinferior = manyinferior2[0]
-									manysuperior = manysuperior2[0]
-									var = message.guild.id
-									cursor.execute(f"SELECT levelid,video FROM levels WHERE server = {var} AND reviewed = 'no' AND ID BETWEEN {manyinferior} AND {manysuperior} ORDER BY ID ASC LIMIT 5")
-									row2 = cursor.fetchone()
-									print(row2)
-
-									iconprofile = message.guild.icon_url
-									embed2.set_thumbnail(url=(iconprofile))
-
-									while row2 is not None:
-										number += 1
-										levelid = row2[0]
-										video = row2[1]
-										levelfinder(levelid)
-										stars,objectplus,levelname,creator,ratingemote,stars,downloads,likes,likesemote = levelfinder(levelid)
-										print("OK")
-
-										if int(stars) == 0:
-											if int(objectplus) >= 40000:
-												if video is not None:
-													embed2.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"({video})", inline=False)
-												else:
-													embed2.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value="\u200b", inline=False)
-											elif int(objectplus) <= 39999:
-												if video is not None:
-													embed2.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote}\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"({video})", inline=False)
-												else:
-													embed2.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote}\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value="\u200b", inline=False)
-										elif stars is not "0":
-											if int(objectplus) >= 40000:
-												if video is not None:
-													embed2.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003> <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"({video})", inline=False)
-												else:
-													embed2.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003> <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value="\u200b", inline=False)
-											elif int(objectplus) <= 39999:
-												if video is not None:
-													embed2.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"({video})", inline=False)
-												else:
-													embed2.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value="\u200b", inline=False)
-										row2 = cursor.fetchone()
-									await msg400.delete()
-									embed2.add_field(name=f"{information}", value=f"{page} 2/5 - {scrollpage}", inline=False)
-									terminated = "yes"
-							if index == 2:
-								if terminated2 == "no":
-									embed400 = discord.Embed(title=f"{loadingtitle}", color=0xffce08)
-									embed400.add_field(name=f'{loadingdesc}', value="\u200b")
-									msg400 = await message.channel.send(embed=embed400)
-
-									cursor.execute(f"SELECT ID FROM levels WHERE server = {var} AND reviewed = 'no' ORDER BY ID ASC")
-									many3 = cursor.fetchall()
-									print(many3)
-									try:
-										manyinferior3 = many3[inferior]
-									except IndexError:
-										manyinferior3 = many3[inferior-1]
-
-									try:
-										manysuperior3 = many3[superior]
-									except IndexError:
-										try:
-											manysuperior3 = many3[superior-1]
-										except IndexError:
-											try:
-												manysuperior3 = many2[superior-2]
-											except IndexError:
-												try:
-													manysuperior3 = many2[superior-3]
-												except IndexError:
-													try:
-														manysuperior3 = many2[superior-4]
-													except IndexError:
-														manysuperior3 = many2[superior-5]
-
-									manyinferior = manyinferior3[0]
-									manysuperior = manysuperior3[0]
-									var = message.guild.id
-									cursor.execute(f"SELECT levelid,video FROM levels WHERE server = {var} AND reviewed = 'no' AND ID BETWEEN {manyinferior} AND {manysuperior} ORDER BY ID ASC LIMIT 5")
-									row3 = cursor.fetchone()
-									print(row3)
-
-									iconprofile = message.guild.icon_url
-									embed3.set_thumbnail(url=(iconprofile))
-
-									while row3 is not None:
-										number += 1
-										levelid = row3[0]
-										video = row3[1]
-										levelfinder(levelid)
-										stars,objectplus,levelname,creator,ratingemote,stars,downloads,likes,likesemote = levelfinder(levelid)
-										print("OK")
-
-										if int(stars) == 0:
-											if int(objectplus) >= 40000:
-												if video is not None:
-													embed3.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"({video})", inline=False)
-												else:
-													embed3.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value="\u200b", inline=False)
-											elif int(objectplus) <= 39999:
-												if video is not None:
-													embed3.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote}\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"({video})", inline=False)
-												else:
-													embed3.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote}\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value="\u200b", inline=False)
-										elif stars is not "0":
-											if int(objectplus) >= 40000:
-												if video is not None:
-													embed3.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003> <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"({video})", inline=False)
-												else:
-													embed3.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003> <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value="\u200b", inline=False)
-											elif int(objectplus) <= 39999:
-												if video is not None:
-													embed3.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"({video})", inline=False)
-												else:
-													embed3.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value="\u200b", inline=False)
-										row3 = cursor.fetchone()
-									await msg400.delete()
-									embed3.add_field(name=f"{information}", value=f"{page} 3/5 - {scrollpage}", inline=False)
-									terminated2 = "yes"
-							if index == 3:
-								if terminated3 == "no":
-									embed400 = discord.Embed(title=f"{loadingtitle}", color=0xffce08)
-									embed400.add_field(name=f'{loadingdesc}', value="\u200b")
-									msg400 = await message.channel.send(embed=embed400)
-
-									cursor.execute(f"SELECT ID FROM levels WHERE server = {var} AND reviewed = 'no' ORDER BY ID ASC")
-									many3 = cursor.fetchall()
-									print(many3)
-									try:
-										manyinferior3 = many3[inferior]
-									except IndexError:
-										manyinferior3 = many3[inferior-1]
-
-									try:
-										manysuperior3 = many3[superior]
-									except IndexError:
-										try:
-											manysuperior3 = many3[superior-1]
-										except IndexError:
-											try:
-												manysuperior3 = many2[superior-2]
-											except IndexError:
-												try:
-													manysuperior3 = many2[superior-3]
-												except IndexError:
-													try:
-														manysuperior3 = many2[superior-4]
-													except IndexError:
-														manysuperior3 = many2[superior-5]
-
-									manyinferior = manyinferior3[0]
-									manysuperior = manysuperior3[0]
-									var = message.guild.id
-									cursor.execute(f"SELECT levelid,video FROM levels WHERE server = {var} AND reviewed = 'no' AND ID BETWEEN {manyinferior} AND {manysuperior} ORDER BY ID ASC LIMIT 5")
-									row3 = cursor.fetchone()
-									print(row3)
-
-									iconprofile = message.guild.icon_url
-									embed4.set_thumbnail(url=(iconprofile))
-
-									while row3 is not None:
-										number += 1
-										levelid = row3[0]
-										video = row3[1]
-										levelfinder(levelid)
-										stars,objectplus,levelname,creator,ratingemote,stars,downloads,likes,likesemote = levelfinder(levelid)
-										print("OK")
-
-										if int(stars) == 0:
-											if int(objectplus) >= 40000:
-												if video is not None:
-													embed4.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"({video})", inline=False)
-												else:
-													embed4.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value="\u200b", inline=False)
-											elif int(objectplus) <= 39999:
-												if video is not None:
-													embed4.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote}\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"({video})", inline=False)
-												else:
-													embed4.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote}\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value="\u200b", inline=False)
-										elif stars is not "0":
-											if int(objectplus) >= 40000:
-												if video is not None:
-													embed4.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003> <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"({video})", inline=False)
-												else:
-													embed4.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003> <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value="\u200b", inline=False)
-											elif int(objectplus) <= 39999:
-												if video is not None:
-													embed4.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"({video})", inline=False)
-												else:
-													embed4.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value="\u200b", inline=False)
-										row3 = cursor.fetchone()
-									await msg400.delete()
-									embed4.add_field(name=f"{information}", value=f"{page} 4/5 - {scrollpage}", inline=False)
-									terminated3 = "yes"
-							if index == 4:
-								if terminated4 == "no":
-									embed400 = discord.Embed(title=f"{loadingtitle}", color=0xffce08)
-									embed400.add_field(name=f'{loadingdesc}', value="\u200b")
-									msg400 = await message.channel.send(embed=embed400)
-
-									cursor.execute(f"SELECT ID FROM levels WHERE server = {var} AND reviewed = 'no' ORDER BY ID ASC")
-									many3 = cursor.fetchall()
-									print(many3)
-									try:
-										manyinferior3 = many3[inferior]
-									except IndexError:
-										manyinferior3 = many3[inferior-1]
-
-									try:
-										manysuperior3 = many3[superior]
-									except IndexError:
-										try:
-											manysuperior3 = many3[superior-1]
-										except IndexError:
-											try:
-												manysuperior3 = many2[superior-2]
-											except IndexError:
-												try:
-													manysuperior3 = many2[superior-3]
-												except IndexError:
-													try:
-														manysuperior3 = many2[superior-4]
-													except IndexError:
-														manysuperior3 = many2[superior-5]
-
-									manyinferior = manyinferior3[0]
-									manysuperior = manysuperior3[0]
-									var = message.guild.id
-									cursor.execute(f"SELECT levelid,video FROM levels WHERE server = {var} AND reviewed = 'no' AND ID BETWEEN {manyinferior} AND {manysuperior} ORDER BY ID ASC LIMIT 5")
-									row3 = cursor.fetchone()
-									print(row3)
-
-									iconprofile = message.guild.icon_url
-									embed5.set_thumbnail(url=(iconprofile))
-
-									while row3 is not None:
-										number += 1
-										levelid = row3[0]
-										video = row3[1]
-										levelfinder(levelid)
-										stars,objectplus,levelname,creator,ratingemote,stars,downloads,likes,likesemote = levelfinder(levelid)
-										print("OK")
-
-										if int(stars) == 0:
-											if int(objectplus) >= 40000:
-												if video is not None:
-													embed4.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"({video})", inline=False)
-												else:
-													embed5.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value="\u200b", inline=False)
-											elif int(objectplus) <= 39999:
-												if video is not None:
-													embed5.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote}\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"({video})", inline=False)
-												else:
-													embed5.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote}\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value="\u200b", inline=False)
-										elif stars is not "0":
-											if int(objectplus) >= 40000:
-												if video is not None:
-													embed5.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003> <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"({video})", inline=False)
-												else:
-													embed5.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003> <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value="\u200b", inline=False)
-											elif int(objectplus) <= 39999:
-												if video is not None:
-													embed5.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"({video})", inline=False)
-												else:
-													embed5.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value="\u200b", inline=False)
-										row3 = cursor.fetchone()
-									await msg400.delete()
-									embed5.add_field(name=f"{information}", value=f"{page} 5/5 - {scrollpage}", inline=False)
-									terminated4 = "yes"
-						action = msg.edit()
-					return
-				elif count >= 26 and count <= 30:
-					messages = (embed, embed2, embed3, embed4, embed5, embed6)
-
-					terminated = "no"
-					terminated2 = "no"
-					terminated3 = "no"
-					terminated4 = "no"
-					terminated5 = "no"
-
-					index = 0
-					inferior = 1
-					superior = 5
-					msg = None
-
-					embed.add_field(name=f"{information}", value=f"{page} 1/6 - {scrollpage}", inline=False)
-
-					res = await message.channel.send(embed=messages[index])
-					while True:
-						if res is not None:
-							msg = res
-						res = await msg.edit(embed=messages[index])
-						l = index != 0
-						r = index != len(messages) - 1
-						j = index == 5
-						k = index == 0
-						if j:
-							await msg.clear_reaction(right)
-						if k:
-							await msg.clear_reaction(left)
-						if l:
-							await msg.add_reaction(left)
-						if r:
-							await msg.add_reaction(right)
-						try:
-							react, user = await client.wait_for('reaction_add', check=predicate(msg, l, r), timeout=30)
-						except Exception:
-							print("BROKE")
-							break
-
-						if react.emoji == left:
-							inferior -= 5
-							superior -= 5
-							index -= 1
-						elif react.emoji == right:
-							inferior += 5
-							superior += 5
-							index += 1
-							if index == 1:
-								if terminated == "no":
-									embed400 = discord.Embed(title=f"{loadingtitle}", color=0xffce08)
-									embed400.add_field(name=f'{loadingdesc}', value="\u200b")
-									msg400 = await message.channel.send(embed=embed400)
-
-									cursor.execute(f"SELECT ID FROM levels WHERE server = {var} AND reviewed = 'no' ORDER BY ID ASC")
-									many2 = cursor.fetchall()
-									print(many2)
-									try:
-										manyinferior2 = many2[inferior]
-									except IndexError:
-										manyinferior2 = many2[inferior-1]
-
-									try:
-										manysuperior2 = many2[superior]
-									except IndexError:
-										try:
-											manysuperior2 = many2[superior-1]
-										except IndexError:
-											try:
-												manysuperior2 = many2[superior-2]
-											except IndexError:
-												try:
-													manysuperior2 = many2[superior-3]
-												except IndexError:
-													try:
-														manysuperior2 = many2[superior-4]
-													except IndexError:
-														manysuperior2 = many2[superior-5]
-
-									manyinferior = manyinferior2[0]
-									manysuperior = manysuperior2[0]
-									var = message.guild.id
-									cursor.execute(f"SELECT levelid,video FROM levels WHERE server = {var} AND reviewed = 'no' AND ID BETWEEN {manyinferior} AND {manysuperior} ORDER BY ID ASC LIMIT 5")
-									row2 = cursor.fetchone()
-									print(row2)
-
-									iconprofile = message.guild.icon_url
-									embed2.set_thumbnail(url=(iconprofile))
-
-									while row2 is not None:
-										number += 1
-										levelid = row2[0]
-										video = row2[1]
-										levelfinder(levelid)
-										stars,objectplus,levelname,creator,ratingemote,stars,downloads,likes,likesemote = levelfinder(levelid)
-										print("OK")
-
-										if int(stars) == 0:
-											if int(objectplus) >= 40000:
-												if video is not None:
-													embed2.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"({video})", inline=False)
-												else:
-													embed2.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value="\u200b", inline=False)
-											elif int(objectplus) <= 39999:
-												if video is not None:
-													embed2.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote}\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"({video})", inline=False)
-												else:
-													embed2.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote}\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value="\u200b", inline=False)
-										elif stars is not "0":
-											if int(objectplus) >= 40000:
-												if video is not None:
-													embed2.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003> <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"({video})", inline=False)
-												else:
-													embed2.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003> <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value="\u200b", inline=False)
-											elif int(objectplus) <= 39999:
-												if video is not None:
-													embed2.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"({video})", inline=False)
-												else:
-													embed2.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value="\u200b", inline=False)
-										row2 = cursor.fetchone()
-									await msg400.delete()
-									embed2.add_field(name=f"{information}", value=f"{page} 2/6 - {scrollpage}", inline=False)
-									terminated = "yes"
-							if index == 2:
-								if terminated2 == "no":
-									embed400 = discord.Embed(title=f"{loadingtitle}", color=0xffce08)
-									embed400.add_field(name=f'{loadingdesc}', value="\u200b")
-									msg400 = await message.channel.send(embed=embed400)
-
-									cursor.execute(f"SELECT ID FROM levels WHERE server = {var} AND reviewed = 'no' ORDER BY ID ASC")
-									many3 = cursor.fetchall()
-									print(many3)
-									try:
-										manyinferior3 = many3[inferior]
-									except IndexError:
-										manyinferior3 = many3[inferior-1]
-
-									try:
-										manysuperior3 = many3[superior]
-									except IndexError:
-										try:
-											manysuperior3 = many3[superior-1]
-										except IndexError:
-											try:
-												manysuperior3 = many2[superior-2]
-											except IndexError:
-												try:
-													manysuperior3 = many2[superior-3]
-												except IndexError:
-													try:
-														manysuperior3 = many2[superior-4]
-													except IndexError:
-														manysuperior3 = many2[superior-5]
-
-									manyinferior = manyinferior3[0]
-									manysuperior = manysuperior3[0]
-									var = message.guild.id
-									cursor.execute(f"SELECT levelid,video FROM levels WHERE server = {var} AND reviewed = 'no' AND ID BETWEEN {manyinferior} AND {manysuperior} ORDER BY ID ASC LIMIT 5")
-									row3 = cursor.fetchone()
-									print(row3)
-
-									iconprofile = message.guild.icon_url
-									embed3.set_thumbnail(url=(iconprofile))
-
-									while row3 is not None:
-										number += 1
-										levelid = row3[0]
-										video = row3[1]
-										levelfinder(levelid)
-										stars,objectplus,levelname,creator,ratingemote,stars,downloads,likes,likesemote = levelfinder(levelid)
-										print("OK")
-
-										if int(stars) == 0:
-											if int(objectplus) >= 40000:
-												if video is not None:
-													embed3.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"({video})", inline=False)
-												else:
-													embed3.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value="\u200b", inline=False)
-											elif int(objectplus) <= 39999:
-												if video is not None:
-													embed3.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote}\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"({video})", inline=False)
-												else:
-													embed3.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote}\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value="\u200b", inline=False)
-										elif stars is not "0":
-											if int(objectplus) >= 40000:
-												if video is not None:
-													embed3.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003> <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"({video})", inline=False)
-												else:
-													embed3.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003> <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value="\u200b", inline=False)
-											elif int(objectplus) <= 39999:
-												if video is not None:
-													embed3.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"({video})", inline=False)
-												else:
-													embed3.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value="\u200b", inline=False)
-										row3 = cursor.fetchone()
-									await msg400.delete()
-									embed3.add_field(name=f"{information}", value=f"{page} 3/6 - {scrollpage}", inline=False)
-									terminated2 = "yes"
-							if index == 3:
-								if terminated3 == "no":
-									embed400 = discord.Embed(title=f"{loadingtitle}", color=0xffce08)
-									embed400.add_field(name=f'{loadingdesc}', value="\u200b")
-									msg400 = await message.channel.send(embed=embed400)
-
-									cursor.execute(f"SELECT ID FROM levels WHERE server = {var} AND reviewed = 'no' ORDER BY ID ASC")
-									many3 = cursor.fetchall()
-									print(many3)
-									try:
-										manyinferior3 = many3[inferior]
-									except IndexError:
-										manyinferior3 = many3[inferior-1]
-
-									try:
-										manysuperior3 = many3[superior]
-									except IndexError:
-										try:
-											manysuperior3 = many3[superior-1]
-										except IndexError:
-											try:
-												manysuperior3 = many2[superior-2]
-											except IndexError:
-												try:
-													manysuperior3 = many2[superior-3]
-												except IndexError:
-													try:
-														manysuperior3 = many2[superior-4]
-													except IndexError:
-														manysuperior3 = many2[superior-5]
-
-									manyinferior = manyinferior3[0]
-									manysuperior = manysuperior3[0]
-									var = message.guild.id
-									cursor.execute(f"SELECT levelid,video FROM levels WHERE server = {var} AND reviewed = 'no' AND ID BETWEEN {manyinferior} AND {manysuperior} ORDER BY ID ASC LIMIT 5")
-									row3 = cursor.fetchone()
-									print(row3)
-
-									iconprofile = message.guild.icon_url
-									embed4.set_thumbnail(url=(iconprofile))
-
-									while row3 is not None:
-										number += 1
-										levelid = row3[0]
-										video = row3[1]
-										levelfinder(levelid)
-										stars,objectplus,levelname,creator,ratingemote,stars,downloads,likes,likesemote = levelfinder(levelid)
-										print("OK")
-
-										if int(stars) == 0:
-											if int(objectplus) >= 40000:
-												if video is not None:
-													embed4.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"({video})", inline=False)
-												else:
-													embed4.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value="\u200b", inline=False)
-											elif int(objectplus) <= 39999:
-												if video is not None:
-													embed4.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote}\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"({video})", inline=False)
-												else:
-													embed4.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote}\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value="\u200b", inline=False)
-										elif stars is not "0":
-											if int(objectplus) >= 40000:
-												if video is not None:
-													embed4.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003> <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"({video})", inline=False)
-												else:
-													embed4.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003> <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value="\u200b", inline=False)
-											elif int(objectplus) <= 39999:
-												if video is not None:
-													embed4.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"({video})", inline=False)
-												else:
-													embed4.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value="\u200b", inline=False)
-										row3 = cursor.fetchone()
-									await msg400.delete()
-									embed4.add_field(name=f"{information}", value=f"{page} 4/6 - {scrollpage}", inline=False)
-									terminated3 = "yes"
-							if index == 4:
-								if terminated4 == "no":
-									embed400 = discord.Embed(title=f"{loadingtitle}", color=0xffce08)
-									embed400.add_field(name=f'{loadingdesc}', value="\u200b")
-									msg400 = await message.channel.send(embed=embed400)
-
-									cursor.execute(f"SELECT ID FROM levels WHERE server = {var} AND reviewed = 'no' ORDER BY ID ASC")
-									many3 = cursor.fetchall()
-									print(many3)
-									try:
-										manyinferior3 = many3[inferior]
-									except IndexError:
-										manyinferior3 = many3[inferior-1]
-
-									try:
-										manysuperior3 = many3[superior]
-									except IndexError:
-										try:
-											manysuperior3 = many3[superior-1]
-										except IndexError:
-											try:
-												manysuperior3 = many2[superior-2]
-											except IndexError:
-												try:
-													manysuperior3 = many2[superior-3]
-												except IndexError:
-													try:
-														manysuperior3 = many2[superior-4]
-													except IndexError:
-														manysuperior3 = many2[superior-5]
-
-									manyinferior = manyinferior3[0]
-									manysuperior = manysuperior3[0]
-									var = message.guild.id
-									cursor.execute(f"SELECT levelid,video FROM levels WHERE server = {var} AND reviewed = 'no' AND ID BETWEEN {manyinferior} AND {manysuperior} ORDER BY ID ASC LIMIT 5")
-									row3 = cursor.fetchone()
-									print(row3)
-
-									iconprofile = message.guild.icon_url
-									embed5.set_thumbnail(url=(iconprofile))
-
-									while row3 is not None:
-										number += 1
-										levelid = row3[0]
-										video = row3[1]
-										levelfinder(levelid)
-										stars,objectplus,levelname,creator,ratingemote,stars,downloads,likes,likesemote = levelfinder(levelid)
-										print("OK")
-
-										if int(stars) == 0:
-											if int(objectplus) >= 40000:
-												if video is not None:
-													embed4.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"({video})", inline=False)
-												else:
-													embed5.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value="\u200b", inline=False)
-											elif int(objectplus) <= 39999:
-												if video is not None:
-													embed5.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote}\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"({video})", inline=False)
-												else:
-													embed5.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote}\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value="\u200b", inline=False)
-										elif stars is not "0":
-											if int(objectplus) >= 40000:
-												if video is not None:
-													embed5.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003> <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"({video})", inline=False)
-												else:
-													embed5.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003> <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value="\u200b", inline=False)
-											elif int(objectplus) <= 39999:
-												if video is not None:
-													embed5.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"({video})", inline=False)
-												else:
-													embed5.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value="\u200b", inline=False)
-										row3 = cursor.fetchone()
-									await msg400.delete()
-									embed5.add_field(name=f"{information}", value=f"{page} 5/6 - {scrollpage}", inline=False)
-									terminated4 = "yes"
-							if index == 5:
-								if terminated5 == "no":
-									embed400 = discord.Embed(title=f"{loadingtitle}", color=0xffce08)
-									embed400.add_field(name=f'{loadingdesc}', value="\u200b")
-									msg400 = await message.channel.send(embed=embed400)
-
-									cursor.execute(f"SELECT ID FROM levels WHERE server = {var} AND reviewed = 'no' ORDER BY ID ASC")
-									many3 = cursor.fetchall()
-									print(many3)
-									try:
-										manyinferior3 = many3[inferior]
-									except IndexError:
-										manyinferior3 = many3[inferior-1]
-
-									try:
-										manysuperior3 = many3[superior]
-									except IndexError:
-										try:
-											manysuperior3 = many3[superior-1]
-										except IndexError:
-											try:
-												manysuperior3 = many2[superior-2]
-											except IndexError:
-												try:
-													manysuperior3 = many2[superior-3]
-												except IndexError:
-													try:
-														manysuperior3 = many2[superior-4]
-													except IndexError:
-														manysuperior3 = many2[superior-5]
-
-									manyinferior = manyinferior3[0]
-									manysuperior = manysuperior3[0]
-									var = message.guild.id
-									cursor.execute(f"SELECT levelid,video FROM levels WHERE server = {var} AND reviewed = 'no' AND ID BETWEEN {manyinferior} AND {manysuperior} ORDER BY ID ASC LIMIT 5")
-									row3 = cursor.fetchone()
-									print(row3)
-
-									iconprofile = message.guild.icon_url
-									embed6.set_thumbnail(url=(iconprofile))
-
-									while row3 is not None:
-										number += 1
-										levelid = row3[0]
-										video = row3[1]
-										levelfinder(levelid)
-										stars,objectplus,levelname,creator,ratingemote,stars,downloads,likes,likesemote = levelfinder(levelid)
-										print("OK")
-
-										if int(stars) == 0:
-											if int(objectplus) >= 40000:
-												if video is not None:
-													embed6.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"({video})", inline=False)
-												else:
-													embed6.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value="\u200b", inline=False)
-											elif int(objectplus) <= 39999:
-												if video is not None:
-													embed6.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote}\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"({video})", inline=False)
-												else:
-													embed6.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote}\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value="\u200b", inline=False)
-										elif stars is not "0":
-											if int(objectplus) >= 40000:
-												if video is not None:
-													embed6.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003> <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"({video})", inline=False)
-												else:
-													embed6.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003> <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value="\u200b", inline=False)
-											elif int(objectplus) <= 39999:
-												if video is not None:
-													embed6.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"({video})", inline=False)
-												else:
-													embed6.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value="\u200b", inline=False)
-										row3 = cursor.fetchone()
-									await msg400.delete()
-									embed6.add_field(name=f"{information}", value=f"{page} 6/6 - {scrollpage}", inline=False)
-									terminated5 = "yes"
-						action = msg.edit()
-					return
-				elif count >= 31 and count <= 35:
-					messages = (embed, embed2, embed3, embed4, embed5, embed6, embed7)
-
-					terminated = "no"
-					terminated2 = "no"
-					terminated3 = "no"
-					terminated4 = "no"
-					terminated5 = "no"
-					terminated6 = "no"
-
-					index = 0
-					inferior = 1
-					superior = 5
-					msg = None
-
-					embed.add_field(name=f"{information}", value=f"{page} 1/7 - {scrollpage}", inline=False)
-
-					res = await message.channel.send(embed=messages[index])
-					while True:
-						if res is not None:
-							msg = res
-						res = await msg.edit(embed=messages[index])
-						l = index != 0
-						r = index != len(messages) - 1
-						j = index == 6
-						k = index == 0
-						if j:
-							await msg.clear_reaction(right)
-						if k:
-							await msg.clear_reaction(left)
-						if l:
-							await msg.add_reaction(left)
-						if r:
-							await msg.add_reaction(right)
-						try:
-							react, user = await client.wait_for('reaction_add', check=predicate(msg, l, r), timeout=30)
-						except Exception:
-							print("BROKE")
-							break
-
-						if react.emoji == left:
-							inferior -= 5
-							superior -= 5
-							index -= 1
-						elif react.emoji == right:
-							inferior += 5
-							superior += 5
-							index += 1
-							if index == 1:
-								if terminated == "no":
-									embed400 = discord.Embed(title=f"{loadingtitle}", color=0xffce08)
-									embed400.add_field(name=f'{loadingdesc}', value="\u200b")
-									msg400 = await message.channel.send(embed=embed400)
-
-									cursor.execute(f"SELECT ID FROM levels WHERE server = {var} AND reviewed = 'no' ORDER BY ID ASC")
-									many2 = cursor.fetchall()
-									print(many2)
-									try:
-										manyinferior2 = many2[inferior]
-									except IndexError:
-										manyinferior2 = many2[inferior-1]
-
-									try:
-										manysuperior2 = many2[superior]
-									except IndexError:
-										try:
-											manysuperior2 = many2[superior-1]
-										except IndexError:
-											try:
-												manysuperior2 = many2[superior-2]
-											except IndexError:
-												try:
-													manysuperior2 = many2[superior-3]
-												except IndexError:
-													try:
-														manysuperior2 = many2[superior-4]
-													except IndexError:
-														manysuperior2 = many2[superior-5]
-
-									manyinferior = manyinferior2[0]
-									manysuperior = manysuperior2[0]
-									var = message.guild.id
-									cursor.execute(f"SELECT levelid,video FROM levels WHERE server = {var} AND reviewed = 'no' AND ID BETWEEN {manyinferior} AND {manysuperior} ORDER BY ID ASC LIMIT 5")
-									row2 = cursor.fetchone()
-									print(row2)
-
-									iconprofile = message.guild.icon_url
-									embed2.set_thumbnail(url=(iconprofile))
-
-									while row2 is not None:
-										number += 1
-										levelid = row2[0]
-										video = row2[1]
-										levelfinder(levelid)
-										stars,objectplus,levelname,creator,ratingemote,stars,downloads,likes,likesemote = levelfinder(levelid)
-										print("OK")
-
-										if int(stars) == 0:
-											if int(objectplus) >= 40000:
-												if video is not None:
-													embed2.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"({video})", inline=False)
-												else:
-													embed2.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value="\u200b", inline=False)
-											elif int(objectplus) <= 39999:
-												if video is not None:
-													embed2.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote}\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"({video})", inline=False)
-												else:
-													embed2.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote}\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value="\u200b", inline=False)
-										elif stars is not "0":
-											if int(objectplus) >= 40000:
-												if video is not None:
-													embed2.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003> <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"({video})", inline=False)
-												else:
-													embed2.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003> <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value="\u200b", inline=False)
-											elif int(objectplus) <= 39999:
-												if video is not None:
-													embed2.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"({video})", inline=False)
-												else:
-													embed2.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value="\u200b", inline=False)
-										row2 = cursor.fetchone()
-									await msg400.delete()
-									embed2.add_field(name=f"{information}", value=f"{page} 2/7 - {scrollpage}", inline=False)
-									terminated = "yes"
-							if index == 2:
-								if terminated2 == "no":
-									embed400 = discord.Embed(title=f"{loadingtitle}", color=0xffce08)
-									embed400.add_field(name=f'{loadingdesc}', value="\u200b")
-									msg400 = await message.channel.send(embed=embed400)
-
-									cursor.execute(f"SELECT ID FROM levels WHERE server = {var} AND reviewed = 'no' ORDER BY ID ASC")
-									many3 = cursor.fetchall()
-									print(many3)
-									try:
-										manyinferior3 = many3[inferior]
-									except IndexError:
-										manyinferior3 = many3[inferior-1]
-
-									try:
-										manysuperior3 = many3[superior]
-									except IndexError:
-										try:
-											manysuperior3 = many3[superior-1]
-										except IndexError:
-											try:
-												manysuperior3 = many2[superior-2]
-											except IndexError:
-												try:
-													manysuperior3 = many2[superior-3]
-												except IndexError:
-													try:
-														manysuperior3 = many2[superior-4]
-													except IndexError:
-														manysuperior3 = many2[superior-5]
-
-									manyinferior = manyinferior3[0]
-									manysuperior = manysuperior3[0]
-									var = message.guild.id
-									cursor.execute(f"SELECT levelid,video FROM levels WHERE server = {var} AND reviewed = 'no' AND ID BETWEEN {manyinferior} AND {manysuperior} ORDER BY ID ASC LIMIT 5")
-									row3 = cursor.fetchone()
-									print(row3)
-
-									iconprofile = message.guild.icon_url
-									embed3.set_thumbnail(url=(iconprofile))
-
-									while row3 is not None:
-										number += 1
-										levelid = row3[0]
-										video = row3[1]
-										levelfinder(levelid)
-										stars,objectplus,levelname,creator,ratingemote,stars,downloads,likes,likesemote = levelfinder(levelid)
-										print("OK")
-
-										if int(stars) == 0:
-											if int(objectplus) >= 40000:
-												if video is not None:
-													embed3.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"({video})", inline=False)
-												else:
-													embed3.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value="\u200b", inline=False)
-											elif int(objectplus) <= 39999:
-												if video is not None:
-													embed3.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote}\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"({video})", inline=False)
-												else:
-													embed3.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote}\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value="\u200b", inline=False)
-										elif stars is not "0":
-											if int(objectplus) >= 40000:
-												if video is not None:
-													embed3.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003> <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"({video})", inline=False)
-												else:
-													embed3.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003> <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value="\u200b", inline=False)
-											elif int(objectplus) <= 39999:
-												if video is not None:
-													embed3.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"({video})", inline=False)
-												else:
-													embed3.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value="\u200b", inline=False)
-										row3 = cursor.fetchone()
-									await msg400.delete()
-									embed3.add_field(name=f"{information}", value=f"{page} 3/7 - {scrollpage}", inline=False)
-									terminated2 = "yes"
-							if index == 3:
-								if terminated3 == "no":
-									embed400 = discord.Embed(title=f"{loadingtitle}", color=0xffce08)
-									embed400.add_field(name=f'{loadingdesc}', value="\u200b")
-									msg400 = await message.channel.send(embed=embed400)
-
-									cursor.execute(f"SELECT ID FROM levels WHERE server = {var} AND reviewed = 'no' ORDER BY ID ASC")
-									many3 = cursor.fetchall()
-									print(many3)
-									try:
-										manyinferior3 = many3[inferior]
-									except IndexError:
-										manyinferior3 = many3[inferior-1]
-
-									try:
-										manysuperior3 = many3[superior]
-									except IndexError:
-										try:
-											manysuperior3 = many3[superior-1]
-										except IndexError:
-											try:
-												manysuperior3 = many2[superior-2]
-											except IndexError:
-												try:
-													manysuperior3 = many2[superior-3]
-												except IndexError:
-													try:
-														manysuperior3 = many2[superior-4]
-													except IndexError:
-														manysuperior3 = many2[superior-5]
-
-									manyinferior = manyinferior3[0]
-									manysuperior = manysuperior3[0]
-									var = message.guild.id
-									cursor.execute(f"SELECT levelid,video FROM levels WHERE server = {var} AND reviewed = 'no' AND ID BETWEEN {manyinferior} AND {manysuperior} ORDER BY ID ASC LIMIT 5")
-									row3 = cursor.fetchone()
-									print(row3)
-
-									iconprofile = message.guild.icon_url
-									embed4.set_thumbnail(url=(iconprofile))
-
-									while row3 is not None:
-										number += 1
-										levelid = row3[0]
-										video = row3[1]
-										levelfinder(levelid)
-										stars,objectplus,levelname,creator,ratingemote,stars,downloads,likes,likesemote = levelfinder(levelid)
-										print("OK")
-
-										if int(stars) == 0:
-											if int(objectplus) >= 40000:
-												if video is not None:
-													embed4.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"({video})", inline=False)
-												else:
-													embed4.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value="\u200b", inline=False)
-											elif int(objectplus) <= 39999:
-												if video is not None:
-													embed4.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote}\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"({video})", inline=False)
-												else:
-													embed4.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote}\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value="\u200b", inline=False)
-										elif stars is not "0":
-											if int(objectplus) >= 40000:
-												if video is not None:
-													embed4.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003> <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"({video})", inline=False)
-												else:
-													embed4.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003> <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value="\u200b", inline=False)
-											elif int(objectplus) <= 39999:
-												if video is not None:
-													embed4.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"({video})", inline=False)
-												else:
-													embed4.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value="\u200b", inline=False)
-										row3 = cursor.fetchone()
-									await msg400.delete()
-									embed4.add_field(name=f"{information}", value=f"{page} 4/7 - {scrollpage}", inline=False)
-									terminated3 = "yes"
-							if index == 4:
-								if terminated4 == "no":
-									embed400 = discord.Embed(title=f"{loadingtitle}", color=0xffce08)
-									embed400.add_field(name=f'{loadingdesc}', value="\u200b")
-									msg400 = await message.channel.send(embed=embed400)
-
-									cursor.execute(f"SELECT ID FROM levels WHERE server = {var} AND reviewed = 'no' ORDER BY ID ASC")
-									many3 = cursor.fetchall()
-									print(many3)
-									try:
-										manyinferior3 = many3[inferior]
-									except IndexError:
-										manyinferior3 = many3[inferior-1]
-
-									try:
-										manysuperior3 = many3[superior]
-									except IndexError:
-										try:
-											manysuperior3 = many3[superior-1]
-										except IndexError:
-											try:
-												manysuperior3 = many2[superior-2]
-											except IndexError:
-												try:
-													manysuperior3 = many2[superior-3]
-												except IndexError:
-													try:
-														manysuperior3 = many2[superior-4]
-													except IndexError:
-														manysuperior3 = many2[superior-5]
-
-									manyinferior = manyinferior3[0]
-									manysuperior = manysuperior3[0]
-									var = message.guild.id
-									cursor.execute(f"SELECT levelid,video FROM levels WHERE server = {var} AND reviewed = 'no' AND ID BETWEEN {manyinferior} AND {manysuperior} ORDER BY ID ASC LIMIT 5")
-									row3 = cursor.fetchone()
-									print(row3)
-
-									iconprofile = message.guild.icon_url
-									embed5.set_thumbnail(url=(iconprofile))
-
-									while row3 is not None:
-										number += 1
-										levelid = row3[0]
-										video = row3[1]
-										levelfinder(levelid)
-										stars,objectplus,levelname,creator,ratingemote,stars,downloads,likes,likesemote = levelfinder(levelid)
-										print("OK")
-
-										if int(stars) == 0:
-											if int(objectplus) >= 40000:
-												if video is not None:
-													embed4.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"({video})", inline=False)
-												else:
-													embed5.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value="\u200b", inline=False)
-											elif int(objectplus) <= 39999:
-												if video is not None:
-													embed5.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote}\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"({video})", inline=False)
-												else:
-													embed5.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote}\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value="\u200b", inline=False)
-										elif stars is not "0":
-											if int(objectplus) >= 40000:
-												if video is not None:
-													embed5.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003> <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"({video})", inline=False)
-												else:
-													embed5.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003> <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value="\u200b", inline=False)
-											elif int(objectplus) <= 39999:
-												if video is not None:
-													embed5.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"({video})", inline=False)
-												else:
-													embed5.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value="\u200b", inline=False)
-										row3 = cursor.fetchone()
-									await msg400.delete()
-									embed5.add_field(name=f"{information}", value=f"{page} 5/7 - {scrollpage}", inline=False)
-									terminated4 = "yes"
-							if index == 5:
-								if terminated5 == "no":
-									embed400 = discord.Embed(title=f"{loadingtitle}", color=0xffce08)
-									embed400.add_field(name=f'{loadingdesc}', value="\u200b")
-									msg400 = await message.channel.send(embed=embed400)
-
-									cursor.execute(f"SELECT ID FROM levels WHERE server = {var} AND reviewed = 'no' ORDER BY ID ASC")
-									many3 = cursor.fetchall()
-									print(many3)
-									try:
-										manyinferior3 = many3[inferior]
-									except IndexError:
-										manyinferior3 = many3[inferior-1]
-
-									try:
-										manysuperior3 = many3[superior]
-									except IndexError:
-										try:
-											manysuperior3 = many3[superior-1]
-										except IndexError:
-											try:
-												manysuperior3 = many2[superior-2]
-											except IndexError:
-												try:
-													manysuperior3 = many2[superior-3]
-												except IndexError:
-													try:
-														manysuperior3 = many2[superior-4]
-													except IndexError:
-														manysuperior3 = many2[superior-5]
-
-									manyinferior = manyinferior3[0]
-									manysuperior = manysuperior3[0]
-									var = message.guild.id
-									cursor.execute(f"SELECT levelid,video FROM levels WHERE server = {var} AND reviewed = 'no' AND ID BETWEEN {manyinferior} AND {manysuperior} ORDER BY ID ASC LIMIT 5")
-									row3 = cursor.fetchone()
-									print(row3)
-
-									iconprofile = message.guild.icon_url
-									embed6.set_thumbnail(url=(iconprofile))
-
-									while row3 is not None:
-										number += 1
-										levelid = row3[0]
-										video = row3[1]
-										levelfinder(levelid)
-										stars,objectplus,levelname,creator,ratingemote,stars,downloads,likes,likesemote = levelfinder(levelid)
-										print("OK")
-
-										if int(stars) == 0:
-											if int(objectplus) >= 40000:
-												if video is not None:
-													embed6.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"({video})", inline=False)
-												else:
-													embed6.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value="\u200b", inline=False)
-											elif int(objectplus) <= 39999:
-												if video is not None:
-													embed6.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote}\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"({video})", inline=False)
-												else:
-													embed6.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote}\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value="\u200b", inline=False)
-										elif stars is not "0":
-											if int(objectplus) >= 40000:
-												if video is not None:
-													embed6.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003> <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"({video})", inline=False)
-												else:
-													embed6.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003> <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value="\u200b", inline=False)
-											elif int(objectplus) <= 39999:
-												if video is not None:
-													embed6.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"({video})", inline=False)
-												else:
-													embed6.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value="\u200b", inline=False)
-										row3 = cursor.fetchone()
-									await msg400.delete()
-									embed6.add_field(name=f"{information}", value=f"{page} 6/7 - {scrollpage}", inline=False)
-									terminated5 = "yes"
-							if index == 6:
-								if terminated6 == "no":
-									embed400 = discord.Embed(title=f"{loadingtitle}", color=0xffce08)
-									embed400.add_field(name=f'{loadingdesc}', value="\u200b")
-									msg400 = await message.channel.send(embed=embed400)
-
-									cursor.execute(f"SELECT ID FROM levels WHERE server = {var} AND reviewed = 'no' ORDER BY ID ASC")
-									many3 = cursor.fetchall()
-									print(many3)
-									try:
-										manyinferior3 = many3[inferior]
-									except IndexError:
-										manyinferior3 = many3[inferior-1]
-
-									try:
-										manysuperior3 = many3[superior]
-									except IndexError:
-										try:
-											manysuperior3 = many3[superior-1]
-										except IndexError:
-											try:
-												manysuperior3 = many2[superior-2]
-											except IndexError:
-												try:
-													manysuperior3 = many2[superior-3]
-												except IndexError:
-													try:
-														manysuperior3 = many2[superior-4]
-													except IndexError:
-														manysuperior3 = many2[superior-5]
-
-									manyinferior = manyinferior3[0]
-									manysuperior = manysuperior3[0]
-									var = message.guild.id
-									cursor.execute(f"SELECT levelid,video FROM levels WHERE server = {var} AND reviewed = 'no' AND ID BETWEEN {manyinferior} AND {manysuperior} ORDER BY ID ASC LIMIT 5")
-									row3 = cursor.fetchone()
-									print(row3)
-
-									iconprofile = message.guild.icon_url
-									embed7.set_thumbnail(url=(iconprofile))
-
-									while row3 is not None:
-										number += 1
-										levelid = row3[0]
-										video = row3[1]
-										levelfinder(levelid)
-										stars,objectplus,levelname,creator,ratingemote,stars,downloads,likes,likesemote = levelfinder(levelid)
-										print("OK")
-
-										if int(stars) == 0:
-											if int(objectplus) >= 40000:
-												if video is not None:
-													embed7.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"({video})", inline=False)
-												else:
-													embed7.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value="\u200b", inline=False)
-											elif int(objectplus) <= 39999:
-												if video is not None:
-													embed7.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote}\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"({video})", inline=False)
-												else:
-													embed7.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote}\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value="\u200b", inline=False)
-										elif stars is not "0":
-											if int(objectplus) >= 40000:
-												if video is not None:
-													embed7.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003> <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"({video})", inline=False)
-												else:
-													embed7.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003> <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value="\u200b", inline=False)
-											elif int(objectplus) <= 39999:
-												if video is not None:
-													embed7.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"({video})", inline=False)
-												else:
-													embed7.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value="\u200b", inline=False)
-										row3 = cursor.fetchone()
-									await msg400.delete()
-									embed7.add_field(name=f"{information}", value=f"{page} 7/7 - {scrollpage}", inline=False)
-									terminated6 = "yes"
-						action = msg.edit()
-					return
-				elif count >= 36 and count <= 40:
-					messages = (embed, embed2, embed3, embed4, embed5, embed6, embed7, embed8)
-
-					terminated = "no"
-					terminated2 = "no"
-					terminated3 = "no"
-					terminated4 = "no"
-					terminated5 = "no"
-					terminated6 = "no"
-					terminated7 = "no"
-
-					index = 0
-					inferior = 1
-					superior = 5
-					msg = None
-
-					embed.add_field(name=f"{information}", value=f"{page} 1/8 - {scrollpage}", inline=False)
-
-					res = await message.channel.send(embed=messages[index])
-					while True:
-						if res is not None:
-							msg = res
-						res = await msg.edit(embed=messages[index])
-						l = index != 0
-						r = index != len(messages) - 1
-						j = index == 7
-						k = index == 0
-						if j:
-							await msg.clear_reaction(right)
-						if k:
-							await msg.clear_reaction(left)
-						if l:
-							await msg.add_reaction(left)
-						if r:
-							await msg.add_reaction(right)
-						try:
-							react, user = await client.wait_for('reaction_add', check=predicate(msg, l, r), timeout=30)
-						except Exception:
-							print("BROKE")
-							break
-
-						if react.emoji == left:
-							inferior -= 5
-							superior -= 5
-							index -= 1
-						elif react.emoji == right:
-							inferior += 5
-							superior += 5
-							index += 1
-							if index == 1:
-								if terminated == "no":
-									embed400 = discord.Embed(title=f"{loadingtitle}", color=0xffce08)
-									embed400.add_field(name=f'{loadingdesc}', value="\u200b")
-									msg400 = await message.channel.send(embed=embed400)
-
-									cursor.execute(f"SELECT ID FROM levels WHERE server = {var} AND reviewed = 'no' ORDER BY ID ASC")
-									many2 = cursor.fetchall()
-									print(many2)
-									try:
-										manyinferior2 = many2[inferior]
-									except IndexError:
-										manyinferior2 = many2[inferior-1]
-
-									try:
-										manysuperior2 = many2[superior]
-									except IndexError:
-										try:
-											manysuperior2 = many2[superior-1]
-										except IndexError:
-											try:
-												manysuperior2 = many2[superior-2]
-											except IndexError:
-												try:
-													manysuperior2 = many2[superior-3]
-												except IndexError:
-													try:
-														manysuperior2 = many2[superior-4]
-													except IndexError:
-														manysuperior2 = many2[superior-5]
-
-									manyinferior = manyinferior2[0]
-									manysuperior = manysuperior2[0]
-									var = message.guild.id
-									cursor.execute(f"SELECT levelid,video FROM levels WHERE server = {var} AND reviewed = 'no' AND ID BETWEEN {manyinferior} AND {manysuperior} ORDER BY ID ASC LIMIT 5")
-									row2 = cursor.fetchone()
-									print(row2)
-
-									iconprofile = message.guild.icon_url
-									embed2.set_thumbnail(url=(iconprofile))
-
-									while row2 is not None:
-										number += 1
-										levelid = row2[0]
-										video = row2[1]
-										levelfinder(levelid)
-										stars,objectplus,levelname,creator,ratingemote,stars,downloads,likes,likesemote = levelfinder(levelid)
-										print("OK")
-
-										if int(stars) == 0:
-											if int(objectplus) >= 40000:
-												if video is not None:
-													embed2.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"({video})", inline=False)
-												else:
-													embed2.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value="\u200b", inline=False)
-											elif int(objectplus) <= 39999:
-												if video is not None:
-													embed2.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote}\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"({video})", inline=False)
-												else:
-													embed2.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote}\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value="\u200b", inline=False)
-										elif stars is not "0":
-											if int(objectplus) >= 40000:
-												if video is not None:
-													embed2.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003> <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"({video})", inline=False)
-												else:
-													embed2.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003> <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value="\u200b", inline=False)
-											elif int(objectplus) <= 39999:
-												if video is not None:
-													embed2.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"({video})", inline=False)
-												else:
-													embed2.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value="\u200b", inline=False)
-										row2 = cursor.fetchone()
-									await msg400.delete()
-									embed2.add_field(name=f"{information}", value=f"{page} 2/8 - {scrollpage}", inline=False)
-									terminated = "yes"
-							if index == 2:
-								if terminated2 == "no":
-									embed400 = discord.Embed(title=f"{loadingtitle}", color=0xffce08)
-									embed400.add_field(name=f'{loadingdesc}', value="\u200b")
-									msg400 = await message.channel.send(embed=embed400)
-
-									cursor.execute(f"SELECT ID FROM levels WHERE server = {var} AND reviewed = 'no' ORDER BY ID ASC")
-									many3 = cursor.fetchall()
-									print(many3)
-									try:
-										manyinferior3 = many3[inferior]
-									except IndexError:
-										manyinferior3 = many3[inferior-1]
-
-									try:
-										manysuperior3 = many3[superior]
-									except IndexError:
-										try:
-											manysuperior3 = many3[superior-1]
-										except IndexError:
-											try:
-												manysuperior3 = many2[superior-2]
-											except IndexError:
-												try:
-													manysuperior3 = many2[superior-3]
-												except IndexError:
-													try:
-														manysuperior3 = many2[superior-4]
-													except IndexError:
-														manysuperior3 = many2[superior-5]
-
-									manyinferior = manyinferior3[0]
-									manysuperior = manysuperior3[0]
-									var = message.guild.id
-									cursor.execute(f"SELECT levelid,video FROM levels WHERE server = {var} AND reviewed = 'no' AND ID BETWEEN {manyinferior} AND {manysuperior} ORDER BY ID ASC LIMIT 5")
-									row3 = cursor.fetchone()
-									print(row3)
-
-									iconprofile = message.guild.icon_url
-									embed3.set_thumbnail(url=(iconprofile))
-
-									while row3 is not None:
-										number += 1
-										levelid = row3[0]
-										video = row3[1]
-										levelfinder(levelid)
-										stars,objectplus,levelname,creator,ratingemote,stars,downloads,likes,likesemote = levelfinder(levelid)
-										print("OK")
-
-										if int(stars) == 0:
-											if int(objectplus) >= 40000:
-												if video is not None:
-													embed3.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"({video})", inline=False)
-												else:
-													embed3.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value="\u200b", inline=False)
-											elif int(objectplus) <= 39999:
-												if video is not None:
-													embed3.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote}\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"({video})", inline=False)
-												else:
-													embed3.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote}\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value="\u200b", inline=False)
-										elif stars is not "0":
-											if int(objectplus) >= 40000:
-												if video is not None:
-													embed3.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003> <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"({video})", inline=False)
-												else:
-													embed3.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003> <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value="\u200b", inline=False)
-											elif int(objectplus) <= 39999:
-												if video is not None:
-													embed3.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"({video})", inline=False)
-												else:
-													embed3.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value="\u200b", inline=False)
-										row3 = cursor.fetchone()
-									await msg400.delete()
-									embed3.add_field(name=f"{information}", value=f"{page} 3/8 - {scrollpage}", inline=False)
-									terminated2 = "yes"
-							if index == 3:
-								if terminated3 == "no":
-									embed400 = discord.Embed(title=f"{loadingtitle}", color=0xffce08)
-									embed400.add_field(name=f'{loadingdesc}', value="\u200b")
-									msg400 = await message.channel.send(embed=embed400)
-
-									cursor.execute(f"SELECT ID FROM levels WHERE server = {var} AND reviewed = 'no' ORDER BY ID ASC")
-									many3 = cursor.fetchall()
-									print(many3)
-									try:
-										manyinferior3 = many3[inferior]
-									except IndexError:
-										manyinferior3 = many3[inferior-1]
-
-									try:
-										manysuperior3 = many3[superior]
-									except IndexError:
-										try:
-											manysuperior3 = many3[superior-1]
-										except IndexError:
-											try:
-												manysuperior3 = many2[superior-2]
-											except IndexError:
-												try:
-													manysuperior3 = many2[superior-3]
-												except IndexError:
-													try:
-														manysuperior3 = many2[superior-4]
-													except IndexError:
-														manysuperior3 = many2[superior-5]
-
-									manyinferior = manyinferior3[0]
-									manysuperior = manysuperior3[0]
-									var = message.guild.id
-									cursor.execute(f"SELECT levelid,video FROM levels WHERE server = {var} AND reviewed = 'no' AND ID BETWEEN {manyinferior} AND {manysuperior} ORDER BY ID ASC LIMIT 5")
-									row3 = cursor.fetchone()
-									print(row3)
-
-									iconprofile = message.guild.icon_url
-									embed4.set_thumbnail(url=(iconprofile))
-
-									while row3 is not None:
-										number += 1
-										levelid = row3[0]
-										video = row3[1]
-										levelfinder(levelid)
-										stars,objectplus,levelname,creator,ratingemote,stars,downloads,likes,likesemote = levelfinder(levelid)
-										print("OK")
-
-										if int(stars) == 0:
-											if int(objectplus) >= 40000:
-												if video is not None:
-													embed4.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"({video})", inline=False)
-												else:
-													embed4.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value="\u200b", inline=False)
-											elif int(objectplus) <= 39999:
-												if video is not None:
-													embed4.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote}\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"({video})", inline=False)
-												else:
-													embed4.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote}\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value="\u200b", inline=False)
-										elif stars is not "0":
-											if int(objectplus) >= 40000:
-												if video is not None:
-													embed4.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003> <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"({video})", inline=False)
-												else:
-													embed4.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003> <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value="\u200b", inline=False)
-											elif int(objectplus) <= 39999:
-												if video is not None:
-													embed4.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"({video})", inline=False)
-												else:
-													embed4.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value="\u200b", inline=False)
-										row3 = cursor.fetchone()
-									await msg400.delete()
-									embed4.add_field(name=f"{information}", value=f"{page} 4/8 - {scrollpage}", inline=False)
-									terminated3 = "yes"
-							if index == 4:
-								if terminated4 == "no":
-									embed400 = discord.Embed(title=f"{loadingtitle}", color=0xffce08)
-									embed400.add_field(name=f'{loadingdesc}', value="\u200b")
-									msg400 = await message.channel.send(embed=embed400)
-
-									cursor.execute(f"SELECT ID FROM levels WHERE server = {var} AND reviewed = 'no' ORDER BY ID ASC")
-									many3 = cursor.fetchall()
-									print(many3)
-									try:
-										manyinferior3 = many3[inferior]
-									except IndexError:
-										manyinferior3 = many3[inferior-1]
-
-									try:
-										manysuperior3 = many3[superior]
-									except IndexError:
-										try:
-											manysuperior3 = many3[superior-1]
-										except IndexError:
-											try:
-												manysuperior3 = many2[superior-2]
-											except IndexError:
-												try:
-													manysuperior3 = many2[superior-3]
-												except IndexError:
-													try:
-														manysuperior3 = many2[superior-4]
-													except IndexError:
-														manysuperior3 = many2[superior-5]
-
-									manyinferior = manyinferior3[0]
-									manysuperior = manysuperior3[0]
-									var = message.guild.id
-									cursor.execute(f"SELECT levelid,video FROM levels WHERE server = {var} AND reviewed = 'no' AND ID BETWEEN {manyinferior} AND {manysuperior} ORDER BY ID ASC LIMIT 5")
-									row3 = cursor.fetchone()
-									print(row3)
-
-									iconprofile = message.guild.icon_url
-									embed5.set_thumbnail(url=(iconprofile))
-
-									while row3 is not None:
-										number += 1
-										levelid = row3[0]
-										video = row3[1]
-										levelfinder(levelid)
-										stars,objectplus,levelname,creator,ratingemote,stars,downloads,likes,likesemote = levelfinder(levelid)
-										print("OK")
-
-										if int(stars) == 0:
-											if int(objectplus) >= 40000:
-												if video is not None:
-													embed4.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"({video})", inline=False)
-												else:
-													embed5.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value="\u200b", inline=False)
-											elif int(objectplus) <= 39999:
-												if video is not None:
-													embed5.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote}\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"({video})", inline=False)
-												else:
-													embed5.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote}\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value="\u200b", inline=False)
-										elif stars is not "0":
-											if int(objectplus) >= 40000:
-												if video is not None:
-													embed5.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003> <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"({video})", inline=False)
-												else:
-													embed5.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003> <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value="\u200b", inline=False)
-											elif int(objectplus) <= 39999:
-												if video is not None:
-													embed5.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"({video})", inline=False)
-												else:
-													embed5.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value="\u200b", inline=False)
-										row3 = cursor.fetchone()
-									await msg400.delete()
-									embed5.add_field(name=f"{information}", value=f"{page} 5/8 - {scrollpage}", inline=False)
-									terminated4 = "yes"
-							if index == 5:
-								if terminated5 == "no":
-									embed400 = discord.Embed(title=f"{loadingtitle}", color=0xffce08)
-									embed400.add_field(name=f'{loadingdesc}', value="\u200b")
-									msg400 = await message.channel.send(embed=embed400)
-
-									cursor.execute(f"SELECT ID FROM levels WHERE server = {var} AND reviewed = 'no' ORDER BY ID ASC")
-									many3 = cursor.fetchall()
-									print(many3)
-									try:
-										manyinferior3 = many3[inferior]
-									except IndexError:
-										manyinferior3 = many3[inferior-1]
-
-									try:
-										manysuperior3 = many3[superior]
-									except IndexError:
-										try:
-											manysuperior3 = many3[superior-1]
-										except IndexError:
-											try:
-												manysuperior3 = many2[superior-2]
-											except IndexError:
-												try:
-													manysuperior3 = many2[superior-3]
-												except IndexError:
-													try:
-														manysuperior3 = many2[superior-4]
-													except IndexError:
-														manysuperior3 = many2[superior-5]
-
-									manyinferior = manyinferior3[0]
-									manysuperior = manysuperior3[0]
-									var = message.guild.id
-									cursor.execute(f"SELECT levelid,video FROM levels WHERE server = {var} AND reviewed = 'no' AND ID BETWEEN {manyinferior} AND {manysuperior} ORDER BY ID ASC LIMIT 5")
-									row3 = cursor.fetchone()
-									print(row3)
-
-									iconprofile = message.guild.icon_url
-									embed6.set_thumbnail(url=(iconprofile))
-
-									while row3 is not None:
-										number += 1
-										levelid = row3[0]
-										video = row3[1]
-										levelfinder(levelid)
-										stars,objectplus,levelname,creator,ratingemote,stars,downloads,likes,likesemote = levelfinder(levelid)
-										print("OK")
-
-										if int(stars) == 0:
-											if int(objectplus) >= 40000:
-												if video is not None:
-													embed6.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"({video})", inline=False)
-												else:
-													embed6.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value="\u200b", inline=False)
-											elif int(objectplus) <= 39999:
-												if video is not None:
-													embed6.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote}\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"({video})", inline=False)
-												else:
-													embed6.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote}\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value="\u200b", inline=False)
-										elif stars is not "0":
-											if int(objectplus) >= 40000:
-												if video is not None:
-													embed6.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003> <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"({video})", inline=False)
-												else:
-													embed6.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003> <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value="\u200b", inline=False)
-											elif int(objectplus) <= 39999:
-												if video is not None:
-													embed6.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"({video})", inline=False)
-												else:
-													embed6.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value="\u200b", inline=False)
-										row3 = cursor.fetchone()
-									await msg400.delete()
-									embed6.add_field(name=f"{information}", value=f"{page} 6/8 - {scrollpage}", inline=False)
-									terminated5 = "yes"
-							if index == 6:
-								if terminated6 == "no":
-									embed400 = discord.Embed(title=f"{loadingtitle}", color=0xffce08)
-									embed400.add_field(name=f'{loadingdesc}', value="\u200b")
-									msg400 = await message.channel.send(embed=embed400)
-
-									cursor.execute(f"SELECT ID FROM levels WHERE server = {var} AND reviewed = 'no' ORDER BY ID ASC")
-									many3 = cursor.fetchall()
-									print(many3)
-									try:
-										manyinferior3 = many3[inferior]
-									except IndexError:
-										manyinferior3 = many3[inferior-1]
-
-									try:
-										manysuperior3 = many3[superior]
-									except IndexError:
-										try:
-											manysuperior3 = many3[superior-1]
-										except IndexError:
-											try:
-												manysuperior3 = many2[superior-2]
-											except IndexError:
-												try:
-													manysuperior3 = many2[superior-3]
-												except IndexError:
-													try:
-														manysuperior3 = many2[superior-4]
-													except IndexError:
-														manysuperior3 = many2[superior-5]
-
-									manyinferior = manyinferior3[0]
-									manysuperior = manysuperior3[0]
-									var = message.guild.id
-									cursor.execute(f"SELECT levelid,video FROM levels WHERE server = {var} AND reviewed = 'no' AND ID BETWEEN {manyinferior} AND {manysuperior} ORDER BY ID ASC LIMIT 5")
-									row3 = cursor.fetchone()
-									print(row3)
-
-									iconprofile = message.guild.icon_url
-									embed7.set_thumbnail(url=(iconprofile))
-
-									while row3 is not None:
-										number += 1
-										levelid = row3[0]
-										video = row3[1]
-										levelfinder(levelid)
-										stars,objectplus,levelname,creator,ratingemote,stars,downloads,likes,likesemote = levelfinder(levelid)
-										print("OK")
-
-										if int(stars) == 0:
-											if int(objectplus) >= 40000:
-												if video is not None:
-													embed7.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"({video})", inline=False)
-												else:
-													embed7.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value="\u200b", inline=False)
-											elif int(objectplus) <= 39999:
-												if video is not None:
-													embed7.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote}\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"({video})", inline=False)
-												else:
-													embed7.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote}\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value="\u200b", inline=False)
-										elif stars is not "0":
-											if int(objectplus) >= 40000:
-												if video is not None:
-													embed7.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003> <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"({video})", inline=False)
-												else:
-													embed7.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003> <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value="\u200b", inline=False)
-											elif int(objectplus) <= 39999:
-												if video is not None:
-													embed7.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"({video})", inline=False)
-												else:
-													embed7.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value="\u200b", inline=False)
-										row3 = cursor.fetchone()
-									await msg400.delete()
-									embed7.add_field(name=f"{information}", value=f"{page} 7/8 - {scrollpage}", inline=False)
-									terminated6 = "yes"
-							if index == 7:
-								if terminated7 == "no":
-									embed400 = discord.Embed(title=f"{loadingtitle}", color=0xffce08)
-									embed400.add_field(name=f'{loadingdesc}', value="\u200b")
-									msg400 = await message.channel.send(embed=embed400)
-
-									cursor.execute(f"SELECT ID FROM levels WHERE server = {var} AND reviewed = 'no' ORDER BY ID ASC")
-									many3 = cursor.fetchall()
-									print(many3)
-									try:
-										manyinferior3 = many3[inferior]
-									except IndexError:
-										manyinferior3 = many3[inferior-1]
-
-									try:
-										manysuperior3 = many3[superior]
-									except IndexError:
-										try:
-											manysuperior3 = many3[superior-1]
-										except IndexError:
-											try:
-												manysuperior3 = many2[superior-2]
-											except IndexError:
-												try:
-													manysuperior3 = many2[superior-3]
-												except IndexError:
-													try:
-														manysuperior3 = many2[superior-4]
-													except IndexError:
-														manysuperior3 = many2[superior-5]
-
-									manyinferior = manyinferior3[0]
-									manysuperior = manysuperior3[0]
-									var = message.guild.id
-									cursor.execute(f"SELECT levelid,video FROM levels WHERE server = {var} AND reviewed = 'no' AND ID BETWEEN {manyinferior} AND {manysuperior} ORDER BY ID ASC LIMIT 5")
-									row3 = cursor.fetchone()
-									print(row3)
-
-									iconprofile = message.guild.icon_url
-									embed8.set_thumbnail(url=(iconprofile))
-
-									while row3 is not None:
-										number += 1
-										levelid = row3[0]
-										video = row3[1]
-										levelfinder(levelid)
-										stars,objectplus,levelname,creator,ratingemote,stars,downloads,likes,likesemote = levelfinder(levelid)
-										print("OK")
-
-										if int(stars) == 0:
-											if int(objectplus) >= 40000:
-												if video is not None:
-													embed8.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"({video})", inline=False)
-												else:
-													embed8.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value="\u200b", inline=False)
-											elif int(objectplus) <= 39999:
-												if video is not None:
-													embed8.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote}\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"({video})", inline=False)
-												else:
-													embed8.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote}\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value="\u200b", inline=False)
-										elif stars is not "0":
-											if int(objectplus) >= 40000:
-												if video is not None:
-													embed8.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003> <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"({video})", inline=False)
-												else:
-													embed8.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003> <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value="\u200b", inline=False)
-											elif int(objectplus) <= 39999:
-												if video is not None:
-													embed8.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"({video})", inline=False)
-												else:
-													embed8.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value="\u200b", inline=False)
-										row3 = cursor.fetchone()
-									await msg400.delete()
-									embed8.add_field(name=f"{information}", value=f"{page} 8/8 - {scrollpage}", inline=False)
-									terminated6 = "yes"
-						action = msg.edit()
-					return
-				elif count >= 41 and count <= 45:
-					messages = (embed, embed2, embed3, embed4, embed5, embed6, embed7, embed8, embed9)
-
-					terminated = "no"
-					terminated2 = "no"
-					terminated3 = "no"
-					terminated4 = "no"
-					terminated5 = "no"
-					terminated6 = "no"
-					terminated7 = "no"
-					terminated8 = "no"
-
-					index = 0
-					inferior = 1
-					superior = 5
-					msg = None
-
-					embed.add_field(name=f"{information}", value=f"{page} 1/9 - {scrollpage}", inline=False)
-
-					res = await message.channel.send(embed=messages[index])
-					while True:
-						if res is not None:
-							msg = res
-						res = await msg.edit(embed=messages[index])
-						l = index != 0
-						r = index != len(messages) - 1
-						j = index == 8
-						k = index == 0
-						if j:
-							await msg.clear_reaction(right)
-						if k:
-							await msg.clear_reaction(left)
-						if l:
-							await msg.add_reaction(left)
-						if r:
-							await msg.add_reaction(right)
-						try:
-							react, user = await client.wait_for('reaction_add', check=predicate(msg, l, r), timeout=30)
-						except Exception:
-							print("BROKE")
-							break
-
-						if react.emoji == left:
-							inferior -= 5
-							superior -= 5
-							index -= 1
-						elif react.emoji == right:
-							inferior += 5
-							superior += 5
-							index += 1
-							if index == 1:
-								if terminated == "no":
-									embed400 = discord.Embed(title=f"{loadingtitle}", color=0xffce08)
-									embed400.add_field(name=f'{loadingdesc}', value="\u200b")
-									msg400 = await message.channel.send(embed=embed400)
-
-									cursor.execute(f"SELECT ID FROM levels WHERE server = {var} AND reviewed = 'no' ORDER BY ID ASC")
-									many2 = cursor.fetchall()
-									print(many2)
-									try:
-										manyinferior2 = many2[inferior]
-									except IndexError:
-										manyinferior2 = many2[inferior-1]
-
-									try:
-										manysuperior2 = many2[superior]
-									except IndexError:
-										try:
-											manysuperior2 = many2[superior-1]
-										except IndexError:
-											try:
-												manysuperior2 = many2[superior-2]
-											except IndexError:
-												try:
-													manysuperior2 = many2[superior-3]
-												except IndexError:
-													try:
-														manysuperior2 = many2[superior-4]
-													except IndexError:
-														manysuperior2 = many2[superior-5]
-
-									manyinferior = manyinferior2[0]
-									manysuperior = manysuperior2[0]
-									var = message.guild.id
-									cursor.execute(f"SELECT levelid,video FROM levels WHERE server = {var} AND reviewed = 'no' AND ID BETWEEN {manyinferior} AND {manysuperior} ORDER BY ID ASC LIMIT 5")
-									row2 = cursor.fetchone()
-									print(row2)
-
-									iconprofile = message.guild.icon_url
-									embed2.set_thumbnail(url=(iconprofile))
-
-									while row2 is not None:
-										number += 1
-										levelid = row2[0]
-										video = row2[1]
-										levelfinder(levelid)
-										stars,objectplus,levelname,creator,ratingemote,stars,downloads,likes,likesemote = levelfinder(levelid)
-										print("OK")
-
-										if int(stars) == 0:
-											if int(objectplus) >= 40000:
-												if video is not None:
-													embed2.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"({video})", inline=False)
-												else:
-													embed2.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value="\u200b", inline=False)
-											elif int(objectplus) <= 39999:
-												if video is not None:
-													embed2.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote}\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"({video})", inline=False)
-												else:
-													embed2.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote}\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value="\u200b", inline=False)
-										elif stars is not "0":
-											if int(objectplus) >= 40000:
-												if video is not None:
-													embed2.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003> <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"({video})", inline=False)
-												else:
-													embed2.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003> <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value="\u200b", inline=False)
-											elif int(objectplus) <= 39999:
-												if video is not None:
-													embed2.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"({video})", inline=False)
-												else:
-													embed2.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value="\u200b", inline=False)
-										row2 = cursor.fetchone()
-									await msg400.delete()
-									embed2.add_field(name=f"{information}", value=f"{page} 2/9 - {scrollpage}", inline=False)
-									terminated = "yes"
-							if index == 2:
-								if terminated2 == "no":
-									embed400 = discord.Embed(title=f"{loadingtitle}", color=0xffce08)
-									embed400.add_field(name=f'{loadingdesc}', value="\u200b")
-									msg400 = await message.channel.send(embed=embed400)
-
-									cursor.execute(f"SELECT ID FROM levels WHERE server = {var} AND reviewed = 'no' ORDER BY ID ASC")
-									many3 = cursor.fetchall()
-									print(many3)
-									try:
-										manyinferior3 = many3[inferior]
-									except IndexError:
-										manyinferior3 = many3[inferior-1]
-
-									try:
-										manysuperior3 = many3[superior]
-									except IndexError:
-										try:
-											manysuperior3 = many3[superior-1]
-										except IndexError:
-											try:
-												manysuperior3 = many2[superior-2]
-											except IndexError:
-												try:
-													manysuperior3 = many2[superior-3]
-												except IndexError:
-													try:
-														manysuperior3 = many2[superior-4]
-													except IndexError:
-														manysuperior3 = many2[superior-5]
-
-									manyinferior = manyinferior3[0]
-									manysuperior = manysuperior3[0]
-									var = message.guild.id
-									cursor.execute(f"SELECT levelid,video FROM levels WHERE server = {var} AND reviewed = 'no' AND ID BETWEEN {manyinferior} AND {manysuperior} ORDER BY ID ASC LIMIT 5")
-									row3 = cursor.fetchone()
-									print(row3)
-
-									iconprofile = message.guild.icon_url
-									embed3.set_thumbnail(url=(iconprofile))
-
-									while row3 is not None:
-										number += 1
-										levelid = row3[0]
-										video = row3[1]
-										levelfinder(levelid)
-										stars,objectplus,levelname,creator,ratingemote,stars,downloads,likes,likesemote = levelfinder(levelid)
-										print("OK")
-
-										if int(stars) == 0:
-											if int(objectplus) >= 40000:
-												if video is not None:
-													embed3.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"({video})", inline=False)
-												else:
-													embed3.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value="\u200b", inline=False)
-											elif int(objectplus) <= 39999:
-												if video is not None:
-													embed3.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote}\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"({video})", inline=False)
-												else:
-													embed3.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote}\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value="\u200b", inline=False)
-										elif stars is not "0":
-											if int(objectplus) >= 40000:
-												if video is not None:
-													embed3.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003> <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"({video})", inline=False)
-												else:
-													embed3.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003> <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value="\u200b", inline=False)
-											elif int(objectplus) <= 39999:
-												if video is not None:
-													embed3.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"({video})", inline=False)
-												else:
-													embed3.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value="\u200b", inline=False)
-										row3 = cursor.fetchone()
-									await msg400.delete()
-									embed3.add_field(name=f"{information}", value=f"{page} 3/9 - {scrollpage}", inline=False)
-									terminated2 = "yes"
-							if index == 3:
-								if terminated3 == "no":
-									embed400 = discord.Embed(title=f"{loadingtitle}", color=0xffce08)
-									embed400.add_field(name=f'{loadingdesc}', value="\u200b")
-									msg400 = await message.channel.send(embed=embed400)
-
-									cursor.execute(f"SELECT ID FROM levels WHERE server = {var} AND reviewed = 'no' ORDER BY ID ASC")
-									many3 = cursor.fetchall()
-									print(many3)
-									try:
-										manyinferior3 = many3[inferior]
-									except IndexError:
-										manyinferior3 = many3[inferior-1]
-
-									try:
-										manysuperior3 = many3[superior]
-									except IndexError:
-										try:
-											manysuperior3 = many3[superior-1]
-										except IndexError:
-											try:
-												manysuperior3 = many2[superior-2]
-											except IndexError:
-												try:
-													manysuperior3 = many2[superior-3]
-												except IndexError:
-													try:
-														manysuperior3 = many2[superior-4]
-													except IndexError:
-														manysuperior3 = many2[superior-5]
-
-									manyinferior = manyinferior3[0]
-									manysuperior = manysuperior3[0]
-									var = message.guild.id
-									cursor.execute(f"SELECT levelid,video FROM levels WHERE server = {var} AND reviewed = 'no' AND ID BETWEEN {manyinferior} AND {manysuperior} ORDER BY ID ASC LIMIT 5")
-									row3 = cursor.fetchone()
-									print(row3)
-
-									iconprofile = message.guild.icon_url
-									embed4.set_thumbnail(url=(iconprofile))
-
-									while row3 is not None:
-										number += 1
-										levelid = row3[0]
-										video = row3[1]
-										levelfinder(levelid)
-										stars,objectplus,levelname,creator,ratingemote,stars,downloads,likes,likesemote = levelfinder(levelid)
-										print("OK")
-
-										if int(stars) == 0:
-											if int(objectplus) >= 40000:
-												if video is not None:
-													embed4.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"({video})", inline=False)
-												else:
-													embed4.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value="\u200b", inline=False)
-											elif int(objectplus) <= 39999:
-												if video is not None:
-													embed4.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote}\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"({video})", inline=False)
-												else:
-													embed4.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote}\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value="\u200b", inline=False)
-										elif stars is not "0":
-											if int(objectplus) >= 40000:
-												if video is not None:
-													embed4.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003> <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"({video})", inline=False)
-												else:
-													embed4.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003> <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value="\u200b", inline=False)
-											elif int(objectplus) <= 39999:
-												if video is not None:
-													embed4.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"({video})", inline=False)
-												else:
-													embed4.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value="\u200b", inline=False)
-										row3 = cursor.fetchone()
-									await msg400.delete()
-									embed4.add_field(name=f"{information}", value=f"{page} 4/9 - {scrollpage}", inline=False)
-									terminated3 = "yes"
-							if index == 4:
-								if terminated4 == "no":
-									embed400 = discord.Embed(title=f"{loadingtitle}", color=0xffce08)
-									embed400.add_field(name=f'{loadingdesc}', value="\u200b")
-									msg400 = await message.channel.send(embed=embed400)
-
-									cursor.execute(f"SELECT ID FROM levels WHERE server = {var} AND reviewed = 'no' ORDER BY ID ASC")
-									many3 = cursor.fetchall()
-									print(many3)
-									try:
-										manyinferior3 = many3[inferior]
-									except IndexError:
-										manyinferior3 = many3[inferior-1]
-
-									try:
-										manysuperior3 = many3[superior]
-									except IndexError:
-										try:
-											manysuperior3 = many3[superior-1]
-										except IndexError:
-											try:
-												manysuperior3 = many2[superior-2]
-											except IndexError:
-												try:
-													manysuperior3 = many2[superior-3]
-												except IndexError:
-													try:
-														manysuperior3 = many2[superior-4]
-													except IndexError:
-														manysuperior3 = many2[superior-5]
-
-									manyinferior = manyinferior3[0]
-									manysuperior = manysuperior3[0]
-									var = message.guild.id
-									cursor.execute(f"SELECT levelid,video FROM levels WHERE server = {var} AND reviewed = 'no' AND ID BETWEEN {manyinferior} AND {manysuperior} ORDER BY ID ASC LIMIT 5")
-									row3 = cursor.fetchone()
-									print(row3)
-
-									iconprofile = message.guild.icon_url
-									embed5.set_thumbnail(url=(iconprofile))
-
-									while row3 is not None:
-										number += 1
-										levelid = row3[0]
-										video = row3[1]
-										levelfinder(levelid)
-										stars,objectplus,levelname,creator,ratingemote,stars,downloads,likes,likesemote = levelfinder(levelid)
-										print("OK")
-
-										if int(stars) == 0:
-											if int(objectplus) >= 40000:
-												if video is not None:
-													embed4.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"({video})", inline=False)
-												else:
-													embed5.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value="\u200b", inline=False)
-											elif int(objectplus) <= 39999:
-												if video is not None:
-													embed5.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote}\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"({video})", inline=False)
-												else:
-													embed5.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote}\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value="\u200b", inline=False)
-										elif stars is not "0":
-											if int(objectplus) >= 40000:
-												if video is not None:
-													embed5.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003> <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"({video})", inline=False)
-												else:
-													embed5.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003> <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value="\u200b", inline=False)
-											elif int(objectplus) <= 39999:
-												if video is not None:
-													embed5.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"({video})", inline=False)
-												else:
-													embed5.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value="\u200b", inline=False)
-										row3 = cursor.fetchone()
-									await msg400.delete()
-									embed5.add_field(name=f"{information}", value=f"{page} 5/9 - {scrollpage}", inline=False)
-									terminated4 = "yes"
-							if index == 5:
-								if terminated5 == "no":
-									embed400 = discord.Embed(title=f"{loadingtitle}", color=0xffce08)
-									embed400.add_field(name=f'{loadingdesc}', value="\u200b")
-									msg400 = await message.channel.send(embed=embed400)
-
-									cursor.execute(f"SELECT ID FROM levels WHERE server = {var} AND reviewed = 'no' ORDER BY ID ASC")
-									many3 = cursor.fetchall()
-									print(many3)
-									try:
-										manyinferior3 = many3[inferior]
-									except IndexError:
-										manyinferior3 = many3[inferior-1]
-
-									try:
-										manysuperior3 = many3[superior]
-									except IndexError:
-										try:
-											manysuperior3 = many3[superior-1]
-										except IndexError:
-											try:
-												manysuperior3 = many2[superior-2]
-											except IndexError:
-												try:
-													manysuperior3 = many2[superior-3]
-												except IndexError:
-													try:
-														manysuperior3 = many2[superior-4]
-													except IndexError:
-														manysuperior3 = many2[superior-5]
-
-									manyinferior = manyinferior3[0]
-									manysuperior = manysuperior3[0]
-									var = message.guild.id
-									cursor.execute(f"SELECT levelid,video FROM levels WHERE server = {var} AND reviewed = 'no' AND ID BETWEEN {manyinferior} AND {manysuperior} ORDER BY ID ASC LIMIT 5")
-									row3 = cursor.fetchone()
-									print(row3)
-
-									iconprofile = message.guild.icon_url
-									embed6.set_thumbnail(url=(iconprofile))
-
-									while row3 is not None:
-										number += 1
-										levelid = row3[0]
-										video = row3[1]
-										levelfinder(levelid)
-										stars,objectplus,levelname,creator,ratingemote,stars,downloads,likes,likesemote = levelfinder(levelid)
-										print("OK")
-
-										if int(stars) == 0:
-											if int(objectplus) >= 40000:
-												if video is not None:
-													embed6.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"({video})", inline=False)
-												else:
-													embed6.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value="\u200b", inline=False)
-											elif int(objectplus) <= 39999:
-												if video is not None:
-													embed6.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote}\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"({video})", inline=False)
-												else:
-													embed6.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote}\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value="\u200b", inline=False)
-										elif stars is not "0":
-											if int(objectplus) >= 40000:
-												if video is not None:
-													embed6.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003> <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"({video})", inline=False)
-												else:
-													embed6.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003> <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value="\u200b", inline=False)
-											elif int(objectplus) <= 39999:
-												if video is not None:
-													embed6.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"({video})", inline=False)
-												else:
-													embed6.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value="\u200b", inline=False)
-										row3 = cursor.fetchone()
-									await msg400.delete()
-									embed6.add_field(name=f"{information}", value=f"{page} 6/9 - {scrollpage}", inline=False)
-									terminated5 = "yes"
-							if index == 6:
-								if terminated6 == "no":
-									embed400 = discord.Embed(title=f"{loadingtitle}", color=0xffce08)
-									embed400.add_field(name=f'{loadingdesc}', value="\u200b")
-									msg400 = await message.channel.send(embed=embed400)
-
-									cursor.execute(f"SELECT ID FROM levels WHERE server = {var} AND reviewed = 'no' ORDER BY ID ASC")
-									many3 = cursor.fetchall()
-									print(many3)
-									try:
-										manyinferior3 = many3[inferior]
-									except IndexError:
-										manyinferior3 = many3[inferior-1]
-
-									try:
-										manysuperior3 = many3[superior]
-									except IndexError:
-										try:
-											manysuperior3 = many3[superior-1]
-										except IndexError:
-											try:
-												manysuperior3 = many2[superior-2]
-											except IndexError:
-												try:
-													manysuperior3 = many2[superior-3]
-												except IndexError:
-													try:
-														manysuperior3 = many2[superior-4]
-													except IndexError:
-														manysuperior3 = many2[superior-5]
-
-									manyinferior = manyinferior3[0]
-									manysuperior = manysuperior3[0]
-									var = message.guild.id
-									cursor.execute(f"SELECT levelid,video FROM levels WHERE server = {var} AND reviewed = 'no' AND ID BETWEEN {manyinferior} AND {manysuperior} ORDER BY ID ASC LIMIT 5")
-									row3 = cursor.fetchone()
-									print(row3)
-
-									iconprofile = message.guild.icon_url
-									embed7.set_thumbnail(url=(iconprofile))
-
-									while row3 is not None:
-										number += 1
-										levelid = row3[0]
-										video = row3[1]
-										levelfinder(levelid)
-										stars,objectplus,levelname,creator,ratingemote,stars,downloads,likes,likesemote = levelfinder(levelid)
-										print("OK")
-
-										if int(stars) == 0:
-											if int(objectplus) >= 40000:
-												if video is not None:
-													embed7.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"({video})", inline=False)
-												else:
-													embed7.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value="\u200b", inline=False)
-											elif int(objectplus) <= 39999:
-												if video is not None:
-													embed7.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote}\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"({video})", inline=False)
-												else:
-													embed7.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote}\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value="\u200b", inline=False)
-										elif stars is not "0":
-											if int(objectplus) >= 40000:
-												if video is not None:
-													embed7.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003> <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"({video})", inline=False)
-												else:
-													embed7.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003> <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value="\u200b", inline=False)
-											elif int(objectplus) <= 39999:
-												if video is not None:
-													embed7.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"({video})", inline=False)
-												else:
-													embed7.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value="\u200b", inline=False)
-										row3 = cursor.fetchone()
-									await msg400.delete()
-									embed7.add_field(name=f"{information}", value=f"{page} 7/9 - {scrollpage}", inline=False)
-									terminated6 = "yes"
-							if index == 7:
-								if terminated7 == "no":
-									embed400 = discord.Embed(title=f"{loadingtitle}", color=0xffce08)
-									embed400.add_field(name=f'{loadingdesc}', value="\u200b")
-									msg400 = await message.channel.send(embed=embed400)
-
-									cursor.execute(f"SELECT ID FROM levels WHERE server = {var} AND reviewed = 'no' ORDER BY ID ASC")
-									many3 = cursor.fetchall()
-									print(many3)
-									try:
-										manyinferior3 = many3[inferior]
-									except IndexError:
-										manyinferior3 = many3[inferior-1]
-
-									try:
-										manysuperior3 = many3[superior]
-									except IndexError:
-										try:
-											manysuperior3 = many3[superior-1]
-										except IndexError:
-											try:
-												manysuperior3 = many2[superior-2]
-											except IndexError:
-												try:
-													manysuperior3 = many2[superior-3]
-												except IndexError:
-													try:
-														manysuperior3 = many2[superior-4]
-													except IndexError:
-														manysuperior3 = many2[superior-5]
-
-									manyinferior = manyinferior3[0]
-									manysuperior = manysuperior3[0]
-									var = message.guild.id
-									cursor.execute(f"SELECT levelid,video FROM levels WHERE server = {var} AND reviewed = 'no' AND ID BETWEEN {manyinferior} AND {manysuperior} ORDER BY ID ASC LIMIT 5")
-									row3 = cursor.fetchone()
-									print(row3)
-
-									iconprofile = message.guild.icon_url
-									embed8.set_thumbnail(url=(iconprofile))
-
-									while row3 is not None:
-										number += 1
-										levelid = row3[0]
-										video = row3[1]
-										levelfinder(levelid)
-										stars,objectplus,levelname,creator,ratingemote,stars,downloads,likes,likesemote = levelfinder(levelid)
-										print("OK")
-
-										if int(stars) == 0:
-											if int(objectplus) >= 40000:
-												if video is not None:
-													embed8.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"({video})", inline=False)
-												else:
-													embed8.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value="\u200b", inline=False)
-											elif int(objectplus) <= 39999:
-												if video is not None:
-													embed8.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote}\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"({video})", inline=False)
-												else:
-													embed8.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote}\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value="\u200b", inline=False)
-										elif stars is not "0":
-											if int(objectplus) >= 40000:
-												if video is not None:
-													embed8.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003> <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"({video})", inline=False)
-												else:
-													embed8.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003> <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value="\u200b", inline=False)
-											elif int(objectplus) <= 39999:
-												if video is not None:
-													embed8.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"({video})", inline=False)
-												else:
-													embed8.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value="\u200b", inline=False)
-										row3 = cursor.fetchone()
-									await msg400.delete()
-									embed8.add_field(name=f"{information}", value=f"{page} 8/9 - {scrollpage}", inline=False)
-									terminated7 = "yes"
-							if index == 8:
-								if terminated8 == "no":
-									embed400 = discord.Embed(title=f"{loadingtitle}", color=0xffce08)
-									embed400.add_field(name=f'{loadingdesc}', value="\u200b")
-									msg400 = await message.channel.send(embed=embed400)
-
-									cursor.execute(f"SELECT ID FROM levels WHERE server = {var} AND reviewed = 'no' ORDER BY ID ASC")
-									many3 = cursor.fetchall()
-									print(many3)
-									try:
-										manyinferior3 = many3[inferior]
-									except IndexError:
-										manyinferior3 = many3[inferior-1]
-
-									try:
-										manysuperior3 = many3[superior]
-									except IndexError:
-										try:
-											manysuperior3 = many3[superior-1]
-										except IndexError:
-											try:
-												manysuperior3 = many2[superior-2]
-											except IndexError:
-												try:
-													manysuperior3 = many2[superior-3]
-												except IndexError:
-													try:
-														manysuperior3 = many2[superior-4]
-													except IndexError:
-														manysuperior3 = many2[superior-5]
-
-									manyinferior = manyinferior3[0]
-									manysuperior = manysuperior3[0]
-									var = message.guild.id
-									cursor.execute(f"SELECT levelid,video FROM levels WHERE server = {var} AND reviewed = 'no' AND ID BETWEEN {manyinferior} AND {manysuperior} ORDER BY ID ASC LIMIT 5")
-									row3 = cursor.fetchone()
-									print(row3)
-
-									iconprofile = message.guild.icon_url
-									embed9.set_thumbnail(url=(iconprofile))
-
-									while row3 is not None:
-										number += 1
-										levelid = row3[0]
-										video = row3[1]
-										levelfinder(levelid)
-										stars,objectplus,levelname,creator,ratingemote,stars,downloads,likes,likesemote = levelfinder(levelid)
-										print("OK")
-
-										if int(stars) == 0:
-											if int(objectplus) >= 40000:
-												if video is not None:
-													embed9.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"({video})", inline=False)
-												else:
-													embed9.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value="\u200b", inline=False)
-											elif int(objectplus) <= 39999:
-												if video is not None:
-													embed9.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote}\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"({video})", inline=False)
-												else:
-													embed9.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote}\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value="\u200b", inline=False)
-										elif stars is not "0":
-											if int(objectplus) >= 40000:
-												if video is not None:
-													embed9.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003> <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"({video})", inline=False)
-												else:
-													embed9.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003> <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value="\u200b", inline=False)
-											elif int(objectplus) <= 39999:
-												if video is not None:
-													embed9.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"({video})", inline=False)
-												else:
-													embed9.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value="\u200b", inline=False)
-										row3 = cursor.fetchone()
-									await msg400.delete()
-									embed9.add_field(name=f"{information}", value=f"{page} 9/9 - {scrollpage}", inline=False)
-									terminated8 = "yes"
-						action = msg.edit()
-					return
-				elif count >= 46:
-					messages = (embed, embed2, embed3, embed4, embed5, embed6, embed7, embed8, embed9, embed10)
-
-					terminated = "no"
-					terminated2 = "no"
-					terminated3 = "no"
-					terminated4 = "no"
-					terminated5 = "no"
-					terminated6 = "no"
-					terminated7 = "no"
-					terminated8 = "no"
-					terminated9 = "no"
-
-					index = 0
-					inferior = 1
-					superior = 5
-					msg = None
-
-					embed.add_field(name=f"{information}", value=f"{page} 1/10 - {scrollpage}", inline=False)
-
-					res = await message.channel.send(embed=messages[index])
-					while True:
-						if res is not None:
-							msg = res
-						res = await msg.edit(embed=messages[index])
-						l = index != 0
-						r = index != len(messages) - 1
-						j = index == 9
-						k = index == 0
-						if j:
-							await msg.clear_reaction(right)
-						if k:
-							await msg.clear_reaction(left)
-						if l:
-							await msg.add_reaction(left)
-						if r:
-							await msg.add_reaction(right)
-						try:
-							react, user = await client.wait_for('reaction_add', check=predicate(msg, l, r), timeout=30)
-						except Exception:
-							print("BROKE")
-							break
-
-						if react.emoji == left:
-							inferior -= 5
-							superior -= 5
-							index -= 1
-						elif react.emoji == right:
-							inferior += 5
-							superior += 5
-							index += 1
-							if index == 1:
-								if terminated == "no":
-									embed400 = discord.Embed(title=f"{loadingtitle}", color=0xffce08)
-									embed400.add_field(name=f'{loadingdesc}', value="\u200b")
-									msg400 = await message.channel.send(embed=embed400)
-
-									cursor.execute(f"SELECT ID FROM levels WHERE server = {var} AND reviewed = 'no' ORDER BY ID ASC")
-									many2 = cursor.fetchall()
-									print(many2)
-									try:
-										manyinferior2 = many2[inferior]
-									except IndexError:
-										manyinferior2 = many2[inferior-1]
-
-									try:
-										manysuperior2 = many2[superior]
-									except IndexError:
-										try:
-											manysuperior2 = many2[superior-1]
-										except IndexError:
-											try:
-												manysuperior2 = many2[superior-2]
-											except IndexError:
-												try:
-													manysuperior2 = many2[superior-3]
-												except IndexError:
-													try:
-														manysuperior2 = many2[superior-4]
-													except IndexError:
-														manysuperior2 = many2[superior-5]
-
-									manyinferior = manyinferior2[0]
-									manysuperior = manysuperior2[0]
-									var = message.guild.id
-									cursor.execute(f"SELECT levelid,video FROM levels WHERE server = {var} AND reviewed = 'no' AND ID BETWEEN {manyinferior} AND {manysuperior} ORDER BY ID ASC LIMIT 5")
-									row2 = cursor.fetchone()
-									print(row2)
-
-									iconprofile = message.guild.icon_url
-									embed2.set_thumbnail(url=(iconprofile))
-
-									while row2 is not None:
-										number += 1
-										levelid = row2[0]
-										video = row2[1]
-										levelfinder(levelid)
-										stars,objectplus,levelname,creator,ratingemote,stars,downloads,likes,likesemote = levelfinder(levelid)
-										print("OK")
-
-										if int(stars) == 0:
-											if int(objectplus) >= 40000:
-												if video is not None:
-													embed2.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"({video})", inline=False)
-												else:
-													embed2.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value="\u200b", inline=False)
-											elif int(objectplus) <= 39999:
-												if video is not None:
-													embed2.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote}\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"({video})", inline=False)
-												else:
-													embed2.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote}\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value="\u200b", inline=False)
-										elif stars is not "0":
-											if int(objectplus) >= 40000:
-												if video is not None:
-													embed2.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003> <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"({video})", inline=False)
-												else:
-													embed2.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003> <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value="\u200b", inline=False)
-											elif int(objectplus) <= 39999:
-												if video is not None:
-													embed2.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"({video})", inline=False)
-												else:
-													embed2.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value="\u200b", inline=False)
-										row2 = cursor.fetchone()
-									await msg400.delete()
-									embed2.add_field(name=f"{information}", value=f"{page} 2/10 - {scrollpage}", inline=False)
-									terminated = "yes"
-							if index == 2:
-								if terminated2 == "no":
-									embed400 = discord.Embed(title=f"{loadingtitle}", color=0xffce08)
-									embed400.add_field(name=f'{loadingdesc}', value="\u200b")
-									msg400 = await message.channel.send(embed=embed400)
-
-									cursor.execute(f"SELECT ID FROM levels WHERE server = {var} AND reviewed = 'no' ORDER BY ID ASC")
-									many3 = cursor.fetchall()
-									print(many3)
-									try:
-										manyinferior3 = many3[inferior]
-									except IndexError:
-										manyinferior3 = many3[inferior-1]
-
-									try:
-										manysuperior3 = many3[superior]
-									except IndexError:
-										try:
-											manysuperior3 = many3[superior-1]
-										except IndexError:
-											try:
-												manysuperior3 = many2[superior-2]
-											except IndexError:
-												try:
-													manysuperior3 = many2[superior-3]
-												except IndexError:
-													try:
-														manysuperior3 = many2[superior-4]
-													except IndexError:
-														manysuperior3 = many2[superior-5]
-
-									manyinferior = manyinferior3[0]
-									manysuperior = manysuperior3[0]
-									var = message.guild.id
-									cursor.execute(f"SELECT levelid,video FROM levels WHERE server = {var} AND reviewed = 'no' AND ID BETWEEN {manyinferior} AND {manysuperior} ORDER BY ID ASC LIMIT 5")
-									row3 = cursor.fetchone()
-									print(row3)
-
-									iconprofile = message.guild.icon_url
-									embed3.set_thumbnail(url=(iconprofile))
-
-									while row3 is not None:
-										number += 1
-										levelid = row3[0]
-										video = row3[1]
-										levelfinder(levelid)
-										stars,objectplus,levelname,creator,ratingemote,stars,downloads,likes,likesemote = levelfinder(levelid)
-										print("OK")
-
-										if int(stars) == 0:
-											if int(objectplus) >= 40000:
-												if video is not None:
-													embed3.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"({video})", inline=False)
-												else:
-													embed3.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value="\u200b", inline=False)
-											elif int(objectplus) <= 39999:
-												if video is not None:
-													embed3.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote}\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"({video})", inline=False)
-												else:
-													embed3.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote}\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value="\u200b", inline=False)
-										elif stars is not "0":
-											if int(objectplus) >= 40000:
-												if video is not None:
-													embed3.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003> <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"({video})", inline=False)
-												else:
-													embed3.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003> <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value="\u200b", inline=False)
-											elif int(objectplus) <= 39999:
-												if video is not None:
-													embed3.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"({video})", inline=False)
-												else:
-													embed3.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value="\u200b", inline=False)
-										row3 = cursor.fetchone()
-									await msg400.delete()
-									embed3.add_field(name=f"{information}", value=f"{page} 3/10 - {scrollpage}", inline=False)
-									terminated2 = "yes"
-							if index == 3:
-								if terminated3 == "no":
-									embed400 = discord.Embed(title=f"{loadingtitle}", color=0xffce08)
-									embed400.add_field(name=f'{loadingdesc}', value="\u200b")
-									msg400 = await message.channel.send(embed=embed400)
-
-									cursor.execute(f"SELECT ID FROM levels WHERE server = {var} AND reviewed = 'no' ORDER BY ID ASC")
-									many3 = cursor.fetchall()
-									print(many3)
-									try:
-										manyinferior3 = many3[inferior]
-									except IndexError:
-										manyinferior3 = many3[inferior-1]
-
-									try:
-										manysuperior3 = many3[superior]
-									except IndexError:
-										try:
-											manysuperior3 = many3[superior-1]
-										except IndexError:
-											try:
-												manysuperior3 = many2[superior-2]
-											except IndexError:
-												try:
-													manysuperior3 = many2[superior-3]
-												except IndexError:
-													try:
-														manysuperior3 = many2[superior-4]
-													except IndexError:
-														manysuperior3 = many2[superior-5]
-
-									manyinferior = manyinferior3[0]
-									manysuperior = manysuperior3[0]
-									var = message.guild.id
-									cursor.execute(f"SELECT levelid,video FROM levels WHERE server = {var} AND reviewed = 'no' AND ID BETWEEN {manyinferior} AND {manysuperior} ORDER BY ID ASC LIMIT 5")
-									row3 = cursor.fetchone()
-									print(row3)
-
-									iconprofile = message.guild.icon_url
-									embed4.set_thumbnail(url=(iconprofile))
-
-									while row3 is not None:
-										number += 1
-										levelid = row3[0]
-										video = row3[1]
-										levelfinder(levelid)
-										stars,objectplus,levelname,creator,ratingemote,stars,downloads,likes,likesemote = levelfinder(levelid)
-										print("OK")
-
-										if int(stars) == 0:
-											if int(objectplus) >= 40000:
-												if video is not None:
-													embed4.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"({video})", inline=False)
-												else:
-													embed4.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value="\u200b", inline=False)
-											elif int(objectplus) <= 39999:
-												if video is not None:
-													embed4.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote}\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"({video})", inline=False)
-												else:
-													embed4.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote}\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value="\u200b", inline=False)
-										elif stars is not "0":
-											if int(objectplus) >= 40000:
-												if video is not None:
-													embed4.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003> <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"({video})", inline=False)
-												else:
-													embed4.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003> <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value="\u200b", inline=False)
-											elif int(objectplus) <= 39999:
-												if video is not None:
-													embed4.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"({video})", inline=False)
-												else:
-													embed4.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value="\u200b", inline=False)
-										row3 = cursor.fetchone()
-									await msg400.delete()
-									embed4.add_field(name=f"{information}", value=f"{page} 4/10 - {scrollpage}", inline=False)
-									terminated3 = "yes"
-							if index == 4:
-								if terminated4 == "no":
-									embed400 = discord.Embed(title=f"{loadingtitle}", color=0xffce08)
-									embed400.add_field(name=f'{loadingdesc}', value="\u200b")
-									msg400 = await message.channel.send(embed=embed400)
-
-									cursor.execute(f"SELECT ID FROM levels WHERE server = {var} AND reviewed = 'no' ORDER BY ID ASC")
-									many3 = cursor.fetchall()
-									print(many3)
-									try:
-										manyinferior3 = many3[inferior]
-									except IndexError:
-										manyinferior3 = many3[inferior-1]
-
-									try:
-										manysuperior3 = many3[superior]
-									except IndexError:
-										try:
-											manysuperior3 = many3[superior-1]
-										except IndexError:
-											try:
-												manysuperior3 = many2[superior-2]
-											except IndexError:
-												try:
-													manysuperior3 = many2[superior-3]
-												except IndexError:
-													try:
-														manysuperior3 = many2[superior-4]
-													except IndexError:
-														manysuperior3 = many2[superior-5]
-
-									manyinferior = manyinferior3[0]
-									manysuperior = manysuperior3[0]
-									var = message.guild.id
-									cursor.execute(f"SELECT levelid,video FROM levels WHERE server = {var} AND reviewed = 'no' AND ID BETWEEN {manyinferior} AND {manysuperior} ORDER BY ID ASC LIMIT 5")
-									row3 = cursor.fetchone()
-									print(row3)
-
-									iconprofile = message.guild.icon_url
-									embed5.set_thumbnail(url=(iconprofile))
-
-									while row3 is not None:
-										number += 1
-										levelid = row3[0]
-										video = row3[1]
-										levelfinder(levelid)
-										stars,objectplus,levelname,creator,ratingemote,stars,downloads,likes,likesemote = levelfinder(levelid)
-										print("OK")
-
-										if int(stars) == 0:
-											if int(objectplus) >= 40000:
-												if video is not None:
-													embed4.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"({video})", inline=False)
-												else:
-													embed5.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value="\u200b", inline=False)
-											elif int(objectplus) <= 39999:
-												if video is not None:
-													embed5.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote}\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"({video})", inline=False)
-												else:
-													embed5.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote}\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value="\u200b", inline=False)
-										elif stars is not "0":
-											if int(objectplus) >= 40000:
-												if video is not None:
-													embed5.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003> <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"({video})", inline=False)
-												else:
-													embed5.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003> <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value="\u200b", inline=False)
-											elif int(objectplus) <= 39999:
-												if video is not None:
-													embed5.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"({video})", inline=False)
-												else:
-													embed5.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value="\u200b", inline=False)
-										row3 = cursor.fetchone()
-									await msg400.delete()
-									embed5.add_field(name=f"{information}", value=f"{page} 5/10 - {scrollpage}", inline=False)
-									terminated4 = "yes"
-							if index == 5:
-								if terminated5 == "no":
-									embed400 = discord.Embed(title=f"{loadingtitle}", color=0xffce08)
-									embed400.add_field(name=f'{loadingdesc}', value="\u200b")
-									msg400 = await message.channel.send(embed=embed400)
-
-									cursor.execute(f"SELECT ID FROM levels WHERE server = {var} AND reviewed = 'no' ORDER BY ID ASC")
-									many3 = cursor.fetchall()
-									print(many3)
-									try:
-										manyinferior3 = many3[inferior]
-									except IndexError:
-										manyinferior3 = many3[inferior-1]
-
-									try:
-										manysuperior3 = many3[superior]
-									except IndexError:
-										try:
-											manysuperior3 = many3[superior-1]
-										except IndexError:
-											try:
-												manysuperior3 = many2[superior-2]
-											except IndexError:
-												try:
-													manysuperior3 = many2[superior-3]
-												except IndexError:
-													try:
-														manysuperior3 = many2[superior-4]
-													except IndexError:
-														manysuperior3 = many2[superior-5]
-
-									manyinferior = manyinferior3[0]
-									manysuperior = manysuperior3[0]
-									var = message.guild.id
-									cursor.execute(f"SELECT levelid,video FROM levels WHERE server = {var} AND reviewed = 'no' AND ID BETWEEN {manyinferior} AND {manysuperior} ORDER BY ID ASC LIMIT 5")
-									row3 = cursor.fetchone()
-									print(row3)
-
-									iconprofile = message.guild.icon_url
-									embed6.set_thumbnail(url=(iconprofile))
-
-									while row3 is not None:
-										number += 1
-										levelid = row3[0]
-										video = row3[1]
-										levelfinder(levelid)
-										stars,objectplus,levelname,creator,ratingemote,stars,downloads,likes,likesemote = levelfinder(levelid)
-										print("OK")
-
-										if int(stars) == 0:
-											if int(objectplus) >= 40000:
-												if video is not None:
-													embed6.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"({video})", inline=False)
-												else:
-													embed6.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value="\u200b", inline=False)
-											elif int(objectplus) <= 39999:
-												if video is not None:
-													embed6.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote}\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"({video})", inline=False)
-												else:
-													embed6.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote}\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value="\u200b", inline=False)
-										elif stars is not "0":
-											if int(objectplus) >= 40000:
-												if video is not None:
-													embed6.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003> <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"({video})", inline=False)
-												else:
-													embed6.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003> <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value="\u200b", inline=False)
-											elif int(objectplus) <= 39999:
-												if video is not None:
-													embed6.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"({video})", inline=False)
-												else:
-													embed6.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value="\u200b", inline=False)
-										row3 = cursor.fetchone()
-									await msg400.delete()
-									embed6.add_field(name=f"{information}", value=f"{page} 6/10 - {scrollpage}", inline=False)
-									terminated5 = "yes"
-							if index == 6:
-								if terminated6 == "no":
-									embed400 = discord.Embed(title=f"{loadingtitle}", color=0xffce08)
-									embed400.add_field(name=f'{loadingdesc}', value="\u200b")
-									msg400 = await message.channel.send(embed=embed400)
-
-									cursor.execute(f"SELECT ID FROM levels WHERE server = {var} AND reviewed = 'no' ORDER BY ID ASC")
-									many3 = cursor.fetchall()
-									print(many3)
-									try:
-										manyinferior3 = many3[inferior]
-									except IndexError:
-										manyinferior3 = many3[inferior-1]
-
-									try:
-										manysuperior3 = many3[superior]
-									except IndexError:
-										try:
-											manysuperior3 = many3[superior-1]
-										except IndexError:
-											try:
-												manysuperior3 = many2[superior-2]
-											except IndexError:
-												try:
-													manysuperior3 = many2[superior-3]
-												except IndexError:
-													try:
-														manysuperior3 = many2[superior-4]
-													except IndexError:
-														manysuperior3 = many2[superior-5]
-
-									manyinferior = manyinferior3[0]
-									manysuperior = manysuperior3[0]
-									var = message.guild.id
-									cursor.execute(f"SELECT levelid,video FROM levels WHERE server = {var} AND reviewed = 'no' AND ID BETWEEN {manyinferior} AND {manysuperior} ORDER BY ID ASC LIMIT 5")
-									row3 = cursor.fetchone()
-									print(row3)
-
-									iconprofile = message.guild.icon_url
-									embed7.set_thumbnail(url=(iconprofile))
-
-									while row3 is not None:
-										number += 1
-										levelid = row3[0]
-										video = row3[1]
-										levelfinder(levelid)
-										stars,objectplus,levelname,creator,ratingemote,stars,downloads,likes,likesemote = levelfinder(levelid)
-										print("OK")
-
-										if int(stars) == 0:
-											if int(objectplus) >= 40000:
-												if video is not None:
-													embed7.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"({video})", inline=False)
-												else:
-													embed7.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value="\u200b", inline=False)
-											elif int(objectplus) <= 39999:
-												if video is not None:
-													embed7.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote}\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"({video})", inline=False)
-												else:
-													embed7.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote}\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value="\u200b", inline=False)
-										elif stars is not "0":
-											if int(objectplus) >= 40000:
-												if video is not None:
-													embed7.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003> <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"({video})", inline=False)
-												else:
-													embed7.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003> <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value="\u200b", inline=False)
-											elif int(objectplus) <= 39999:
-												if video is not None:
-													embed7.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"({video})", inline=False)
-												else:
-													embed7.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value="\u200b", inline=False)
-										row3 = cursor.fetchone()
-									await msg400.delete()
-									embed7.add_field(name=f"{information}", value=f"{page} 7/10 - {scrollpage}", inline=False)
-									terminated6 = "yes"
-							if index == 7:
-								if terminated7 == "no":
-									embed400 = discord.Embed(title=f"{loadingtitle}", color=0xffce08)
-									embed400.add_field(name=f'{loadingdesc}', value="\u200b")
-									msg400 = await message.channel.send(embed=embed400)
-
-									cursor.execute(f"SELECT ID FROM levels WHERE server = {var} AND reviewed = 'no' ORDER BY ID ASC")
-									many3 = cursor.fetchall()
-									print(many3)
-									try:
-										manyinferior3 = many3[inferior]
-									except IndexError:
-										manyinferior3 = many3[inferior-1]
-
-									try:
-										manysuperior3 = many3[superior]
-									except IndexError:
-										try:
-											manysuperior3 = many3[superior-1]
-										except IndexError:
-											try:
-												manysuperior3 = many2[superior-2]
-											except IndexError:
-												try:
-													manysuperior3 = many2[superior-3]
-												except IndexError:
-													try:
-														manysuperior3 = many2[superior-4]
-													except IndexError:
-														manysuperior3 = many2[superior-5]
-
-									manyinferior = manyinferior3[0]
-									manysuperior = manysuperior3[0]
-									var = message.guild.id
-									cursor.execute(f"SELECT levelid,video FROM levels WHERE server = {var} AND reviewed = 'no' AND ID BETWEEN {manyinferior} AND {manysuperior} ORDER BY ID ASC LIMIT 5")
-									row3 = cursor.fetchone()
-									print(row3)
-
-									iconprofile = message.guild.icon_url
-									embed8.set_thumbnail(url=(iconprofile))
-
-									while row3 is not None:
-										number += 1
-										levelid = row3[0]
-										video = row3[1]
-										levelfinder(levelid)
-										stars,objectplus,levelname,creator,ratingemote,stars,downloads,likes,likesemote = levelfinder(levelid)
-										print("OK")
-
-										if int(stars) == 0:
-											if int(objectplus) >= 40000:
-												if video is not None:
-													embed8.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"({video})", inline=False)
-												else:
-													embed8.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value="\u200b", inline=False)
-											elif int(objectplus) <= 39999:
-												if video is not None:
-													embed8.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote}\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"({video})", inline=False)
-												else:
-													embed8.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote}\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value="\u200b", inline=False)
-										elif stars is not "0":
-											if int(objectplus) >= 40000:
-												if video is not None:
-													embed8.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003> <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"({video})", inline=False)
-												else:
-													embed8.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003> <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value="\u200b", inline=False)
-											elif int(objectplus) <= 39999:
-												if video is not None:
-													embed8.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"({video})", inline=False)
-												else:
-													embed8.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value="\u200b", inline=False)
-										row3 = cursor.fetchone()
-									await msg400.delete()
-									embed8.add_field(name=f"{information}", value=f"{page} 8/10 - {scrollpage}", inline=False)
-									terminated7 = "yes"
-							if index == 8:
-								if terminated8 == "no":
-									embed400 = discord.Embed(title=f"{loadingtitle}", color=0xffce08)
-									embed400.add_field(name=f'{loadingdesc}', value="\u200b")
-									msg400 = await message.channel.send(embed=embed400)
-
-									cursor.execute(f"SELECT ID FROM levels WHERE server = {var} AND reviewed = 'no' ORDER BY ID ASC")
-									many3 = cursor.fetchall()
-									print(many3)
-									try:
-										manyinferior3 = many3[inferior]
-									except IndexError:
-										manyinferior3 = many3[inferior-1]
-
-									try:
-										manysuperior3 = many3[superior]
-									except IndexError:
-										try:
-											manysuperior3 = many3[superior-1]
-										except IndexError:
-											try:
-												manysuperior3 = many2[superior-2]
-											except IndexError:
-												try:
-													manysuperior3 = many2[superior-3]
-												except IndexError:
-													try:
-														manysuperior3 = many2[superior-4]
-													except IndexError:
-														manysuperior3 = many2[superior-5]
-
-									manyinferior = manyinferior3[0]
-									manysuperior = manysuperior3[0]
-									var = message.guild.id
-									cursor.execute(f"SELECT levelid,video FROM levels WHERE server = {var} AND reviewed = 'no' AND ID BETWEEN {manyinferior} AND {manysuperior} ORDER BY ID ASC LIMIT 5")
-									row3 = cursor.fetchone()
-									print(row3)
-
-									iconprofile = message.guild.icon_url
-									embed9.set_thumbnail(url=(iconprofile))
-
-									while row3 is not None:
-										number += 1
-										levelid = row3[0]
-										video = row3[1]
-										levelfinder(levelid)
-										stars,objectplus,levelname,creator,ratingemote,stars,downloads,likes,likesemote = levelfinder(levelid)
-										print("OK")
-
-										if int(stars) == 0:
-											if int(objectplus) >= 40000:
-												if video is not None:
-													embed9.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"({video})", inline=False)
-												else:
-													embed9.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value="\u200b", inline=False)
-											elif int(objectplus) <= 39999:
-												if video is not None:
-													embed9.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote}\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"({video})", inline=False)
-												else:
-													embed9.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote}\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value="\u200b", inline=False)
-										elif stars is not "0":
-											if int(objectplus) >= 40000:
-												if video is not None:
-													embed9.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003> <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"({video})", inline=False)
-												else:
-													embed9.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003> <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value="\u200b", inline=False)
-											elif int(objectplus) <= 39999:
-												if video is not None:
-													embed9.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"({video})", inline=False)
-												else:
-													embed9.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value="\u200b", inline=False)
-										row3 = cursor.fetchone()
-									await msg400.delete()
-									embed9.add_field(name=f"{information}", value=f"{page} 9/10 - {scrollpage}", inline=False)
-									terminated8 = "yes"
-							if index == 9:
-								if terminated9 == "no":
-									embed400 = discord.Embed(title=f"{loadingtitle}", color=0xffce08)
-									embed400.add_field(name=f'{loadingdesc}', value="\u200b")
-									msg400 = await message.channel.send(embed=embed400)
-
-									cursor.execute(f"SELECT ID FROM levels WHERE server = {var} AND reviewed = 'no' ORDER BY ID ASC")
-									many3 = cursor.fetchall()
-									print(many3)
-									try:
-										manyinferior3 = many3[inferior]
-									except IndexError:
-										manyinferior3 = many3[inferior-1]
-
-									try:
-										manysuperior3 = many3[superior]
-									except IndexError:
-										try:
-											manysuperior3 = many3[superior-1]
-										except IndexError:
-											try:
-												manysuperior3 = many2[superior-2]
-											except IndexError:
-												try:
-													manysuperior3 = many2[superior-3]
-												except IndexError:
-													try:
-														manysuperior3 = many2[superior-4]
-													except IndexError:
-														manysuperior3 = many2[superior-5]
-
-									manyinferior = manyinferior3[0]
-									manysuperior = manysuperior3[0]
-									var = message.guild.id
-									cursor.execute(f"SELECT levelid,video FROM levels WHERE server = {var} AND reviewed = 'no' AND ID BETWEEN {manyinferior} AND {manysuperior} ORDER BY ID ASC LIMIT 5")
-									row3 = cursor.fetchone()
-									print(row3)
-
-									iconprofile = message.guild.icon_url
-									embed10.set_thumbnail(url=(iconprofile))
-
-									while row3 is not None:
-										number += 1
-										levelid = row3[0]
-										video = row3[1]
-										levelfinder(levelid)
-										stars,objectplus,levelname,creator,ratingemote,stars,downloads,likes,likesemote = levelfinder(levelid)
-										print("OK")
-
-										if int(stars) == 0:
-											if int(objectplus) >= 40000:
-												if video is not None:
-													embed10.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"({video})", inline=False)
-												else:
-													embed10.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value="\u200b", inline=False)
-											elif int(objectplus) <= 39999:
-												if video is not None:
-													embed10.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote}\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"({video})", inline=False)
-												else:
-													embed10.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote}\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value="\u200b", inline=False)
-										elif stars is not "0":
-											if int(objectplus) >= 40000:
-												if video is not None:
-													embed10.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003> <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"({video})", inline=False)
-												else:
-													embed10.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003> <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value="\u200b", inline=False)
-											elif int(objectplus) <= 39999:
-												if video is not None:
-													embed10.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"({video})", inline=False)
-												else:
-													embed10.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value="\u200b", inline=False)
-										row3 = cursor.fetchone()
-									await msg400.delete()
-									embed10.add_field(name=f"{information}", value=f"{page} 10/10 - {scrollpage}", inline=False)
-									terminated9 = "yes"
-						action = msg.edit()
-					return
+				await msg1.add_reaction(right)
+
+				while True:
+					if str(reaction) == right:
+						i += 1
+						if i+1>=maxpage:
+							await msg1.clear_reactions()
+							await msg1.add_reaction(left)
+							await msg1.edit(embed = pages[i])
+						else:
+							await msg1.add_reaction(left)
+							await msg1.add_reaction(right)
+							await msg1.edit(embed = pages[i])
+					if str(reaction) == left:
+						i -= 1
+						if i<=minpage:
+							await msg1.clear_reactions()
+							await msg1.add_reaction(right)
+							await msg1.edit(embed = pages[i])
+						else:
+							await msg1.add_reaction(left)
+							await msg1.add_reaction(right)
+							await msg1.edit(embed = pages[i])
+
+					try:
+						reaction, user = await client.wait_for('reaction_add', timeout = 15.0, check = check)
+						await msg1.remove_reaction(reaction, user)
+					except:
+						break
+				await msg1.clear_reactions()
+				return
 
 		if msg.startswith("myqueue"):
 			try:
@@ -7695,6 +5282,18 @@ async def on_message(message):
 				conn.cursor(buffered=True)
 
 				author = message.author.id
+				serverid = message.guild.id
+
+				maincommand = "reqmyqueue"
+				checkmaintenance = checkmaintenance(maincommand)
+				if checkmaintenance == "yes":
+					embed = discord.Embed(title="", color=0xff0000)
+					embed.add_field(name=f'Error. <:error:472907618386575370>', value=f"**The command is under maintenance, please try again later.**")
+					msg2 = await message.channel.send(embed=embed)
+					time.sleep(5)
+					await msg2.delete()
+					return
+				
 				cursor.execute(f"SELECT language FROM users WHERE userid = {author}")
 				try:
 					language = cursor.fetchone()[0]
@@ -7713,3179 +5312,204 @@ async def on_message(message):
 				page = translate_messages[7]
 				scrollpage = translate_messages[8]
 				requestedserver = translate_messages[9]
-
+				totallevels = translate_messages[10]
+				
+				translate_cooldown_messages = open(f"language/client/cooldown-{language2}.txt").read().splitlines()
+				errormessage123 = translate_cooldown_messages[3]
+				errorcooldown1 = translate_cooldown_messages[0]
+				errorcooldown2 = translate_cooldown_messages[1]
+				
+				#cooldowncheck(author)
+				alwayscooldown,secondcooldown = cooldowncheck(author)
+				
+				if alwayscooldown == 1:
+					embed = discord.Embed(title="", color=0xff0000)
+					embed.add_field(name=f'{errormessage123}', value=f"{errorcooldown1} {secondcooldown} {errorcooldown2}")
+					msg2 = await message.channel.send(embed=embed)
+					time.sleep(5)
+					await msg2.delete()
+					return
+				sql = "INSERT INTO cooldowns (userid, cooldown) VALUES (%s, %s)"
+				datetime_object_cooldown = datetime_object + datetime.timedelta(seconds=30)
+				val = (author, datetime_object_cooldown)
+				cursor.execute(sql,val)
+				conn.commit()
+				
 				userid = message.author.id
+				var = message.guild.id
 				embed = discord.Embed(title=f"{loadingtitle}", color=0xffce08)
 				embed.add_field(name=f'{loadingdesc}', value="\u200b")
 				msg = await message.channel.send(embed=embed)
 
 				requester = message.author.id
-				try:
-					cursor.execute(f"SELECT COUNT(levelid) AS NumberOfLevelIDs FROM levels WHERE requester = {userid}")
-					rowyou = cursor.fetchone()[0]
-				except TypeError:
-					embed = discord.Embed(title=f"{queuetitle} "+str(message.author), color=0x00ff00)
-					embed.add_field(name=f'{queuedesc}', value="\u200b")
-					await msg.delete()
-					await message.channel.send(embed=embed)
-					return
-				print(rowyou)
-				embed = discord.Embed(title=f"{queuetitle} "+str(message.author), color=0x00ff00)
-				embed.add_field(name=f'{queuedesc}', value="\u200b")
-				embed2 = discord.Embed(title=f"{queuetitle} "+str(message.author), color=0x00ff00)
-				embed2.add_field(name=f'{queuedesc}', value="\u200b")
-				embed3 = discord.Embed(title=f"{queuetitle} "+str(message.author), color=0x00ff00)
-				embed3.add_field(name=f'{queuedesc}', value="\u200b")
-				embed4 = discord.Embed(title=f"{queuetitle} "+str(message.author), color=0x00ff00)
-				embed4.add_field(name=f'{queuedesc}', value="\u200b")
-				embed5 = discord.Embed(title=f"{queuetitle} "+str(message.author), color=0x00ff00)
-				embed5.add_field(name=f'{queuedesc}', value="\u200b")
-				embed6 = discord.Embed(title=f"{queuetitle} "+str(message.author), color=0x00ff00)
-				embed6.add_field(name=f'{queuedesc}', value="\u200b")
-				embed7 = discord.Embed(title=f"{queuetitle} "+str(message.author), color=0x00ff00)
-				embed7.add_field(name=f'{queuedesc}', value="\u200b")
-				embed8 = discord.Embed(title=f"{queuetitle} "+str(message.author), color=0x00ff00)
-				embed8.add_field(name=f'{queuedesc}', value="\u200b")
-				embed9 = discord.Embed(title=f"{queuetitle} "+str(message.author), color=0x00ff00)
-				embed9.add_field(name=f'{queuedesc}', value="\u200b")
-				embed10 = discord.Embed(title=f"{queuetitle} "+str(message.author), color=0x00ff00)
-				embed10.add_field(name=f'{queuedesc}', value="\u200b")
 
-				usera = message.guild.get_member(requester)
+				cursor.execute("SELECT COUNT(*) FROM levels WHERE requester = {} AND reviewed = 'no' ORDER BY ID ASC LIMIT 100".format(requester))
+				totallevelsresult = cursor.fetchone()[0]
+
+				embed1 = discord.Embed(title=f"{queuetitle} "+str(message.guild.name), color=0x00ff00)
+				embed1.add_field(name=f'{queuedesc}', value="\u200b", inline=False)
+				embed1.add_field(name=f'{totallevels} {totallevelsresult}', value="\u200b", inline=False)
+				embed2 = discord.Embed(title=f"{queuetitle} "+str(message.guild.name), color=0x00ff00)
+				embed2.add_field(name=f'{queuedesc}', value="\u200b", inline=False)
+				embed2.add_field(name=f'{totallevels} {totallevelsresult}', value="\u200b", inline=False)
+				embed3 = discord.Embed(title=f"{queuetitle} "+str(message.guild.name), color=0x00ff00)
+				embed3.add_field(name=f'{queuedesc}', value="\u200b", inline=False)
+				embed3.add_field(name=f'{totallevels} {totallevelsresult}', value="\u200b", inline=False)
+				embed4 = discord.Embed(title=f"{queuetitle} "+str(message.guild.name), color=0x00ff00)
+				embed4.add_field(name=f'{queuedesc}', value="\u200b", inline=False)
+				embed4.add_field(name=f'{totallevels} {totallevelsresult}', value="\u200b", inline=False)
+				embed5 = discord.Embed(title=f"{queuetitle} "+str(message.guild.name), color=0x00ff00)
+				embed5.add_field(name=f'{queuedesc}', value="\u200b", inline=False)
+				embed5.add_field(name=f'{totallevels} {totallevelsresult}', value="\u200b", inline=False)
+				embed6 = discord.Embed(title=f"{queuetitle} "+str(message.guild.name), color=0x00ff00)
+				embed6.add_field(name=f'{queuedesc}', value="\u200b", inline=False)
+				embed6.add_field(name=f'{totallevels} {totallevelsresult}', value="\u200b", inline=False)
+				embed7 = discord.Embed(title=f"{queuetitle} "+str(message.guild.name), color=0x00ff00)
+				embed7.add_field(name=f'{queuedesc}', value="\u200b", inline=False)
+				embed7.add_field(name=f'{totallevels} {totallevelsresult}', value="\u200b", inline=False)
+				embed8 = discord.Embed(title=f"{queuetitle} "+str(message.guild.name), color=0x00ff00)
+				embed8.add_field(name=f'{queuedesc}', value="\u200b", inline=False)
+				embed8.add_field(name=f'{totallevels} {totallevelsresult}', value="\u200b", inline=False)
+				embed9 = discord.Embed(title=f"{queuetitle} "+str(message.guild.name), color=0x00ff00)
+				embed9.add_field(name=f'{queuedesc}', value="\u200b", inline=False)
+				embed9.add_field(name=f'{totallevels} {totallevelsresult}', value="\u200b", inline=False)
+				embed10 = discord.Embed(title=f"{queuetitle} "+str(message.guild.name), color=0x00ff00)
+				embed10.add_field(name=f'{queuedesc}', value="\u200b", inline=False)
+				embed10.add_field(name=f'{totallevels} {totallevelsresult}', value="\u200b", inline=False)
+				embed11 = discord.Embed(title=f"{queuetitle} "+str(message.guild.name), color=0x00ff00)
+				embed11.add_field(name=f'{queuedesc}', value="\u200b", inline=False)
+				embed11.add_field(name=f'{totallevels} {totallevelsresult}', value="\u200b", inline=False)
+				embed12 = discord.Embed(title=f"{queuetitle} "+str(message.guild.name), color=0x00ff00)
+				embed12.add_field(name=f'{queuedesc}', value="\u200b", inline=False)
+				embed12.add_field(name=f'{totallevels} {totallevelsresult}', value="\u200b", inline=False)
+				embed13 = discord.Embed(title=f"{queuetitle} "+str(message.guild.name), color=0x00ff00)
+				embed13.add_field(name=f'{queuedesc}', value="\u200b", inline=False)
+				embed13.add_field(name=f'{totallevels} {totallevelsresult}', value="\u200b", inline=False)
+				embed14 = discord.Embed(title=f"{queuetitle} "+str(message.guild.name), color=0x00ff00)
+				embed14.add_field(name=f'{queuedesc}', value="\u200b", inline=False)
+				embed14.add_field(name=f'{totallevels} {totallevelsresult}', value="\u200b", inline=False)
+				embed15 = discord.Embed(title=f"{queuetitle} "+str(message.guild.name), color=0x00ff00)
+				embed15.add_field(name=f'{queuedesc}', value="\u200b", inline=False)
+				embed15.add_field(name=f'{totallevels} {totallevelsresult}', value="\u200b", inline=False)
+				embed16 = discord.Embed(title=f"{queuetitle} "+str(message.guild.name), color=0x00ff00)
+				embed16.add_field(name=f'{queuedesc}', value="\u200b", inline=False)
+				embed16.add_field(name=f'{totallevels} {totallevelsresult}', value="\u200b", inline=False)
+				embed17 = discord.Embed(title=f"{queuetitle} "+str(message.guild.name), color=0x00ff00)
+				embed17.add_field(name=f'{queuedesc}', value="\u200b", inline=False)
+				embed17.add_field(name=f'{totallevels} {totallevelsresult}', value="\u200b", inline=False)
+				embed18 = discord.Embed(title=f"{queuetitle} "+str(message.guild.name), color=0x00ff00)
+				embed18.add_field(name=f'{queuedesc}', value="\u200b", inline=False)
+				embed18.add_field(name=f'{totallevels} {totallevelsresult}', value="\u200b", inline=False)
+				embed19 = discord.Embed(title=f"{queuetitle} "+str(message.guild.name), color=0x00ff00)
+				embed19.add_field(name=f'{queuedesc}', value="\u200b", inline=False)
+				embed19.add_field(name=f'{totallevels} {totallevelsresult}', value="\u200b", inline=False)
+				embed20 = discord.Embed(title=f"{queuetitle} "+str(message.guild.name), color=0x00ff00)
+				embed20.add_field(name=f'{queuedesc}', value="\u200b", inline=False)
+				embed20.add_field(name=f'{totallevels} {totallevelsresult}', value="\u200b", inline=False)
+
+				usera = await message.guild.fetch_member(requester)
 				iconprofile = usera.avatar_url
-				embed.set_thumbnail(url=(iconprofile))
+				embed1.set_thumbnail(url=(iconprofile))
 
-				count = 0
-				if rowyou > 5:
-					rowyou = 5
-				count += rowyou
-				number = 0
-				cursor.execute(f"SELECT levelid,server FROM levels WHERE requester = {userid} ORDER BY ID ASC LIMIT 5")
-				row = cursor.fetchone()
-				print(row)
-				while row is not None:
-					number += 1
-					levelid = row[0]
-					levelfinder(levelid)
-					stars,objectplus,levelname,creator,ratingemote,stars,downloads,likes,likesemote = levelfinder(levelid)
+				pages = [embed1,embed2,embed3,embed4,embed5,embed6,embed7,embed8,embed9,embed10,embed11,embed12,embed13,embed14,embed15,embed16,embed17,embed18,embed19,embed20]
+				
+				cursor.execute("SELECT levelid,video,server FROM levels WHERE requester = {} AND reviewed = 'no' ORDER BY ID ASC LIMIT 100".format(requester))
+				datas = cursor.fetchall()
+				levels = []
+				creators = []
 
-					serverid = row[1]
-					servers = client.get_guild(serverid)
-					if int(stars) == 0:
-						if int(objectplus) >= 40000:
-							embed.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"__({requestedserver} `{servers}`)__", inline=False)
-						elif int(objectplus) <= 39999:
-							embed.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote}\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"__({requestedserver} `{servers}`)__", inline=False)
-					elif stars is not "0":
-						if int(objectplus) >= 40000:
-							embed.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003> <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"__({requestedserver} `{servers}`)__", inline=False)
-						elif int(objectplus) <= 39999:
-							embed.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"__({requestedserver} `{servers}`)__", inline=False)
-					count -= 1
-					row = cursor.fetchone()
+				for k in range(len(datas)):
+					levels.append(str(datas[k][0]))
+
+				result = queuedecryptor(levels)
+
+				minpage = 0
+				maxpage = len(result)/5
+
+				pageselect = 0
+				current = 1
+				maxshow = 5
+
+				if result == "-1":
+					await msg.delete()
+					msg1 = await message.channel.send(embed=embed1)
+					return
+
+				# Getting level datas
+				levels = []
+				result = result.split("#")
+				result1 = result[0]
+				#Getting Username
+				result2 = result[1]
+				result = result1.split("|")
+
+				result2 = result2.split("|")
+
+				for g in range(len(result)):
+					levelids = result[g]
+					levelids = levelids.split(":")
+					levels.append(levelids[1])
+					for k in range(len(result2)):
+						accountid = result2[k]
+						accountid = accountid.split(":")
+						if levelids[7] == accountid[0]:
+							creatornamed = result2[k]
+							creatornamed = creatornamed.split(":")
+							creators.append(creatornamed[1])
+							break
+				
+				for h in range(len(result)):
+					video = datas[h][1]
+					if current > maxshow:
+						maxshow += 5
+						pageselect += 1
+						pages[pageselect].set_thumbnail(url=(iconprofile))	
+					current += 1
+					myqueueconstructor(pageselect,result[h],video,h+1,levels[h],pages,var,creators[h])
+
+				def check(reaction, user):
+					return user == message.author
+
+				i = 0
+				reaction = None
 
 				await msg.delete()
-				cursor.execute(f"SELECT COUNT(levelid) AS NumberOfLevelIDs FROM levels WHERE requester = {userid}")
-				count = cursor.fetchone()[0]
-				if count <= 5:
-					embed.add_field(name=f"{information}", value=f"{page} 1/1", inline=False)
-					await message.channel.send(embed=embed)
+				msg1 = await message.channel.send(embed=embed1)
+
+				if pageselect <= 1:
 					return
-				elif count >= 6 and count <= 10:
-					messages = (embed, embed2)
 
-					terminated = "no"
-
-					index = 0
-					inferior = 1
-					superior = 5
-					msg = None
-
-					embed.add_field(name=f"{information}", value=f"{page} 1/2 - {scrollpage}", inline=False)
-
-					action = message.channel.send
-					while True:
-						res = await action(embed=messages[index])
-						if res is not None:
-							msg = res
-						l = index != 0
-						r = index != len(messages) - 1
-						j = index == 1
-						k = index == 0
-						if j:
-							await msg.clear_reaction(right)
-						if k:
-							await msg.clear_reaction(left)
-						if l:
-							await msg.add_reaction(left)
-						if r:
-							await msg.add_reaction(right)
-						try:
-							react, user = await client.wait_for('reaction_add', check=predicate(msg, l, r), timeout=30)
-						except Exception:
-							print("BROKE")
-							break
-
-						if react.emoji == left:
-							inferior -= 5
-							superior -= 5
-							index -= 1
-						elif react.emoji == right:
-							inferior += 5
-							superior += 5
-							index += 1
-							if terminated == "no":
-								embed400 = discord.Embed(title=f"{loadingtitle}", color=0xffce08)
-								embed400.add_field(name=f'{loadingdesc}', value="\u200b")
-								msg400 = await message.channel.send(embed=embed400)
-
-								cursor.execute(f"SELECT ID FROM levels WHERE requester = {userid} ORDER BY ID ASC")
-								many2 = cursor.fetchall()
-								print(many2)
-								try:
-									manyinferior2 = many2[inferior]
-								except IndexError:
-									manyinferior2 = many2[inferior-1]
-
-								try:
-									manysuperior2 = many2[superior]
-								except IndexError:
-									try:
-										manysuperior2 = many2[superior-1]
-									except IndexError:
-										try:
-											manysuperior2 = many2[superior-2]
-										except IndexError:
-											try:
-												manysuperior2 = many2[superior-3]
-											except IndexError:
-												try:
-													manysuperior2 = many2[superior-4]
-												except IndexError:
-													manysuperior2 = many2[superior-5]
-
-								manyinferior = manyinferior2[0]
-								manysuperior = manysuperior2[0]
-								var = message.guild.id
-								cursor.execute(f"SELECT levelid,server FROM levels WHERE requester = {userid} AND ID BETWEEN {manyinferior} AND {manysuperior} ORDER BY ID ASC LIMIT 5")
-								row = cursor.fetchone()
-								while row is not None:
-									number += 1
-									print(row)
-									levelid = row[0]
-									levelfinder(levelid)
-									stars,objectplus,levelname,creator,ratingemote,stars,downloads,likes,likesemote = levelfinder(levelid)
-
-									serverid = row[1]
-									servers = client.get_guild(serverid)
-									if int(stars) == 0:
-										if int(objectplus) >= 40000:
-											embed2.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"__({requestedserver} `{servers}`)__", inline=False)
-										elif int(objectplus) <= 39999:
-											embed2.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote}\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"__({requestedserver} `{servers}`)__", inline=False)
-									elif stars is not "0":
-										if int(objectplus) >= 40000:
-											embed2.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003> <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"__({requestedserver} `{servers}`)__", inline=False)
-										elif int(objectplus) <= 39999:
-											embed2.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"__({requestedserver} `{servers}`)__", inline=False)
-									row = cursor.fetchone()
-								await msg400.delete()
-								embed2.add_field(name=f"{information}", value=f"{page} 2/2 - {scrollpage}", inline=False)
-								terminated = "yes"
-						action = msg.edit
-					return
-				elif count >= 11 and count <= 15:
-					messages = (embed, embed2, embed3)
-
-					terminated = "no"
-					terminated2 = "no"
-
-					index = 0
-					inferior = 1
-					superior = 5
-					msg = None
-
-					embed.add_field(name=f"{information}", value=f"{page} 1/3- {scrollpage}", inline=False)
-
-					action = message.channel.send
-					while True:
-						res = await action(embed=messages[index])
-						if res is not None:
-							msg = res
-						l = index != 0
-						r = index != len(messages) - 1
-						j = index == 2
-						k = index == 0
-						if j:
-							await msg.clear_reaction(right)
-						if k:
-							await msg.clear_reaction(left)
-						if l:
-							await msg.add_reaction(left)
-						if r:
-							await msg.add_reaction(right)
-						try:
-							react, user = await client.wait_for('reaction_add', check=predicate(msg, l, r), timeout=30)
-						except Exception:
-							print("BROKE")
-							break
-
-						if react.emoji == left:
-							inferior -= 5
-							superior -= 5
-							index -= 1
-						elif react.emoji == right:
-							inferior += 5
-							superior += 5
-							index += 1
-							if index == 1:
-								if terminated == "no":
-									embed400 = discord.Embed(title=f"{loadingtitle}", color=0xffce08)
-									embed400.add_field(name=f'{loadingdesc}', value="\u200b")
-									msg400 = await message.channel.send(embed=embed400)
-
-									cursor.execute(f"SELECT ID FROM levels WHERE requester = {userid} ORDER BY ID ASC")
-									many2 = cursor.fetchall()
-									print(many2)
-									try:
-										manyinferior2 = many2[inferior]
-									except IndexError:
-										manyinferior2 = many2[inferior-1]
-
-									try:
-										manysuperior2 = many2[superior]
-									except IndexError:
-										try:
-											manysuperior2 = many2[superior-1]
-										except IndexError:
-											try:
-												manysuperior2 = many2[superior-2]
-											except IndexError:
-												try:
-													manysuperior2 = many2[superior-3]
-												except IndexError:
-													try:
-														manysuperior2 = many2[superior-4]
-													except IndexError:
-														manysuperior2 = many2[superior-5]
-
-									manyinferior = manyinferior2[0]
-									manysuperior = manysuperior2[0]
-									var = message.guild.id
-									cursor.execute(f"SELECT levelid,server FROM levels WHERE requester = {userid} AND ID BETWEEN {manyinferior} AND {manysuperior} ORDER BY ID ASC LIMIT 5")
-									row = cursor.fetchone()
-									while row is not None:
-										number += 1
-										print(row)
-										levelid = row[0]
-										levelfinder(levelid)
-										stars,objectplus,levelname,creator,ratingemote,stars,downloads,likes,likesemote = levelfinder(levelid)
-
-										serverid = row[1]
-										servers = client.get_guild(serverid)
-										if int(stars) == 0:
-											if int(objectplus) >= 40000:
-												embed2.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"__({requestedserver} `{servers}`)__", inline=False)
-											elif int(objectplus) <= 39999:
-												embed2.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote}\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"__({requestedserver} `{servers}`)__", inline=False)
-										elif stars is not "0":
-											if int(objectplus) >= 40000:
-												embed2.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003> <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"__({requestedserver} `{servers}`)__", inline=False)
-											elif int(objectplus) <= 39999:
-												embed2.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"__({requestedserver} `{servers}`)__", inline=False)
-										row = cursor.fetchone()
-									await msg400.delete()
-									embed2.add_field(name=f"{information}", value=f"{page} 2/3 - {scrollpage}", inline=False)
-									terminated = "yes"
-							elif index == 2:
-								if terminated2 == "no":
-									embed400 = discord.Embed(title=f"{loadingtitle}", color=0xffce08)
-									embed400.add_field(name=f'{loadingdesc}', value="\u200b")
-									msg400 = await message.channel.send(embed=embed400)
-
-									cursor.execute(f"SELECT ID FROM levels WHERE requester = {userid} ORDER BY ID ASC")
-									many2 = cursor.fetchall()
-									print(many2)
-									try:
-										manyinferior2 = many2[inferior]
-									except IndexError:
-										manyinferior2 = many2[inferior-1]
-
-									try:
-										manysuperior2 = many2[superior]
-									except IndexError:
-										try:
-											manysuperior2 = many2[superior-1]
-										except IndexError:
-											try:
-												manysuperior2 = many2[superior-2]
-											except IndexError:
-												try:
-													manysuperior2 = many2[superior-3]
-												except IndexError:
-													try:
-														manysuperior2 = many2[superior-4]
-													except IndexError:
-														manysuperior2 = many2[superior-5]
-
-									manyinferior = manyinferior2[0]
-									manysuperior = manysuperior2[0]
-									var = message.guild.id
-									cursor.execute(f"SELECT levelid,server FROM levels WHERE requester = {userid} AND ID BETWEEN {manyinferior} AND {manysuperior} ORDER BY ID ASC LIMIT 5")
-									row = cursor.fetchone()
-									while row is not None:
-										number += 1
-										print(row)
-										levelid = row[0]
-										levelfinder(levelid)
-										stars,objectplus,levelname,creator,ratingemote,stars,downloads,likes,likesemote = levelfinder(levelid)
-
-										serverid = row[1]
-										servers = client.get_guild(serverid)
-										if int(stars) == 0:
-											if int(objectplus) >= 40000:
-												embed3.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"__({requestedserver} `{servers}`)__", inline=False)
-											elif int(objectplus) <= 39999:
-												embed3.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote}\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"__({requestedserver} `{servers}`)__", inline=False)
-										elif stars is not "0":
-											if int(objectplus) >= 40000:
-												embed3.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003> <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"__({requestedserver} `{servers}`)__", inline=False)
-											elif int(objectplus) <= 39999:
-												embed3.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"__({requestedserver} `{servers}`)__", inline=False)
-										row = cursor.fetchone()
-									await msg400.delete()
-									embed3.add_field(name=f"{information}", value=f"{page} 3/3 - {scrollpage}", inline=False)
-									terminated2 = "yes"
-						action = msg.edit
-					return
-				elif count >= 16 and count <= 20:
-					messages = (embed, embed2, embed3, embed4)
-
-					terminated = "no"
-					terminated2 = "no"
-					terminated3 = "no"
-
-					index = 0
-					inferior = 1
-					superior = 5
-					msg = None
-
-					embed.add_field(name=f"{information}", value=f"{page} 1/4- {scrollpage}", inline=False)
-
-					res = await message.channel.send(embed=messages[index])
-					while True:
-						if res is not None:
-							msg = res
-						res = await msg.edit(embed=messages[index])
-						l = index != 0
-						r = index != len(messages) - 1
-						j = index == 3
-						k = index == 0
-						if j:
-							await msg.clear_reaction(right)
-						if k:
-							await msg.clear_reaction(left)
-						if l:
-							await msg.add_reaction(left)
-						if r:
-							await msg.add_reaction(right)
-						try:
-							react, user = await client.wait_for('reaction_add', check=predicate(msg, l, r), timeout=30)
-						except Exception:
-							print("BROKE")
-							break
-
-						if react.emoji == left:
-							inferior -= 5
-							superior -= 5
-							index -= 1
-						elif react.emoji == right:
-							inferior += 5
-							superior += 5
-							index += 1
-							if index == 1:
-								if terminated == "no":
-									embed400 = discord.Embed(title=f"{loadingtitle}", color=0xffce08)
-									embed400.add_field(name=f'{loadingdesc}', value="\u200b")
-									msg400 = await message.channel.send(embed=embed400)
-
-									cursor.execute(f"SELECT ID FROM levels WHERE requester = {userid} ORDER BY ID ASC")
-									many2 = cursor.fetchall()
-									print(many2)
-									try:
-										manyinferior2 = many2[inferior]
-									except IndexError:
-										manyinferior2 = many2[inferior-1]
-
-									try:
-										manysuperior2 = many2[superior]
-									except IndexError:
-										try:
-											manysuperior2 = many2[superior-1]
-										except IndexError:
-											try:
-												manysuperior2 = many2[superior-2]
-											except IndexError:
-												try:
-													manysuperior2 = many2[superior-3]
-												except IndexError:
-													try:
-														manysuperior2 = many2[superior-4]
-													except IndexError:
-														manysuperior2 = many2[superior-5]
-
-									manyinferior = manyinferior2[0]
-									manysuperior = manysuperior2[0]
-									var = message.guild.id
-									cursor.execute(f"SELECT levelid,server FROM levels WHERE requester = {userid} AND ID BETWEEN {manyinferior} AND {manysuperior} ORDER BY ID ASC LIMIT 5")
-									row = cursor.fetchone()
-									while row is not None:
-										number += 1
-										print(row)
-										levelid = row[0]
-										levelfinder(levelid)
-										stars,objectplus,levelname,creator,ratingemote,stars,downloads,likes,likesemote = levelfinder(levelid)
-
-										serverid = row[1]
-										servers = client.get_guild(serverid)
-										if int(stars) == 0:
-											if int(objectplus) >= 40000:
-												embed2.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"__({requestedserver} `{servers}`)__", inline=False)
-											elif int(objectplus) <= 39999:
-												embed2.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote}\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"__({requestedserver} `{servers}`)__", inline=False)
-										elif stars is not "0":
-											if int(objectplus) >= 40000:
-												embed2.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003> <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"__({requestedserver} `{servers}`)__", inline=False)
-											elif int(objectplus) <= 39999:
-												embed2.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"__({requestedserver} `{servers}`)__", inline=False)
-										row = cursor.fetchone()
-									await msg400.delete()
-									embed2.add_field(name=f"{information}", value=f"{page} 2/3 - {scrollpage}", inline=False)
-									terminated = "yes"
-							elif index == 2:
-								if terminated2 == "no":
-									embed400 = discord.Embed(title=f"{loadingtitle}", color=0xffce08)
-									embed400.add_field(name=f'{loadingdesc}', value="\u200b")
-									msg400 = await message.channel.send(embed=embed400)
-
-									cursor.execute(f"SELECT ID FROM levels WHERE requester = {userid} ORDER BY ID ASC")
-									many2 = cursor.fetchall()
-									print(many2)
-									try:
-										manyinferior2 = many2[inferior]
-									except IndexError:
-										manyinferior2 = many2[inferior-1]
-
-									try:
-										manysuperior2 = many2[superior]
-									except IndexError:
-										try:
-											manysuperior2 = many2[superior-1]
-										except IndexError:
-											try:
-												manysuperior2 = many2[superior-2]
-											except IndexError:
-												try:
-													manysuperior2 = many2[superior-3]
-												except IndexError:
-													try:
-														manysuperior2 = many2[superior-4]
-													except IndexError:
-														manysuperior2 = many2[superior-5]
-
-									manyinferior = manyinferior2[0]
-									manysuperior = manysuperior2[0]
-									var = message.guild.id
-									cursor.execute(f"SELECT levelid,server FROM levels WHERE requester = {userid} AND ID BETWEEN {manyinferior} AND {manysuperior} ORDER BY ID ASC LIMIT 5")
-									row = cursor.fetchone()
-									while row is not None:
-										number += 1
-										print(row)
-										levelid = row[0]
-										levelfinder(levelid)
-										stars,objectplus,levelname,creator,ratingemote,stars,downloads,likes,likesemote = levelfinder(levelid)
-
-										serverid = row[1]
-										servers = client.get_guild(serverid)
-										if int(stars) == 0:
-											if int(objectplus) >= 40000:
-												embed3.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"__({requestedserver} `{servers}`)__", inline=False)
-											elif int(objectplus) <= 39999:
-												embed3.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote}\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"__({requestedserver} `{servers}`)__", inline=False)
-										elif stars is not "0":
-											if int(objectplus) >= 40000:
-												embed3.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003> <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"__({requestedserver} `{servers}`)__", inline=False)
-											elif int(objectplus) <= 39999:
-												embed3.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"__({requestedserver} `{servers}`)__", inline=False)
-										row = cursor.fetchone()
-									await msg400.delete()
-									embed3.add_field(name=f"{information}", value=f"{page} 3/3 - {scrollpage}", inline=False)
-									terminated2 = "yes"
-							elif index == 3:
-								if terminated3 == "no":
-									embed400 = discord.Embed(title=f"{loadingtitle}", color=0xffce08)
-									embed400.add_field(name=f'{loadingdesc}', value="\u200b")
-									msg400 = await message.channel.send(embed=embed400)
-
-									cursor.execute(f"SELECT ID FROM levels WHERE requester = {userid} ORDER BY ID ASC")
-									many2 = cursor.fetchall()
-									print(many2)
-									try:
-										manyinferior2 = many2[inferior]
-									except IndexError:
-										manyinferior2 = many2[inferior-1]
-
-									try:
-										manysuperior2 = many2[superior]
-									except IndexError:
-										try:
-											manysuperior2 = many2[superior-1]
-										except IndexError:
-											try:
-												manysuperior2 = many2[superior-2]
-											except IndexError:
-												try:
-													manysuperior2 = many2[superior-3]
-												except IndexError:
-													try:
-														manysuperior2 = many2[superior-4]
-													except IndexError:
-														manysuperior2 = many2[superior-5]
-
-									manyinferior = manyinferior2[0]
-									manysuperior = manysuperior2[0]
-									var = message.guild.id
-									cursor.execute(f"SELECT levelid,server FROM levels WHERE requester = {userid} AND ID BETWEEN {manyinferior} AND {manysuperior} ORDER BY ID ASC LIMIT 5")
-									row = cursor.fetchone()
-									while row is not None:
-										number += 1
-										print(row)
-										levelid = row[0]
-										levelfinder(levelid)
-										stars,objectplus,levelname,creator,ratingemote,stars,downloads,likes,likesemote = levelfinder(levelid)
-
-										serverid = row[1]
-										servers = client.get_guild(serverid)
-										if int(stars) == 0:
-											if int(objectplus) >= 40000:
-												embed4.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"__({requestedserver} `{servers}`)__", inline=False)
-											elif int(objectplus) <= 39999:
-												embed4.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote}\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"__({requestedserver} `{servers}`)__", inline=False)
-										elif stars is not "0":
-											if int(objectplus) >= 40000:
-												embed4.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003> <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"__({requestedserver} `{servers}`)__", inline=False)
-											elif int(objectplus) <= 39999:
-												embed4.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"__({requestedserver} `{servers}`)__", inline=False)
-										row = cursor.fetchone()
-									await msg400.delete()
-									embed4.add_field(name=f"{information}", value=f"{page} 3/3 - {scrollpage}", inline=False)
-									terminated3 = "yes"
-						action = msg.edit
-					return
-				elif count >= 21 and count <= 25:
-					messages = (embed, embed2, embed3, embed4, embed5)
-
-					terminated = "no"
-					terminated2 = "no"
-					terminated3 = "no"
-					terminated4 = "no"
-
-					index = 0
-					inferior = 1
-					superior = 5
-					msg = None
-
-					embed.add_field(name=f"{information}", value=f"{page} 1/4- {scrollpage}", inline=False)
-
-					res = await message.channel.send(embed=messages[index])
-					while True:
-						if res is not None:
-							msg = res
-						res = await msg.edit(embed=messages[index])
-						l = index != 0
-						r = index != len(messages) - 1
-						j = index == 4
-						k = index == 0
-						if j:
-							await msg.clear_reaction(right)
-						if k:
-							await msg.clear_reaction(left)
-						if l:
-							await msg.add_reaction(left)
-						if r:
-							await msg.add_reaction(right)
-						try:
-							react, user = await client.wait_for('reaction_add', check=predicate(msg, l, r), timeout=30)
-						except Exception:
-							print("BROKE")
-							break
-
-						if react.emoji == left:
-							inferior -= 5
-							superior -= 5
-							index -= 1
-						elif react.emoji == right:
-							inferior += 5
-							superior += 5
-							index += 1
-							if index == 1:
-								if terminated == "no":
-									embed400 = discord.Embed(title=f"{loadingtitle}", color=0xffce08)
-									embed400.add_field(name=f'{loadingdesc}', value="\u200b")
-									msg400 = await message.channel.send(embed=embed400)
-
-									cursor.execute(f"SELECT ID FROM levels WHERE requester = {userid} ORDER BY ID ASC")
-									many2 = cursor.fetchall()
-									print(many2)
-									try:
-										manyinferior2 = many2[inferior]
-									except IndexError:
-										manyinferior2 = many2[inferior-1]
-
-									try:
-										manysuperior2 = many2[superior]
-									except IndexError:
-										try:
-											manysuperior2 = many2[superior-1]
-										except IndexError:
-											try:
-												manysuperior2 = many2[superior-2]
-											except IndexError:
-												try:
-													manysuperior2 = many2[superior-3]
-												except IndexError:
-													try:
-														manysuperior2 = many2[superior-4]
-													except IndexError:
-														manysuperior2 = many2[superior-5]
-
-									manyinferior = manyinferior2[0]
-									manysuperior = manysuperior2[0]
-									var = message.guild.id
-									cursor.execute(f"SELECT levelid,server FROM levels WHERE requester = {userid} AND ID BETWEEN {manyinferior} AND {manysuperior} ORDER BY ID ASC LIMIT 5")
-									row = cursor.fetchone()
-									while row is not None:
-										number += 1
-										print(row)
-										levelid = row[0]
-										levelfinder(levelid)
-										stars,objectplus,levelname,creator,ratingemote,stars,downloads,likes,likesemote = levelfinder(levelid)
-
-										serverid = row[1]
-										servers = client.get_guild(serverid)
-										if int(stars) == 0:
-											if int(objectplus) >= 40000:
-												embed2.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"__({requestedserver} `{servers}`)__", inline=False)
-											elif int(objectplus) <= 39999:
-												embed2.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote}\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"__({requestedserver} `{servers}`)__", inline=False)
-										elif stars is not "0":
-											if int(objectplus) >= 40000:
-												embed2.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003> <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"__({requestedserver} `{servers}`)__", inline=False)
-											elif int(objectplus) <= 39999:
-												embed2.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"__({requestedserver} `{servers}`)__", inline=False)
-										row = cursor.fetchone()
-									await msg400.delete()
-									embed2.add_field(name=f"{information}", value=f"{page} 2/3 - {scrollpage}", inline=False)
-									terminated = "yes"
-							elif index == 2:
-								if terminated2 == "no":
-									embed400 = discord.Embed(title=f"{loadingtitle}", color=0xffce08)
-									embed400.add_field(name=f'{loadingdesc}', value="\u200b")
-									msg400 = await message.channel.send(embed=embed400)
-
-									cursor.execute(f"SELECT ID FROM levels WHERE requester = {userid} ORDER BY ID ASC")
-									many2 = cursor.fetchall()
-									print(many2)
-									try:
-										manyinferior2 = many2[inferior]
-									except IndexError:
-										manyinferior2 = many2[inferior-1]
-
-									try:
-										manysuperior2 = many2[superior]
-									except IndexError:
-										try:
-											manysuperior2 = many2[superior-1]
-										except IndexError:
-											try:
-												manysuperior2 = many2[superior-2]
-											except IndexError:
-												try:
-													manysuperior2 = many2[superior-3]
-												except IndexError:
-													try:
-														manysuperior2 = many2[superior-4]
-													except IndexError:
-														manysuperior2 = many2[superior-5]
-
-									manyinferior = manyinferior2[0]
-									manysuperior = manysuperior2[0]
-									var = message.guild.id
-									cursor.execute(f"SELECT levelid,server FROM levels WHERE requester = {userid} AND ID BETWEEN {manyinferior} AND {manysuperior} ORDER BY ID ASC LIMIT 5")
-									row = cursor.fetchone()
-									while row is not None:
-										number += 1
-										print(row)
-										levelid = row[0]
-										levelfinder(levelid)
-										stars,objectplus,levelname,creator,ratingemote,stars,downloads,likes,likesemote = levelfinder(levelid)
-
-										serverid = row[1]
-										servers = client.get_guild(serverid)
-										if int(stars) == 0:
-											if int(objectplus) >= 40000:
-												embed3.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"__({requestedserver} `{servers}`)__", inline=False)
-											elif int(objectplus) <= 39999:
-												embed3.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote}\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"__({requestedserver} `{servers}`)__", inline=False)
-										elif stars is not "0":
-											if int(objectplus) >= 40000:
-												embed3.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003> <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"__({requestedserver} `{servers}`)__", inline=False)
-											elif int(objectplus) <= 39999:
-												embed3.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"__({requestedserver} `{servers}`)__", inline=False)
-										row = cursor.fetchone()
-									await msg400.delete()
-									embed3.add_field(name=f"{information}", value=f"{page} 3/3 - {scrollpage}", inline=False)
-									terminated2 = "yes"
-							elif index == 3:
-								if terminated3 == "no":
-									embed400 = discord.Embed(title=f"{loadingtitle}", color=0xffce08)
-									embed400.add_field(name=f'{loadingdesc}', value="\u200b")
-									msg400 = await message.channel.send(embed=embed400)
-
-									cursor.execute(f"SELECT ID FROM levels WHERE requester = {userid} ORDER BY ID ASC")
-									many2 = cursor.fetchall()
-									print(many2)
-									try:
-										manyinferior2 = many2[inferior]
-									except IndexError:
-										manyinferior2 = many2[inferior-1]
-
-									try:
-										manysuperior2 = many2[superior]
-									except IndexError:
-										try:
-											manysuperior2 = many2[superior-1]
-										except IndexError:
-											try:
-												manysuperior2 = many2[superior-2]
-											except IndexError:
-												try:
-													manysuperior2 = many2[superior-3]
-												except IndexError:
-													try:
-														manysuperior2 = many2[superior-4]
-													except IndexError:
-														manysuperior2 = many2[superior-5]
-
-									manyinferior = manyinferior2[0]
-									manysuperior = manysuperior2[0]
-									var = message.guild.id
-									cursor.execute(f"SELECT levelid,server FROM levels WHERE requester = {userid} AND ID BETWEEN {manyinferior} AND {manysuperior} ORDER BY ID ASC LIMIT 5")
-									row = cursor.fetchone()
-									while row is not None:
-										number += 1
-										print(row)
-										levelid = row[0]
-										levelfinder(levelid)
-										stars,objectplus,levelname,creator,ratingemote,stars,downloads,likes,likesemote = levelfinder(levelid)
-
-										serverid = row[1]
-										servers = client.get_guild(serverid)
-										if int(stars) == 0:
-											if int(objectplus) >= 40000:
-												embed4.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"__({requestedserver} `{servers}`)__", inline=False)
-											elif int(objectplus) <= 39999:
-												embed4.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote}\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"__({requestedserver} `{servers}`)__", inline=False)
-										elif stars is not "0":
-											if int(objectplus) >= 40000:
-												embed4.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003> <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"__({requestedserver} `{servers}`)__", inline=False)
-											elif int(objectplus) <= 39999:
-												embed4.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"__({requestedserver} `{servers}`)__", inline=False)
-										row = cursor.fetchone()
-									await msg400.delete()
-									embed4.add_field(name=f"{information}", value=f"{page} 3/3 - {scrollpage}", inline=False)
-									terminated3 = "yes"
-							elif index == 4:
-								if terminated4 == "no":
-									embed400 = discord.Embed(title=f"{loadingtitle}", color=0xffce08)
-									embed400.add_field(name=f'{loadingdesc}', value="\u200b")
-									msg400 = await message.channel.send(embed=embed400)
-
-									cursor.execute(f"SELECT ID FROM levels WHERE requester = {userid} ORDER BY ID ASC")
-									many2 = cursor.fetchall()
-									print(many2)
-									try:
-										manyinferior2 = many2[inferior]
-									except IndexError:
-										manyinferior2 = many2[inferior-1]
-
-									try:
-										manysuperior2 = many2[superior]
-									except IndexError:
-										try:
-											manysuperior2 = many2[superior-1]
-										except IndexError:
-											try:
-												manysuperior2 = many2[superior-2]
-											except IndexError:
-												try:
-													manysuperior2 = many2[superior-3]
-												except IndexError:
-													try:
-														manysuperior2 = many2[superior-4]
-													except IndexError:
-														manysuperior2 = many2[superior-5]
-
-									manyinferior = manyinferior2[0]
-									manysuperior = manysuperior2[0]
-									var = message.guild.id
-									cursor.execute(f"SELECT levelid,server FROM levels WHERE requester = {userid} AND ID BETWEEN {manyinferior} AND {manysuperior} ORDER BY ID ASC LIMIT 5")
-									row = cursor.fetchone()
-									while row is not None:
-										number += 1
-										print(row)
-										levelid = row[0]
-										levelfinder(levelid)
-										stars,objectplus,levelname,creator,ratingemote,stars,downloads,likes,likesemote = levelfinder(levelid)
-
-										serverid = row[1]
-										servers = client.get_guild(serverid)
-										if int(stars) == 0:
-											if int(objectplus) >= 40000:
-												embed5.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"__({requestedserver} `{servers}`)__", inline=False)
-											elif int(objectplus) <= 39999:
-												embed5.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote}\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"__({requestedserver} `{servers}`)__", inline=False)
-										elif stars is not "0":
-											if int(objectplus) >= 40000:
-												embed5.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003> <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"__({requestedserver} `{servers}`)__", inline=False)
-											elif int(objectplus) <= 39999:
-												embed5.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"__({requestedserver} `{servers}`)__", inline=False)
-										row = cursor.fetchone()
-									await msg400.delete()
-									embed5.add_field(name=f"{information}", value=f"{page} 3/3 - {scrollpage}", inline=False)
-									terminated4 = "yes"
-						action = msg.edit
-					return
-				elif count >= 26 and count <= 30:
-					messages = (embed, embed2, embed3, embed4, embed5, embed6)
-
-					terminated = "no"
-					terminated2 = "no"
-					terminated3 = "no"
-					terminated4 = "no"
-					terminated5 = "no"
-
-					index = 0
-					inferior = 1
-					superior = 5
-					msg = None
-
-					embed.add_field(name=f"{information}", value=f"{page} 1/4- {scrollpage}", inline=False)
-
-					res = await message.channel.send(embed=messages[index])
-					while True:
-						if res is not None:
-							msg = res
-						res = await msg.edit(embed=messages[index])
-						l = index != 0
-						r = index != len(messages) - 1
-						j = index == 5
-						k = index == 0
-						if j:
-							await msg.clear_reaction(right)
-						if k:
-							await msg.clear_reaction(left)
-						if l:
-							await msg.add_reaction(left)
-						if r:
-							await msg.add_reaction(right)
-						try:
-							react, user = await client.wait_for('reaction_add', check=predicate(msg, l, r), timeout=30)
-						except Exception:
-							print("BROKE")
-							break
-
-						if react.emoji == left:
-							inferior -= 5
-							superior -= 5
-							index -= 1
-						elif react.emoji == right:
-							inferior += 5
-							superior += 5
-							index += 1
-							if index == 1:
-								if terminated == "no":
-									embed400 = discord.Embed(title=f"{loadingtitle}", color=0xffce08)
-									embed400.add_field(name=f'{loadingdesc}', value="\u200b")
-									msg400 = await message.channel.send(embed=embed400)
-
-									cursor.execute(f"SELECT ID FROM levels WHERE requester = {userid} ORDER BY ID ASC")
-									many2 = cursor.fetchall()
-									print(many2)
-									try:
-										manyinferior2 = many2[inferior]
-									except IndexError:
-										manyinferior2 = many2[inferior-1]
-
-									try:
-										manysuperior2 = many2[superior]
-									except IndexError:
-										try:
-											manysuperior2 = many2[superior-1]
-										except IndexError:
-											try:
-												manysuperior2 = many2[superior-2]
-											except IndexError:
-												try:
-													manysuperior2 = many2[superior-3]
-												except IndexError:
-													try:
-														manysuperior2 = many2[superior-4]
-													except IndexError:
-														manysuperior2 = many2[superior-5]
-
-									manyinferior = manyinferior2[0]
-									manysuperior = manysuperior2[0]
-									var = message.guild.id
-									cursor.execute(f"SELECT levelid,server FROM levels WHERE requester = {userid} AND ID BETWEEN {manyinferior} AND {manysuperior} ORDER BY ID ASC LIMIT 5")
-									row = cursor.fetchone()
-									while row is not None:
-										number += 1
-										print(row)
-										levelid = row[0]
-										levelfinder(levelid)
-										stars,objectplus,levelname,creator,ratingemote,stars,downloads,likes,likesemote = levelfinder(levelid)
-
-										serverid = row[1]
-										servers = client.get_guild(serverid)
-										if int(stars) == 0:
-											if int(objectplus) >= 40000:
-												embed2.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"__({requestedserver} `{servers}`)__", inline=False)
-											elif int(objectplus) <= 39999:
-												embed2.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote}\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"__({requestedserver} `{servers}`)__", inline=False)
-										elif stars is not "0":
-											if int(objectplus) >= 40000:
-												embed2.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003> <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"__({requestedserver} `{servers}`)__", inline=False)
-											elif int(objectplus) <= 39999:
-												embed2.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"__({requestedserver} `{servers}`)__", inline=False)
-										row = cursor.fetchone()
-									await msg400.delete()
-									embed2.add_field(name=f"{information}", value=f"{page} 2/3 - {scrollpage}", inline=False)
-									terminated = "yes"
-							elif index == 2:
-								if terminated2 == "no":
-									embed400 = discord.Embed(title=f"{loadingtitle}", color=0xffce08)
-									embed400.add_field(name=f'{loadingdesc}', value="\u200b")
-									msg400 = await message.channel.send(embed=embed400)
-
-									cursor.execute(f"SELECT ID FROM levels WHERE requester = {userid} ORDER BY ID ASC")
-									many2 = cursor.fetchall()
-									print(many2)
-									try:
-										manyinferior2 = many2[inferior]
-									except IndexError:
-										manyinferior2 = many2[inferior-1]
-
-									try:
-										manysuperior2 = many2[superior]
-									except IndexError:
-										try:
-											manysuperior2 = many2[superior-1]
-										except IndexError:
-											try:
-												manysuperior2 = many2[superior-2]
-											except IndexError:
-												try:
-													manysuperior2 = many2[superior-3]
-												except IndexError:
-													try:
-														manysuperior2 = many2[superior-4]
-													except IndexError:
-														manysuperior2 = many2[superior-5]
-
-									manyinferior = manyinferior2[0]
-									manysuperior = manysuperior2[0]
-									var = message.guild.id
-									cursor.execute(f"SELECT levelid,server FROM levels WHERE requester = {userid} AND ID BETWEEN {manyinferior} AND {manysuperior} ORDER BY ID ASC LIMIT 5")
-									row = cursor.fetchone()
-									while row is not None:
-										number += 1
-										print(row)
-										levelid = row[0]
-										levelfinder(levelid)
-										stars,objectplus,levelname,creator,ratingemote,stars,downloads,likes,likesemote = levelfinder(levelid)
-
-										serverid = row[1]
-										servers = client.get_guild(serverid)
-										if int(stars) == 0:
-											if int(objectplus) >= 40000:
-												embed3.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"__({requestedserver} `{servers}`)__", inline=False)
-											elif int(objectplus) <= 39999:
-												embed3.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote}\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"__({requestedserver} `{servers}`)__", inline=False)
-										elif stars is not "0":
-											if int(objectplus) >= 40000:
-												embed3.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003> <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"__({requestedserver} `{servers}`)__", inline=False)
-											elif int(objectplus) <= 39999:
-												embed3.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"__({requestedserver} `{servers}`)__", inline=False)
-										row = cursor.fetchone()
-									await msg400.delete()
-									embed3.add_field(name=f"{information}", value=f"{page} 3/3 - {scrollpage}", inline=False)
-									terminated2 = "yes"
-							elif index == 3:
-								if terminated3 == "no":
-									embed400 = discord.Embed(title=f"{loadingtitle}", color=0xffce08)
-									embed400.add_field(name=f'{loadingdesc}', value="\u200b")
-									msg400 = await message.channel.send(embed=embed400)
-
-									cursor.execute(f"SELECT ID FROM levels WHERE requester = {userid} ORDER BY ID ASC")
-									many2 = cursor.fetchall()
-									print(many2)
-									try:
-										manyinferior2 = many2[inferior]
-									except IndexError:
-										manyinferior2 = many2[inferior-1]
-
-									try:
-										manysuperior2 = many2[superior]
-									except IndexError:
-										try:
-											manysuperior2 = many2[superior-1]
-										except IndexError:
-											try:
-												manysuperior2 = many2[superior-2]
-											except IndexError:
-												try:
-													manysuperior2 = many2[superior-3]
-												except IndexError:
-													try:
-														manysuperior2 = many2[superior-4]
-													except IndexError:
-														manysuperior2 = many2[superior-5]
-
-									manyinferior = manyinferior2[0]
-									manysuperior = manysuperior2[0]
-									var = message.guild.id
-									cursor.execute(f"SELECT levelid,server FROM levels WHERE requester = {userid} AND ID BETWEEN {manyinferior} AND {manysuperior} ORDER BY ID ASC LIMIT 5")
-									row = cursor.fetchone()
-									while row is not None:
-										number += 1
-										print(row)
-										levelid = row[0]
-										levelfinder(levelid)
-										stars,objectplus,levelname,creator,ratingemote,stars,downloads,likes,likesemote = levelfinder(levelid)
-
-										serverid = row[1]
-										servers = client.get_guild(serverid)
-										if int(stars) == 0:
-											if int(objectplus) >= 40000:
-												embed4.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"__({requestedserver} `{servers}`)__", inline=False)
-											elif int(objectplus) <= 39999:
-												embed4.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote}\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"__({requestedserver} `{servers}`)__", inline=False)
-										elif stars is not "0":
-											if int(objectplus) >= 40000:
-												embed4.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003> <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"__({requestedserver} `{servers}`)__", inline=False)
-											elif int(objectplus) <= 39999:
-												embed4.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"__({requestedserver} `{servers}`)__", inline=False)
-										row = cursor.fetchone()
-									await msg400.delete()
-									embed4.add_field(name=f"{information}", value=f"{page} 3/3 - {scrollpage}", inline=False)
-									terminated3 = "yes"
-							elif index == 4:
-								if terminated4 == "no":
-									embed400 = discord.Embed(title=f"{loadingtitle}", color=0xffce08)
-									embed400.add_field(name=f'{loadingdesc}', value="\u200b")
-									msg400 = await message.channel.send(embed=embed400)
-
-									cursor.execute(f"SELECT ID FROM levels WHERE requester = {userid} ORDER BY ID ASC")
-									many2 = cursor.fetchall()
-									print(many2)
-									try:
-										manyinferior2 = many2[inferior]
-									except IndexError:
-										manyinferior2 = many2[inferior-1]
-
-									try:
-										manysuperior2 = many2[superior]
-									except IndexError:
-										try:
-											manysuperior2 = many2[superior-1]
-										except IndexError:
-											try:
-												manysuperior2 = many2[superior-2]
-											except IndexError:
-												try:
-													manysuperior2 = many2[superior-3]
-												except IndexError:
-													try:
-														manysuperior2 = many2[superior-4]
-													except IndexError:
-														manysuperior2 = many2[superior-5]
-
-									manyinferior = manyinferior2[0]
-									manysuperior = manysuperior2[0]
-									var = message.guild.id
-									cursor.execute(f"SELECT levelid,server FROM levels WHERE requester = {userid} AND ID BETWEEN {manyinferior} AND {manysuperior} ORDER BY ID ASC LIMIT 5")
-									row = cursor.fetchone()
-									while row is not None:
-										number += 1
-										print(row)
-										levelid = row[0]
-										levelfinder(levelid)
-										stars,objectplus,levelname,creator,ratingemote,stars,downloads,likes,likesemote = levelfinder(levelid)
-
-										serverid = row[1]
-										servers = client.get_guild(serverid)
-										if int(stars) == 0:
-											if int(objectplus) >= 40000:
-												embed5.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"__({requestedserver} `{servers}`)__", inline=False)
-											elif int(objectplus) <= 39999:
-												embed5.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote}\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"__({requestedserver} `{servers}`)__", inline=False)
-										elif stars is not "0":
-											if int(objectplus) >= 40000:
-												embed5.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003> <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"__({requestedserver} `{servers}`)__", inline=False)
-											elif int(objectplus) <= 39999:
-												embed5.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"__({requestedserver} `{servers}`)__", inline=False)
-										row = cursor.fetchone()
-									await msg400.delete()
-									embed4.add_field(name=f"{information}", value=f"{page} 3/3 - {scrollpage}", inline=False)
-									terminated5 = "yes"
-							elif index == 5:
-								if terminated5 == "no":
-									embed400 = discord.Embed(title=f"{loadingtitle}", color=0xffce08)
-									embed400.add_field(name=f'{loadingdesc}', value="\u200b")
-									msg400 = await message.channel.send(embed=embed400)
-
-									cursor.execute(f"SELECT ID FROM levels WHERE requester = {userid} ORDER BY ID ASC")
-									many2 = cursor.fetchall()
-									print(many2)
-									try:
-										manyinferior2 = many2[inferior]
-									except IndexError:
-										manyinferior2 = many2[inferior-1]
-
-									try:
-										manysuperior2 = many2[superior]
-									except IndexError:
-										try:
-											manysuperior2 = many2[superior-1]
-										except IndexError:
-											try:
-												manysuperior2 = many2[superior-2]
-											except IndexError:
-												try:
-													manysuperior2 = many2[superior-3]
-												except IndexError:
-													try:
-														manysuperior2 = many2[superior-4]
-													except IndexError:
-														manysuperior2 = many2[superior-5]
-
-									manyinferior = manyinferior2[0]
-									manysuperior = manysuperior2[0]
-									var = message.guild.id
-									cursor.execute(f"SELECT levelid,server FROM levels WHERE requester = {userid} AND ID BETWEEN {manyinferior} AND {manysuperior} ORDER BY ID ASC LIMIT 5")
-									row = cursor.fetchone()
-									while row is not None:
-										number += 1
-										print(row)
-										levelid = row[0]
-										levelfinder(levelid)
-										stars,objectplus,levelname,creator,ratingemote,stars,downloads,likes,likesemote = levelfinder(levelid)
-
-										serverid = row[1]
-										servers = client.get_guild(serverid)
-										if int(stars) == 0:
-											if int(objectplus) >= 40000:
-												embed6.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"__({requestedserver} `{servers}`)__", inline=False)
-											elif int(objectplus) <= 39999:
-												embed6.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote}\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"__({requestedserver} `{servers}`)__", inline=False)
-										elif stars is not "0":
-											if int(objectplus) >= 40000:
-												embed6.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003> <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"__({requestedserver} `{servers}`)__", inline=False)
-											elif int(objectplus) <= 39999:
-												embed6.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"__({requestedserver} `{servers}`)__", inline=False)
-										row = cursor.fetchone()
-									await msg400.delete()
-									embed6.add_field(name=f"{information}", value=f"{page} 3/3 - {scrollpage}", inline=False)
-									terminated5 = "yes"
-						action = msg.edit
-					return
-				elif count >= 31 and count <= 35:
-					messages = (embed, embed2, embed3, embed4, embed5, embed6, embed7)
-
-					terminated = "no"
-					terminated2 = "no"
-					terminated3 = "no"
-					terminated4 = "no"
-					terminated5 = "no"
-					terminated6 = "no"
-
-					index = 0
-					inferior = 1
-					superior = 5
-					msg = None
-
-					embed.add_field(name=f"{information}", value=f"{page} 1/4- {scrollpage}", inline=False)
-
-					res = await message.channel.send(embed=messages[index])
-					while True:
-						if res is not None:
-							msg = res
-						res = await msg.edit(embed=messages[index])
-						l = index != 0
-						r = index != len(messages) - 1
-						j = index == 6
-						k = index == 0
-						if j:
-							await msg.clear_reaction(right)
-						if k:
-							await msg.clear_reaction(left)
-						if l:
-							await msg.add_reaction(left)
-						if r:
-							await msg.add_reaction(right)
-						try:
-							react, user = await client.wait_for('reaction_add', check=predicate(msg, l, r), timeout=30)
-						except Exception:
-							print("BROKE")
-							break
-
-						if react.emoji == left:
-							inferior -= 5
-							superior -= 5
-							index -= 1
-						elif react.emoji == right:
-							inferior += 5
-							superior += 5
-							index += 1
-							if index == 1:
-								if terminated == "no":
-									embed400 = discord.Embed(title=f"{loadingtitle}", color=0xffce08)
-									embed400.add_field(name=f'{loadingdesc}', value="\u200b")
-									msg400 = await message.channel.send(embed=embed400)
-
-									cursor.execute(f"SELECT ID FROM levels WHERE requester = {userid} ORDER BY ID ASC")
-									many2 = cursor.fetchall()
-									print(many2)
-									try:
-										manyinferior2 = many2[inferior]
-									except IndexError:
-										manyinferior2 = many2[inferior-1]
-
-									try:
-										manysuperior2 = many2[superior]
-									except IndexError:
-										try:
-											manysuperior2 = many2[superior-1]
-										except IndexError:
-											try:
-												manysuperior2 = many2[superior-2]
-											except IndexError:
-												try:
-													manysuperior2 = many2[superior-3]
-												except IndexError:
-													try:
-														manysuperior2 = many2[superior-4]
-													except IndexError:
-														manysuperior2 = many2[superior-5]
-
-									manyinferior = manyinferior2[0]
-									manysuperior = manysuperior2[0]
-									var = message.guild.id
-									cursor.execute(f"SELECT levelid,server FROM levels WHERE requester = {userid} AND ID BETWEEN {manyinferior} AND {manysuperior} ORDER BY ID ASC LIMIT 5")
-									row = cursor.fetchone()
-									while row is not None:
-										number += 1
-										print(row)
-										levelid = row[0]
-										levelfinder(levelid)
-										stars,objectplus,levelname,creator,ratingemote,stars,downloads,likes,likesemote = levelfinder(levelid)
-
-										serverid = row[1]
-										servers = client.get_guild(serverid)
-										if int(stars) == 0:
-											if int(objectplus) >= 40000:
-												embed2.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"__({requestedserver} `{servers}`)__", inline=False)
-											elif int(objectplus) <= 39999:
-												embed2.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote}\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"__({requestedserver} `{servers}`)__", inline=False)
-										elif stars is not "0":
-											if int(objectplus) >= 40000:
-												embed2.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003> <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"__({requestedserver} `{servers}`)__", inline=False)
-											elif int(objectplus) <= 39999:
-												embed2.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"__({requestedserver} `{servers}`)__", inline=False)
-										row = cursor.fetchone()
-									await msg400.delete()
-									embed2.add_field(name=f"{information}", value=f"{page} 2/3 - {scrollpage}", inline=False)
-									terminated = "yes"
-							elif index == 2:
-								if terminated2 == "no":
-									embed400 = discord.Embed(title=f"{loadingtitle}", color=0xffce08)
-									embed400.add_field(name=f'{loadingdesc}', value="\u200b")
-									msg400 = await message.channel.send(embed=embed400)
-
-									cursor.execute(f"SELECT ID FROM levels WHERE requester = {userid} ORDER BY ID ASC")
-									many2 = cursor.fetchall()
-									print(many2)
-									try:
-										manyinferior2 = many2[inferior]
-									except IndexError:
-										manyinferior2 = many2[inferior-1]
-
-									try:
-										manysuperior2 = many2[superior]
-									except IndexError:
-										try:
-											manysuperior2 = many2[superior-1]
-										except IndexError:
-											try:
-												manysuperior2 = many2[superior-2]
-											except IndexError:
-												try:
-													manysuperior2 = many2[superior-3]
-												except IndexError:
-													try:
-														manysuperior2 = many2[superior-4]
-													except IndexError:
-														manysuperior2 = many2[superior-5]
-
-									manyinferior = manyinferior2[0]
-									manysuperior = manysuperior2[0]
-									var = message.guild.id
-									cursor.execute(f"SELECT levelid,server FROM levels WHERE requester = {userid} AND ID BETWEEN {manyinferior} AND {manysuperior} ORDER BY ID ASC LIMIT 5")
-									row = cursor.fetchone()
-									while row is not None:
-										number += 1
-										print(row)
-										levelid = row[0]
-										levelfinder(levelid)
-										stars,objectplus,levelname,creator,ratingemote,stars,downloads,likes,likesemote = levelfinder(levelid)
-
-										serverid = row[1]
-										servers = client.get_guild(serverid)
-										if int(stars) == 0:
-											if int(objectplus) >= 40000:
-												embed3.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"__({requestedserver} `{servers}`)__", inline=False)
-											elif int(objectplus) <= 39999:
-												embed3.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote}\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"__({requestedserver} `{servers}`)__", inline=False)
-										elif stars is not "0":
-											if int(objectplus) >= 40000:
-												embed3.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003> <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"__({requestedserver} `{servers}`)__", inline=False)
-											elif int(objectplus) <= 39999:
-												embed3.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"__({requestedserver} `{servers}`)__", inline=False)
-										row = cursor.fetchone()
-									await msg400.delete()
-									embed3.add_field(name=f"{information}", value=f"{page} 3/3 - {scrollpage}", inline=False)
-									terminated2 = "yes"
-							elif index == 3:
-								if terminated3 == "no":
-									embed400 = discord.Embed(title=f"{loadingtitle}", color=0xffce08)
-									embed400.add_field(name=f'{loadingdesc}', value="\u200b")
-									msg400 = await message.channel.send(embed=embed400)
-
-									cursor.execute(f"SELECT ID FROM levels WHERE requester = {userid} ORDER BY ID ASC")
-									many2 = cursor.fetchall()
-									print(many2)
-									try:
-										manyinferior2 = many2[inferior]
-									except IndexError:
-										manyinferior2 = many2[inferior-1]
-
-									try:
-										manysuperior2 = many2[superior]
-									except IndexError:
-										try:
-											manysuperior2 = many2[superior-1]
-										except IndexError:
-											try:
-												manysuperior2 = many2[superior-2]
-											except IndexError:
-												try:
-													manysuperior2 = many2[superior-3]
-												except IndexError:
-													try:
-														manysuperior2 = many2[superior-4]
-													except IndexError:
-														manysuperior2 = many2[superior-5]
-
-									manyinferior = manyinferior2[0]
-									manysuperior = manysuperior2[0]
-									var = message.guild.id
-									cursor.execute(f"SELECT levelid,server FROM levels WHERE requester = {userid} AND ID BETWEEN {manyinferior} AND {manysuperior} ORDER BY ID ASC LIMIT 5")
-									row = cursor.fetchone()
-									while row is not None:
-										number += 1
-										print(row)
-										levelid = row[0]
-										levelfinder(levelid)
-										stars,objectplus,levelname,creator,ratingemote,stars,downloads,likes,likesemote = levelfinder(levelid)
-
-										serverid = row[1]
-										servers = client.get_guild(serverid)
-										if int(stars) == 0:
-											if int(objectplus) >= 40000:
-												embed4.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"__({requestedserver} `{servers}`)__", inline=False)
-											elif int(objectplus) <= 39999:
-												embed4.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote}\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"__({requestedserver} `{servers}`)__", inline=False)
-										elif stars is not "0":
-											if int(objectplus) >= 40000:
-												embed4.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003> <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"__({requestedserver} `{servers}`)__", inline=False)
-											elif int(objectplus) <= 39999:
-												embed4.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"__({requestedserver} `{servers}`)__", inline=False)
-										row = cursor.fetchone()
-									await msg400.delete()
-									embed4.add_field(name=f"{information}", value=f"{page} 3/3 - {scrollpage}", inline=False)
-									terminated3 = "yes"
-							elif index == 4:
-								if terminated4 == "no":
-									embed400 = discord.Embed(title=f"{loadingtitle}", color=0xffce08)
-									embed400.add_field(name=f'{loadingdesc}', value="\u200b")
-									msg400 = await message.channel.send(embed=embed400)
-
-									cursor.execute(f"SELECT ID FROM levels WHERE requester = {userid} ORDER BY ID ASC")
-									many2 = cursor.fetchall()
-									print(many2)
-									try:
-										manyinferior2 = many2[inferior]
-									except IndexError:
-										manyinferior2 = many2[inferior-1]
-
-									try:
-										manysuperior2 = many2[superior]
-									except IndexError:
-										try:
-											manysuperior2 = many2[superior-1]
-										except IndexError:
-											try:
-												manysuperior2 = many2[superior-2]
-											except IndexError:
-												try:
-													manysuperior2 = many2[superior-3]
-												except IndexError:
-													try:
-														manysuperior2 = many2[superior-4]
-													except IndexError:
-														manysuperior2 = many2[superior-5]
-
-									manyinferior = manyinferior2[0]
-									manysuperior = manysuperior2[0]
-									var = message.guild.id
-									cursor.execute(f"SELECT levelid,server FROM levels WHERE requester = {userid} AND ID BETWEEN {manyinferior} AND {manysuperior} ORDER BY ID ASC LIMIT 5")
-									row = cursor.fetchone()
-									while row is not None:
-										number += 1
-										print(row)
-										levelid = row[0]
-										levelfinder(levelid)
-										stars,objectplus,levelname,creator,ratingemote,stars,downloads,likes,likesemote = levelfinder(levelid)
-
-										serverid = row[1]
-										servers = client.get_guild(serverid)
-										if int(stars) == 0:
-											if int(objectplus) >= 40000:
-												embed5.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"__({requestedserver} `{servers}`)__", inline=False)
-											elif int(objectplus) <= 39999:
-												embed5.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote}\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"__({requestedserver} `{servers}`)__", inline=False)
-										elif stars is not "0":
-											if int(objectplus) >= 40000:
-												embed5.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003> <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"__({requestedserver} `{servers}`)__", inline=False)
-											elif int(objectplus) <= 39999:
-												embed5.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"__({requestedserver} `{servers}`)__", inline=False)
-										row = cursor.fetchone()
-									await msg400.delete()
-									embed4.add_field(name=f"{information}", value=f"{page} 3/3 - {scrollpage}", inline=False)
-									terminated5 = "yes"
-							elif index == 5:
-								if terminated5 == "no":
-									embed400 = discord.Embed(title=f"{loadingtitle}", color=0xffce08)
-									embed400.add_field(name=f'{loadingdesc}', value="\u200b")
-									msg400 = await message.channel.send(embed=embed400)
-
-									cursor.execute(f"SELECT ID FROM levels WHERE requester = {userid} ORDER BY ID ASC")
-									many2 = cursor.fetchall()
-									print(many2)
-									try:
-										manyinferior2 = many2[inferior]
-									except IndexError:
-										manyinferior2 = many2[inferior-1]
-
-									try:
-										manysuperior2 = many2[superior]
-									except IndexError:
-										try:
-											manysuperior2 = many2[superior-1]
-										except IndexError:
-											try:
-												manysuperior2 = many2[superior-2]
-											except IndexError:
-												try:
-													manysuperior2 = many2[superior-3]
-												except IndexError:
-													try:
-														manysuperior2 = many2[superior-4]
-													except IndexError:
-														manysuperior2 = many2[superior-5]
-
-									manyinferior = manyinferior2[0]
-									manysuperior = manysuperior2[0]
-									var = message.guild.id
-									cursor.execute(f"SELECT levelid,server FROM levels WHERE requester = {userid} AND ID BETWEEN {manyinferior} AND {manysuperior} ORDER BY ID ASC LIMIT 5")
-									row = cursor.fetchone()
-									while row is not None:
-										number += 1
-										print(row)
-										levelid = row[0]
-										levelfinder(levelid)
-										stars,objectplus,levelname,creator,ratingemote,stars,downloads,likes,likesemote = levelfinder(levelid)
-
-										serverid = row[1]
-										servers = client.get_guild(serverid)
-										if int(stars) == 0:
-											if int(objectplus) >= 40000:
-												embed6.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"__({requestedserver} `{servers}`)__", inline=False)
-											elif int(objectplus) <= 39999:
-												embed6.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote}\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"__({requestedserver} `{servers}`)__", inline=False)
-										elif stars is not "0":
-											if int(objectplus) >= 40000:
-												embed6.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003> <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"__({requestedserver} `{servers}`)__", inline=False)
-											elif int(objectplus) <= 39999:
-												embed6.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"__({requestedserver} `{servers}`)__", inline=False)
-										row = cursor.fetchone()
-									await msg400.delete()
-									embed6.add_field(name=f"{information}", value=f"{page} 3/3 - {scrollpage}", inline=False)
-									terminated5 = "yes"
-							elif index == 6:
-								if terminated6 == "no":
-									embed400 = discord.Embed(title=f"{loadingtitle}", color=0xffce08)
-									embed400.add_field(name=f'{loadingdesc}', value="\u200b")
-									msg400 = await message.channel.send(embed=embed400)
-
-									cursor.execute(f"SELECT ID FROM levels WHERE requester = {userid} ORDER BY ID ASC")
-									many2 = cursor.fetchall()
-									print(many2)
-									try:
-										manyinferior2 = many2[inferior]
-									except IndexError:
-										manyinferior2 = many2[inferior-1]
-
-									try:
-										manysuperior2 = many2[superior]
-									except IndexError:
-										try:
-											manysuperior2 = many2[superior-1]
-										except IndexError:
-											try:
-												manysuperior2 = many2[superior-2]
-											except IndexError:
-												try:
-													manysuperior2 = many2[superior-3]
-												except IndexError:
-													try:
-														manysuperior2 = many2[superior-4]
-													except IndexError:
-														manysuperior2 = many2[superior-5]
-
-									manyinferior = manyinferior2[0]
-									manysuperior = manysuperior2[0]
-									var = message.guild.id
-									cursor.execute(f"SELECT levelid,server FROM levels WHERE requester = {userid} AND ID BETWEEN {manyinferior} AND {manysuperior} ORDER BY ID ASC LIMIT 5")
-									row = cursor.fetchone()
-									while row is not None:
-										number += 1
-										print(row)
-										levelid = row[0]
-										levelfinder(levelid)
-										stars,objectplus,levelname,creator,ratingemote,stars,downloads,likes,likesemote = levelfinder(levelid)
-
-										serverid = row[1]
-										servers = client.get_guild(serverid)
-										if int(stars) == 0:
-											if int(objectplus) >= 40000:
-												embed7.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"__({requestedserver} `{servers}`)__", inline=False)
-											elif int(objectplus) <= 39999:
-												embed7.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote}\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"__({requestedserver} `{servers}`)__", inline=False)
-										elif stars is not "0":
-											if int(objectplus) >= 40000:
-												embed7.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003> <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"__({requestedserver} `{servers}`)__", inline=False)
-											elif int(objectplus) <= 39999:
-												embed7.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"__({requestedserver} `{servers}`)__", inline=False)
-										row = cursor.fetchone()
-									await msg400.delete()
-									embed7.add_field(name=f"{information}", value=f"{page} 3/3 - {scrollpage}", inline=False)
-									terminated6 = "yes"
-						action = msg.edit
-					return
-				elif count >= 36 and count <= 40:
-					messages = (embed, embed2, embed3, embed4, embed5, embed6, embed7, embed8)
-
-					terminated = "no"
-					terminated2 = "no"
-					terminated3 = "no"
-					terminated4 = "no"
-					terminated5 = "no"
-					terminated6 = "no"
-					terminated7 = "no"
-
-					index = 0
-					inferior = 1
-					superior = 5
-					msg = None
-
-					embed.add_field(name=f"{information}", value=f"{page} 1/4- {scrollpage}", inline=False)
-
-					res = await message.channel.send(embed=messages[index])
-					while True:
-						if res is not None:
-							msg = res
-						res = await msg.edit(embed=messages[index])
-						l = index != 0
-						r = index != len(messages) - 1
-						j = index == 7
-						k = index == 0
-						if j:
-							await msg.clear_reaction(right)
-						if k:
-							await msg.clear_reaction(left)
-						if l:
-							await msg.add_reaction(left)
-						if r:
-							await msg.add_reaction(right)
-						try:
-							react, user = await client.wait_for('reaction_add', check=predicate(msg, l, r), timeout=30)
-						except Exception:
-							print("BROKE")
-							break
-
-						if react.emoji == left:
-							inferior -= 5
-							superior -= 5
-							index -= 1
-						elif react.emoji == right:
-							inferior += 5
-							superior += 5
-							index += 1
-							if index == 1:
-								if terminated == "no":
-									embed400 = discord.Embed(title=f"{loadingtitle}", color=0xffce08)
-									embed400.add_field(name=f'{loadingdesc}', value="\u200b")
-									msg400 = await message.channel.send(embed=embed400)
-
-									cursor.execute(f"SELECT ID FROM levels WHERE requester = {userid} ORDER BY ID ASC")
-									many2 = cursor.fetchall()
-									print(many2)
-									try:
-										manyinferior2 = many2[inferior]
-									except IndexError:
-										manyinferior2 = many2[inferior-1]
-
-									try:
-										manysuperior2 = many2[superior]
-									except IndexError:
-										try:
-											manysuperior2 = many2[superior-1]
-										except IndexError:
-											try:
-												manysuperior2 = many2[superior-2]
-											except IndexError:
-												try:
-													manysuperior2 = many2[superior-3]
-												except IndexError:
-													try:
-														manysuperior2 = many2[superior-4]
-													except IndexError:
-														manysuperior2 = many2[superior-5]
-
-									manyinferior = manyinferior2[0]
-									manysuperior = manysuperior2[0]
-									var = message.guild.id
-									cursor.execute(f"SELECT levelid,server FROM levels WHERE requester = {userid} AND ID BETWEEN {manyinferior} AND {manysuperior} ORDER BY ID ASC LIMIT 5")
-									row = cursor.fetchone()
-									while row is not None:
-										number += 1
-										print(row)
-										levelid = row[0]
-										levelfinder(levelid)
-										stars,objectplus,levelname,creator,ratingemote,stars,downloads,likes,likesemote = levelfinder(levelid)
-
-										serverid = row[1]
-										servers = client.get_guild(serverid)
-										if int(stars) == 0:
-											if int(objectplus) >= 40000:
-												embed2.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"__({requestedserver} `{servers}`)__", inline=False)
-											elif int(objectplus) <= 39999:
-												embed2.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote}\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"__({requestedserver} `{servers}`)__", inline=False)
-										elif stars is not "0":
-											if int(objectplus) >= 40000:
-												embed2.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003> <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"__({requestedserver} `{servers}`)__", inline=False)
-											elif int(objectplus) <= 39999:
-												embed2.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"__({requestedserver} `{servers}`)__", inline=False)
-										row = cursor.fetchone()
-									await msg400.delete()
-									embed2.add_field(name=f"{information}", value=f"{page} 2/3 - {scrollpage}", inline=False)
-									terminated = "yes"
-							elif index == 2:
-								if terminated2 == "no":
-									embed400 = discord.Embed(title=f"{loadingtitle}", color=0xffce08)
-									embed400.add_field(name=f'{loadingdesc}', value="\u200b")
-									msg400 = await message.channel.send(embed=embed400)
-
-									cursor.execute(f"SELECT ID FROM levels WHERE requester = {userid} ORDER BY ID ASC")
-									many2 = cursor.fetchall()
-									print(many2)
-									try:
-										manyinferior2 = many2[inferior]
-									except IndexError:
-										manyinferior2 = many2[inferior-1]
-
-									try:
-										manysuperior2 = many2[superior]
-									except IndexError:
-										try:
-											manysuperior2 = many2[superior-1]
-										except IndexError:
-											try:
-												manysuperior2 = many2[superior-2]
-											except IndexError:
-												try:
-													manysuperior2 = many2[superior-3]
-												except IndexError:
-													try:
-														manysuperior2 = many2[superior-4]
-													except IndexError:
-														manysuperior2 = many2[superior-5]
-
-									manyinferior = manyinferior2[0]
-									manysuperior = manysuperior2[0]
-									var = message.guild.id
-									cursor.execute(f"SELECT levelid,server FROM levels WHERE requester = {userid} AND ID BETWEEN {manyinferior} AND {manysuperior} ORDER BY ID ASC LIMIT 5")
-									row = cursor.fetchone()
-									while row is not None:
-										number += 1
-										print(row)
-										levelid = row[0]
-										levelfinder(levelid)
-										stars,objectplus,levelname,creator,ratingemote,stars,downloads,likes,likesemote = levelfinder(levelid)
-
-										serverid = row[1]
-										servers = client.get_guild(serverid)
-										if int(stars) == 0:
-											if int(objectplus) >= 40000:
-												embed3.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"__({requestedserver} `{servers}`)__", inline=False)
-											elif int(objectplus) <= 39999:
-												embed3.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote}\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"__({requestedserver} `{servers}`)__", inline=False)
-										elif stars is not "0":
-											if int(objectplus) >= 40000:
-												embed3.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003> <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"__({requestedserver} `{servers}`)__", inline=False)
-											elif int(objectplus) <= 39999:
-												embed3.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"__({requestedserver} `{servers}`)__", inline=False)
-										row = cursor.fetchone()
-									await msg400.delete()
-									embed3.add_field(name=f"{information}", value=f"{page} 3/3 - {scrollpage}", inline=False)
-									terminated2 = "yes"
-							elif index == 3:
-								if terminated3 == "no":
-									embed400 = discord.Embed(title=f"{loadingtitle}", color=0xffce08)
-									embed400.add_field(name=f'{loadingdesc}', value="\u200b")
-									msg400 = await message.channel.send(embed=embed400)
-
-									cursor.execute(f"SELECT ID FROM levels WHERE requester = {userid} ORDER BY ID ASC")
-									many2 = cursor.fetchall()
-									print(many2)
-									try:
-										manyinferior2 = many2[inferior]
-									except IndexError:
-										manyinferior2 = many2[inferior-1]
-
-									try:
-										manysuperior2 = many2[superior]
-									except IndexError:
-										try:
-											manysuperior2 = many2[superior-1]
-										except IndexError:
-											try:
-												manysuperior2 = many2[superior-2]
-											except IndexError:
-												try:
-													manysuperior2 = many2[superior-3]
-												except IndexError:
-													try:
-														manysuperior2 = many2[superior-4]
-													except IndexError:
-														manysuperior2 = many2[superior-5]
-
-									manyinferior = manyinferior2[0]
-									manysuperior = manysuperior2[0]
-									var = message.guild.id
-									cursor.execute(f"SELECT levelid,server FROM levels WHERE requester = {userid} AND ID BETWEEN {manyinferior} AND {manysuperior} ORDER BY ID ASC LIMIT 5")
-									row = cursor.fetchone()
-									while row is not None:
-										number += 1
-										print(row)
-										levelid = row[0]
-										levelfinder(levelid)
-										stars,objectplus,levelname,creator,ratingemote,stars,downloads,likes,likesemote = levelfinder(levelid)
-
-										serverid = row[1]
-										servers = client.get_guild(serverid)
-										if int(stars) == 0:
-											if int(objectplus) >= 40000:
-												embed4.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"__({requestedserver} `{servers}`)__", inline=False)
-											elif int(objectplus) <= 39999:
-												embed4.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote}\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"__({requestedserver} `{servers}`)__", inline=False)
-										elif stars is not "0":
-											if int(objectplus) >= 40000:
-												embed4.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003> <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"__({requestedserver} `{servers}`)__", inline=False)
-											elif int(objectplus) <= 39999:
-												embed4.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"__({requestedserver} `{servers}`)__", inline=False)
-										row = cursor.fetchone()
-									await msg400.delete()
-									embed4.add_field(name=f"{information}", value=f"{page} 3/3 - {scrollpage}", inline=False)
-									terminated3 = "yes"
-							elif index == 4:
-								if terminated4 == "no":
-									embed400 = discord.Embed(title=f"{loadingtitle}", color=0xffce08)
-									embed400.add_field(name=f'{loadingdesc}', value="\u200b")
-									msg400 = await message.channel.send(embed=embed400)
-
-									cursor.execute(f"SELECT ID FROM levels WHERE requester = {userid} ORDER BY ID ASC")
-									many2 = cursor.fetchall()
-									print(many2)
-									try:
-										manyinferior2 = many2[inferior]
-									except IndexError:
-										manyinferior2 = many2[inferior-1]
-
-									try:
-										manysuperior2 = many2[superior]
-									except IndexError:
-										try:
-											manysuperior2 = many2[superior-1]
-										except IndexError:
-											try:
-												manysuperior2 = many2[superior-2]
-											except IndexError:
-												try:
-													manysuperior2 = many2[superior-3]
-												except IndexError:
-													try:
-														manysuperior2 = many2[superior-4]
-													except IndexError:
-														manysuperior2 = many2[superior-5]
-
-									manyinferior = manyinferior2[0]
-									manysuperior = manysuperior2[0]
-									var = message.guild.id
-									cursor.execute(f"SELECT levelid,server FROM levels WHERE requester = {userid} AND ID BETWEEN {manyinferior} AND {manysuperior} ORDER BY ID ASC LIMIT 5")
-									row = cursor.fetchone()
-									while row is not None:
-										number += 1
-										print(row)
-										levelid = row[0]
-										levelfinder(levelid)
-										stars,objectplus,levelname,creator,ratingemote,stars,downloads,likes,likesemote = levelfinder(levelid)
-
-										serverid = row[1]
-										servers = client.get_guild(serverid)
-										if int(stars) == 0:
-											if int(objectplus) >= 40000:
-												embed5.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"__({requestedserver} `{servers}`)__", inline=False)
-											elif int(objectplus) <= 39999:
-												embed5.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote}\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"__({requestedserver} `{servers}`)__", inline=False)
-										elif stars is not "0":
-											if int(objectplus) >= 40000:
-												embed5.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003> <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"__({requestedserver} `{servers}`)__", inline=False)
-											elif int(objectplus) <= 39999:
-												embed5.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"__({requestedserver} `{servers}`)__", inline=False)
-										row = cursor.fetchone()
-									await msg400.delete()
-									embed4.add_field(name=f"{information}", value=f"{page} 3/3 - {scrollpage}", inline=False)
-									terminated5 = "yes"
-							elif index == 5:
-								if terminated5 == "no":
-									embed400 = discord.Embed(title=f"{loadingtitle}", color=0xffce08)
-									embed400.add_field(name=f'{loadingdesc}', value="\u200b")
-									msg400 = await message.channel.send(embed=embed400)
-
-									cursor.execute(f"SELECT ID FROM levels WHERE requester = {userid} ORDER BY ID ASC")
-									many2 = cursor.fetchall()
-									print(many2)
-									try:
-										manyinferior2 = many2[inferior]
-									except IndexError:
-										manyinferior2 = many2[inferior-1]
-
-									try:
-										manysuperior2 = many2[superior]
-									except IndexError:
-										try:
-											manysuperior2 = many2[superior-1]
-										except IndexError:
-											try:
-												manysuperior2 = many2[superior-2]
-											except IndexError:
-												try:
-													manysuperior2 = many2[superior-3]
-												except IndexError:
-													try:
-														manysuperior2 = many2[superior-4]
-													except IndexError:
-														manysuperior2 = many2[superior-5]
-
-									manyinferior = manyinferior2[0]
-									manysuperior = manysuperior2[0]
-									var = message.guild.id
-									cursor.execute(f"SELECT levelid,server FROM levels WHERE requester = {userid} AND ID BETWEEN {manyinferior} AND {manysuperior} ORDER BY ID ASC LIMIT 5")
-									row = cursor.fetchone()
-									while row is not None:
-										number += 1
-										print(row)
-										levelid = row[0]
-										levelfinder(levelid)
-										stars,objectplus,levelname,creator,ratingemote,stars,downloads,likes,likesemote = levelfinder(levelid)
-
-										serverid = row[1]
-										servers = client.get_guild(serverid)
-										if int(stars) == 0:
-											if int(objectplus) >= 40000:
-												embed6.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"__({requestedserver} `{servers}`)__", inline=False)
-											elif int(objectplus) <= 39999:
-												embed6.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote}\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"__({requestedserver} `{servers}`)__", inline=False)
-										elif stars is not "0":
-											if int(objectplus) >= 40000:
-												embed6.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003> <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"__({requestedserver} `{servers}`)__", inline=False)
-											elif int(objectplus) <= 39999:
-												embed6.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"__({requestedserver} `{servers}`)__", inline=False)
-										row = cursor.fetchone()
-									await msg400.delete()
-									embed6.add_field(name=f"{information}", value=f"{page} 3/3 - {scrollpage}", inline=False)
-									terminated5 = "yes"
-							elif index == 6:
-								if terminated6 == "no":
-									embed400 = discord.Embed(title=f"{loadingtitle}", color=0xffce08)
-									embed400.add_field(name=f'{loadingdesc}', value="\u200b")
-									msg400 = await message.channel.send(embed=embed400)
-
-									cursor.execute(f"SELECT ID FROM levels WHERE requester = {userid} ORDER BY ID ASC")
-									many2 = cursor.fetchall()
-									print(many2)
-									try:
-										manyinferior2 = many2[inferior]
-									except IndexError:
-										manyinferior2 = many2[inferior-1]
-
-									try:
-										manysuperior2 = many2[superior]
-									except IndexError:
-										try:
-											manysuperior2 = many2[superior-1]
-										except IndexError:
-											try:
-												manysuperior2 = many2[superior-2]
-											except IndexError:
-												try:
-													manysuperior2 = many2[superior-3]
-												except IndexError:
-													try:
-														manysuperior2 = many2[superior-4]
-													except IndexError:
-														manysuperior2 = many2[superior-5]
-
-									manyinferior = manyinferior2[0]
-									manysuperior = manysuperior2[0]
-									var = message.guild.id
-									cursor.execute(f"SELECT levelid,server FROM levels WHERE requester = {userid} AND ID BETWEEN {manyinferior} AND {manysuperior} ORDER BY ID ASC LIMIT 5")
-									row = cursor.fetchone()
-									while row is not None:
-										number += 1
-										print(row)
-										levelid = row[0]
-										levelfinder(levelid)
-										stars,objectplus,levelname,creator,ratingemote,stars,downloads,likes,likesemote = levelfinder(levelid)
-
-										serverid = row[1]
-										servers = client.get_guild(serverid)
-										if int(stars) == 0:
-											if int(objectplus) >= 40000:
-												embed7.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"__({requestedserver} `{servers}`)__", inline=False)
-											elif int(objectplus) <= 39999:
-												embed7.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote}\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"__({requestedserver} `{servers}`)__", inline=False)
-										elif stars is not "0":
-											if int(objectplus) >= 40000:
-												embed7.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003> <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"__({requestedserver} `{servers}`)__", inline=False)
-											elif int(objectplus) <= 39999:
-												embed7.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"__({requestedserver} `{servers}`)__", inline=False)
-										row = cursor.fetchone()
-									await msg400.delete()
-									embed7.add_field(name=f"{information}", value=f"{page} 3/3 - {scrollpage}", inline=False)
-									terminated6 = "yes"
-							elif index == 7:
-								if terminated7 == "no":
-									embed400 = discord.Embed(title=f"{loadingtitle}", color=0xffce08)
-									embed400.add_field(name=f'{loadingdesc}', value="\u200b")
-									msg400 = await message.channel.send(embed=embed400)
-
-									cursor.execute(f"SELECT ID FROM levels WHERE requester = {userid} ORDER BY ID ASC")
-									many2 = cursor.fetchall()
-									print(many2)
-									try:
-										manyinferior2 = many2[inferior]
-									except IndexError:
-										manyinferior2 = many2[inferior-1]
-
-									try:
-										manysuperior2 = many2[superior]
-									except IndexError:
-										try:
-											manysuperior2 = many2[superior-1]
-										except IndexError:
-											try:
-												manysuperior2 = many2[superior-2]
-											except IndexError:
-												try:
-													manysuperior2 = many2[superior-3]
-												except IndexError:
-													try:
-														manysuperior2 = many2[superior-4]
-													except IndexError:
-														manysuperior2 = many2[superior-5]
-
-									manyinferior = manyinferior2[0]
-									manysuperior = manysuperior2[0]
-									var = message.guild.id
-									cursor.execute(f"SELECT levelid,server FROM levels WHERE requester = {userid} AND ID BETWEEN {manyinferior} AND {manysuperior} ORDER BY ID ASC LIMIT 5")
-									row = cursor.fetchone()
-									while row is not None:
-										number += 1
-										print(row)
-										levelid = row[0]
-										levelfinder(levelid)
-										stars,objectplus,levelname,creator,ratingemote,stars,downloads,likes,likesemote = levelfinder(levelid)
-
-										serverid = row[1]
-										servers = client.get_guild(serverid)
-										if int(stars) == 0:
-											if int(objectplus) >= 40000:
-												embed8.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"__({requestedserver} `{servers}`)__", inline=False)
-											elif int(objectplus) <= 39999:
-												embed8.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote}\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"__({requestedserver} `{servers}`)__", inline=False)
-										elif stars is not "0":
-											if int(objectplus) >= 40000:
-												embed8.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003> <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"__({requestedserver} `{servers}`)__", inline=False)
-											elif int(objectplus) <= 39999:
-												embed8.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"__({requestedserver} `{servers}`)__", inline=False)
-										row = cursor.fetchone()
-									await msg400.delete()
-									embed8.add_field(name=f"{information}", value=f"{page} 3/3 - {scrollpage}", inline=False)
-									terminated7 = "yes"
-						action = msg.edit
-					return
-				elif count >= 41 and count <= 45:
-					messages = (embed, embed2, embed3, embed4, embed5, embed6, embed7, embed8, embed9)
-
-					terminated = "no"
-					terminated2 = "no"
-					terminated3 = "no"
-					terminated4 = "no"
-					terminated5 = "no"
-					terminated6 = "no"
-					terminated7 = "no"
-					terminated8 = "no"
-
-					index = 0
-					inferior = 1
-					superior = 5
-					msg = None
-
-					embed.add_field(name=f"{information}", value=f"{page} 1/4- {scrollpage}", inline=False)
-
-					res = await message.channel.send(embed=messages[index])
-					while True:
-						if res is not None:
-							msg = res
-						res = await msg.edit(embed=messages[index])
-						l = index != 0
-						r = index != len(messages) - 1
-						j = index == 8
-						k = index == 0
-						if j:
-							await msg.clear_reaction(right)
-						if k:
-							await msg.clear_reaction(left)
-						if l:
-							await msg.add_reaction(left)
-						if r:
-							await msg.add_reaction(right)
-						try:
-							react, user = await client.wait_for('reaction_add', check=predicate(msg, l, r), timeout=30)
-						except Exception:
-							print("BROKE")
-							break
-
-						if react.emoji == left:
-							inferior -= 5
-							superior -= 5
-							index -= 1
-						elif react.emoji == right:
-							inferior += 5
-							superior += 5
-							index += 1
-							if index == 1:
-								if terminated == "no":
-									embed400 = discord.Embed(title=f"{loadingtitle}", color=0xffce08)
-									embed400.add_field(name=f'{loadingdesc}', value="\u200b")
-									msg400 = await message.channel.send(embed=embed400)
-
-									cursor.execute(f"SELECT ID FROM levels WHERE requester = {userid} ORDER BY ID ASC")
-									many2 = cursor.fetchall()
-									print(many2)
-									try:
-										manyinferior2 = many2[inferior]
-									except IndexError:
-										manyinferior2 = many2[inferior-1]
-
-									try:
-										manysuperior2 = many2[superior]
-									except IndexError:
-										try:
-											manysuperior2 = many2[superior-1]
-										except IndexError:
-											try:
-												manysuperior2 = many2[superior-2]
-											except IndexError:
-												try:
-													manysuperior2 = many2[superior-3]
-												except IndexError:
-													try:
-														manysuperior2 = many2[superior-4]
-													except IndexError:
-														manysuperior2 = many2[superior-5]
-
-									manyinferior = manyinferior2[0]
-									manysuperior = manysuperior2[0]
-									var = message.guild.id
-									cursor.execute(f"SELECT levelid,server FROM levels WHERE requester = {userid} AND ID BETWEEN {manyinferior} AND {manysuperior} ORDER BY ID ASC LIMIT 5")
-									row = cursor.fetchone()
-									while row is not None:
-										number += 1
-										print(row)
-										levelid = row[0]
-										levelfinder(levelid)
-										stars,objectplus,levelname,creator,ratingemote,stars,downloads,likes,likesemote = levelfinder(levelid)
-
-										serverid = row[1]
-										servers = client.get_guild(serverid)
-										if int(stars) == 0:
-											if int(objectplus) >= 40000:
-												embed2.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"__({requestedserver} `{servers}`)__", inline=False)
-											elif int(objectplus) <= 39999:
-												embed2.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote}\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"__({requestedserver} `{servers}`)__", inline=False)
-										elif stars is not "0":
-											if int(objectplus) >= 40000:
-												embed2.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003> <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"__({requestedserver} `{servers}`)__", inline=False)
-											elif int(objectplus) <= 39999:
-												embed2.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"__({requestedserver} `{servers}`)__", inline=False)
-										row = cursor.fetchone()
-									await msg400.delete()
-									embed2.add_field(name=f"{information}", value=f"{page} 2/3 - {scrollpage}", inline=False)
-									terminated = "yes"
-							elif index == 2:
-								if terminated2 == "no":
-									embed400 = discord.Embed(title=f"{loadingtitle}", color=0xffce08)
-									embed400.add_field(name=f'{loadingdesc}', value="\u200b")
-									msg400 = await message.channel.send(embed=embed400)
-
-									cursor.execute(f"SELECT ID FROM levels WHERE requester = {userid} ORDER BY ID ASC")
-									many2 = cursor.fetchall()
-									print(many2)
-									try:
-										manyinferior2 = many2[inferior]
-									except IndexError:
-										manyinferior2 = many2[inferior-1]
-
-									try:
-										manysuperior2 = many2[superior]
-									except IndexError:
-										try:
-											manysuperior2 = many2[superior-1]
-										except IndexError:
-											try:
-												manysuperior2 = many2[superior-2]
-											except IndexError:
-												try:
-													manysuperior2 = many2[superior-3]
-												except IndexError:
-													try:
-														manysuperior2 = many2[superior-4]
-													except IndexError:
-														manysuperior2 = many2[superior-5]
-
-									manyinferior = manyinferior2[0]
-									manysuperior = manysuperior2[0]
-									var = message.guild.id
-									cursor.execute(f"SELECT levelid,server FROM levels WHERE requester = {userid} AND ID BETWEEN {manyinferior} AND {manysuperior} ORDER BY ID ASC LIMIT 5")
-									row = cursor.fetchone()
-									while row is not None:
-										number += 1
-										print(row)
-										levelid = row[0]
-										levelfinder(levelid)
-										stars,objectplus,levelname,creator,ratingemote,stars,downloads,likes,likesemote = levelfinder(levelid)
-
-										serverid = row[1]
-										servers = client.get_guild(serverid)
-										if int(stars) == 0:
-											if int(objectplus) >= 40000:
-												embed3.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"__({requestedserver} `{servers}`)__", inline=False)
-											elif int(objectplus) <= 39999:
-												embed3.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote}\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"__({requestedserver} `{servers}`)__", inline=False)
-										elif stars is not "0":
-											if int(objectplus) >= 40000:
-												embed3.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003> <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"__({requestedserver} `{servers}`)__", inline=False)
-											elif int(objectplus) <= 39999:
-												embed3.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"__({requestedserver} `{servers}`)__", inline=False)
-										row = cursor.fetchone()
-									await msg400.delete()
-									embed3.add_field(name=f"{information}", value=f"{page} 3/3 - {scrollpage}", inline=False)
-									terminated2 = "yes"
-							elif index == 3:
-								if terminated3 == "no":
-									embed400 = discord.Embed(title=f"{loadingtitle}", color=0xffce08)
-									embed400.add_field(name=f'{loadingdesc}', value="\u200b")
-									msg400 = await message.channel.send(embed=embed400)
-
-									cursor.execute(f"SELECT ID FROM levels WHERE requester = {userid} ORDER BY ID ASC")
-									many2 = cursor.fetchall()
-									print(many2)
-									try:
-										manyinferior2 = many2[inferior]
-									except IndexError:
-										manyinferior2 = many2[inferior-1]
-
-									try:
-										manysuperior2 = many2[superior]
-									except IndexError:
-										try:
-											manysuperior2 = many2[superior-1]
-										except IndexError:
-											try:
-												manysuperior2 = many2[superior-2]
-											except IndexError:
-												try:
-													manysuperior2 = many2[superior-3]
-												except IndexError:
-													try:
-														manysuperior2 = many2[superior-4]
-													except IndexError:
-														manysuperior2 = many2[superior-5]
-
-									manyinferior = manyinferior2[0]
-									manysuperior = manysuperior2[0]
-									var = message.guild.id
-									cursor.execute(f"SELECT levelid,server FROM levels WHERE requester = {userid} AND ID BETWEEN {manyinferior} AND {manysuperior} ORDER BY ID ASC LIMIT 5")
-									row = cursor.fetchone()
-									while row is not None:
-										number += 1
-										print(row)
-										levelid = row[0]
-										levelfinder(levelid)
-										stars,objectplus,levelname,creator,ratingemote,stars,downloads,likes,likesemote = levelfinder(levelid)
-
-										serverid = row[1]
-										servers = client.get_guild(serverid)
-										if int(stars) == 0:
-											if int(objectplus) >= 40000:
-												embed4.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"__({requestedserver} `{servers}`)__", inline=False)
-											elif int(objectplus) <= 39999:
-												embed4.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote}\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"__({requestedserver} `{servers}`)__", inline=False)
-										elif stars is not "0":
-											if int(objectplus) >= 40000:
-												embed4.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003> <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"__({requestedserver} `{servers}`)__", inline=False)
-											elif int(objectplus) <= 39999:
-												embed4.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"__({requestedserver} `{servers}`)__", inline=False)
-										row = cursor.fetchone()
-									await msg400.delete()
-									embed4.add_field(name=f"{information}", value=f"{page} 3/3 - {scrollpage}", inline=False)
-									terminated3 = "yes"
-							elif index == 4:
-								if terminated4 == "no":
-									embed400 = discord.Embed(title=f"{loadingtitle}", color=0xffce08)
-									embed400.add_field(name=f'{loadingdesc}', value="\u200b")
-									msg400 = await message.channel.send(embed=embed400)
-
-									cursor.execute(f"SELECT ID FROM levels WHERE requester = {userid} ORDER BY ID ASC")
-									many2 = cursor.fetchall()
-									print(many2)
-									try:
-										manyinferior2 = many2[inferior]
-									except IndexError:
-										manyinferior2 = many2[inferior-1]
-
-									try:
-										manysuperior2 = many2[superior]
-									except IndexError:
-										try:
-											manysuperior2 = many2[superior-1]
-										except IndexError:
-											try:
-												manysuperior2 = many2[superior-2]
-											except IndexError:
-												try:
-													manysuperior2 = many2[superior-3]
-												except IndexError:
-													try:
-														manysuperior2 = many2[superior-4]
-													except IndexError:
-														manysuperior2 = many2[superior-5]
-
-									manyinferior = manyinferior2[0]
-									manysuperior = manysuperior2[0]
-									var = message.guild.id
-									cursor.execute(f"SELECT levelid,server FROM levels WHERE requester = {userid} AND ID BETWEEN {manyinferior} AND {manysuperior} ORDER BY ID ASC LIMIT 5")
-									row = cursor.fetchone()
-									while row is not None:
-										number += 1
-										print(row)
-										levelid = row[0]
-										levelfinder(levelid)
-										stars,objectplus,levelname,creator,ratingemote,stars,downloads,likes,likesemote = levelfinder(levelid)
-
-										serverid = row[1]
-										servers = client.get_guild(serverid)
-										if int(stars) == 0:
-											if int(objectplus) >= 40000:
-												embed5.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"__({requestedserver} `{servers}`)__", inline=False)
-											elif int(objectplus) <= 39999:
-												embed5.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote}\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"__({requestedserver} `{servers}`)__", inline=False)
-										elif stars is not "0":
-											if int(objectplus) >= 40000:
-												embed5.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003> <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"__({requestedserver} `{servers}`)__", inline=False)
-											elif int(objectplus) <= 39999:
-												embed5.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"__({requestedserver} `{servers}`)__", inline=False)
-										row = cursor.fetchone()
-									await msg400.delete()
-									embed4.add_field(name=f"{information}", value=f"{page} 3/3 - {scrollpage}", inline=False)
-									terminated5 = "yes"
-							elif index == 5:
-								if terminated5 == "no":
-									embed400 = discord.Embed(title=f"{loadingtitle}", color=0xffce08)
-									embed400.add_field(name=f'{loadingdesc}', value="\u200b")
-									msg400 = await message.channel.send(embed=embed400)
-
-									cursor.execute(f"SELECT ID FROM levels WHERE requester = {userid} ORDER BY ID ASC")
-									many2 = cursor.fetchall()
-									print(many2)
-									try:
-										manyinferior2 = many2[inferior]
-									except IndexError:
-										manyinferior2 = many2[inferior-1]
-
-									try:
-										manysuperior2 = many2[superior]
-									except IndexError:
-										try:
-											manysuperior2 = many2[superior-1]
-										except IndexError:
-											try:
-												manysuperior2 = many2[superior-2]
-											except IndexError:
-												try:
-													manysuperior2 = many2[superior-3]
-												except IndexError:
-													try:
-														manysuperior2 = many2[superior-4]
-													except IndexError:
-														manysuperior2 = many2[superior-5]
-
-									manyinferior = manyinferior2[0]
-									manysuperior = manysuperior2[0]
-									var = message.guild.id
-									cursor.execute(f"SELECT levelid,server FROM levels WHERE requester = {userid} AND ID BETWEEN {manyinferior} AND {manysuperior} ORDER BY ID ASC LIMIT 5")
-									row = cursor.fetchone()
-									while row is not None:
-										number += 1
-										print(row)
-										levelid = row[0]
-										levelfinder(levelid)
-										stars,objectplus,levelname,creator,ratingemote,stars,downloads,likes,likesemote = levelfinder(levelid)
-
-										serverid = row[1]
-										servers = client.get_guild(serverid)
-										if int(stars) == 0:
-											if int(objectplus) >= 40000:
-												embed6.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"__({requestedserver} `{servers}`)__", inline=False)
-											elif int(objectplus) <= 39999:
-												embed6.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote}\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"__({requestedserver} `{servers}`)__", inline=False)
-										elif stars is not "0":
-											if int(objectplus) >= 40000:
-												embed6.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003> <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"__({requestedserver} `{servers}`)__", inline=False)
-											elif int(objectplus) <= 39999:
-												embed6.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"__({requestedserver} `{servers}`)__", inline=False)
-										row = cursor.fetchone()
-									await msg400.delete()
-									embed6.add_field(name=f"{information}", value=f"{page} 3/3 - {scrollpage}", inline=False)
-									terminated5 = "yes"
-							elif index == 6:
-								if terminated6 == "no":
-									embed400 = discord.Embed(title=f"{loadingtitle}", color=0xffce08)
-									embed400.add_field(name=f'{loadingdesc}', value="\u200b")
-									msg400 = await message.channel.send(embed=embed400)
-
-									cursor.execute(f"SELECT ID FROM levels WHERE requester = {userid} ORDER BY ID ASC")
-									many2 = cursor.fetchall()
-									print(many2)
-									try:
-										manyinferior2 = many2[inferior]
-									except IndexError:
-										manyinferior2 = many2[inferior-1]
-
-									try:
-										manysuperior2 = many2[superior]
-									except IndexError:
-										try:
-											manysuperior2 = many2[superior-1]
-										except IndexError:
-											try:
-												manysuperior2 = many2[superior-2]
-											except IndexError:
-												try:
-													manysuperior2 = many2[superior-3]
-												except IndexError:
-													try:
-														manysuperior2 = many2[superior-4]
-													except IndexError:
-														manysuperior2 = many2[superior-5]
-
-									manyinferior = manyinferior2[0]
-									manysuperior = manysuperior2[0]
-									var = message.guild.id
-									cursor.execute(f"SELECT levelid,server FROM levels WHERE requester = {userid} AND ID BETWEEN {manyinferior} AND {manysuperior} ORDER BY ID ASC LIMIT 5")
-									row = cursor.fetchone()
-									while row is not None:
-										number += 1
-										print(row)
-										levelid = row[0]
-										levelfinder(levelid)
-										stars,objectplus,levelname,creator,ratingemote,stars,downloads,likes,likesemote = levelfinder(levelid)
-
-										serverid = row[1]
-										servers = client.get_guild(serverid)
-										if int(stars) == 0:
-											if int(objectplus) >= 40000:
-												embed7.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"__({requestedserver} `{servers}`)__", inline=False)
-											elif int(objectplus) <= 39999:
-												embed7.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote}\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"__({requestedserver} `{servers}`)__", inline=False)
-										elif stars is not "0":
-											if int(objectplus) >= 40000:
-												embed7.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003> <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"__({requestedserver} `{servers}`)__", inline=False)
-											elif int(objectplus) <= 39999:
-												embed7.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"__({requestedserver} `{servers}`)__", inline=False)
-										row = cursor.fetchone()
-									await msg400.delete()
-									embed7.add_field(name=f"{information}", value=f"{page} 3/3 - {scrollpage}", inline=False)
-									terminated6 = "yes"
-							elif index == 7:
-								if terminated7 == "no":
-									embed400 = discord.Embed(title=f"{loadingtitle}", color=0xffce08)
-									embed400.add_field(name=f'{loadingdesc}', value="\u200b")
-									msg400 = await message.channel.send(embed=embed400)
-
-									cursor.execute(f"SELECT ID FROM levels WHERE requester = {userid} ORDER BY ID ASC")
-									many2 = cursor.fetchall()
-									print(many2)
-									try:
-										manyinferior2 = many2[inferior]
-									except IndexError:
-										manyinferior2 = many2[inferior-1]
-
-									try:
-										manysuperior2 = many2[superior]
-									except IndexError:
-										try:
-											manysuperior2 = many2[superior-1]
-										except IndexError:
-											try:
-												manysuperior2 = many2[superior-2]
-											except IndexError:
-												try:
-													manysuperior2 = many2[superior-3]
-												except IndexError:
-													try:
-														manysuperior2 = many2[superior-4]
-													except IndexError:
-														manysuperior2 = many2[superior-5]
-
-									manyinferior = manyinferior2[0]
-									manysuperior = manysuperior2[0]
-									var = message.guild.id
-									cursor.execute(f"SELECT levelid,server FROM levels WHERE requester = {userid} AND ID BETWEEN {manyinferior} AND {manysuperior} ORDER BY ID ASC LIMIT 5")
-									row = cursor.fetchone()
-									while row is not None:
-										number += 1
-										print(row)
-										levelid = row[0]
-										levelfinder(levelid)
-										stars,objectplus,levelname,creator,ratingemote,stars,downloads,likes,likesemote = levelfinder(levelid)
-
-										serverid = row[1]
-										servers = client.get_guild(serverid)
-										if int(stars) == 0:
-											if int(objectplus) >= 40000:
-												embed8.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"__({requestedserver} `{servers}`)__", inline=False)
-											elif int(objectplus) <= 39999:
-												embed8.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote}\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"__({requestedserver} `{servers}`)__", inline=False)
-										elif stars is not "0":
-											if int(objectplus) >= 40000:
-												embed8.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003> <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"__({requestedserver} `{servers}`)__", inline=False)
-											elif int(objectplus) <= 39999:
-												embed8.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"__({requestedserver} `{servers}`)__", inline=False)
-										row = cursor.fetchone()
-									await msg400.delete()
-									embed8.add_field(name=f"{information}", value=f"{page} 3/3 - {scrollpage}", inline=False)
-									terminated7 = "yes"
-							elif index == 8:
-								if terminated8 == "no":
-									embed400 = discord.Embed(title=f"{loadingtitle}", color=0xffce08)
-									embed400.add_field(name=f'{loadingdesc}', value="\u200b")
-									msg400 = await message.channel.send(embed=embed400)
-
-									cursor.execute(f"SELECT ID FROM levels WHERE requester = {userid} ORDER BY ID ASC")
-									many2 = cursor.fetchall()
-									print(many2)
-									try:
-										manyinferior2 = many2[inferior]
-									except IndexError:
-										manyinferior2 = many2[inferior-1]
-
-									try:
-										manysuperior2 = many2[superior]
-									except IndexError:
-										try:
-											manysuperior2 = many2[superior-1]
-										except IndexError:
-											try:
-												manysuperior2 = many2[superior-2]
-											except IndexError:
-												try:
-													manysuperior2 = many2[superior-3]
-												except IndexError:
-													try:
-														manysuperior2 = many2[superior-4]
-													except IndexError:
-														manysuperior2 = many2[superior-5]
-
-									manyinferior = manyinferior2[0]
-									manysuperior = manysuperior2[0]
-									var = message.guild.id
-									cursor.execute(f"SELECT levelid,server FROM levels WHERE requester = {userid} AND ID BETWEEN {manyinferior} AND {manysuperior} ORDER BY ID ASC LIMIT 5")
-									row = cursor.fetchone()
-									while row is not None:
-										number += 1
-										print(row)
-										levelid = row[0]
-										levelfinder(levelid)
-										stars,objectplus,levelname,creator,ratingemote,stars,downloads,likes,likesemote = levelfinder(levelid)
-
-										serverid = row[1]
-										servers = client.get_guild(serverid)
-										if int(stars) == 0:
-											if int(objectplus) >= 40000:
-												embed9.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"__({requestedserver} `{servers}`)__", inline=False)
-											elif int(objectplus) <= 39999:
-												embed9.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote}\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"__({requestedserver} `{servers}`)__", inline=False)
-										elif stars is not "0":
-											if int(objectplus) >= 40000:
-												embed9.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003> <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"__({requestedserver} `{servers}`)__", inline=False)
-											elif int(objectplus) <= 39999:
-												embed9.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"__({requestedserver} `{servers}`)__", inline=False)
-										row = cursor.fetchone()
-									await msg400.delete()
-									embed9.add_field(name=f"{information}", value=f"{page} 3/3 - {scrollpage}", inline=False)
-									terminated8 = "yes"
-						action = msg.edit
-					return
-				elif count >= 46:
-					messages = (embed, embed2, embed3, embed4, embed5, embed6, embed7, embed8, embed9, embed10)
-
-					terminated = "no"
-					terminated2 = "no"
-					terminated3 = "no"
-					terminated4 = "no"
-					terminated5 = "no"
-					terminated6 = "no"
-					terminated7 = "no"
-					terminated8 = "no"
-					terminated9 = "no"
-
-					index = 0
-					inferior = 1
-					superior = 5
-					msg = None
-
-					embed.add_field(name=f"{information}", value=f"{page} 1/4- {scrollpage}", inline=False)
-
-					res = await message.channel.send(embed=messages[index])
-					while True:
-						if res is not None:
-							msg = res
-						res = await msg.edit(embed=messages[index])
-						l = index != 0
-						r = index != len(messages) - 1
-						j = index == 9
-						k = index == 0
-						if j:
-							await msg.clear_reaction(right)
-						if k:
-							await msg.clear_reaction(left)
-						if l:
-							await msg.add_reaction(left)
-						if r:
-							await msg.add_reaction(right)
-						try:
-							react, user = await client.wait_for('reaction_add', check=predicate(msg, l, r), timeout=30)
-						except Exception:
-							print("BROKE")
-							break
-
-						if react.emoji == left:
-							inferior -= 5
-							superior -= 5
-							index -= 1
-						elif react.emoji == right:
-							inferior += 5
-							superior += 5
-							index += 1
-							if index == 1:
-								if terminated == "no":
-									embed400 = discord.Embed(title=f"{loadingtitle}", color=0xffce08)
-									embed400.add_field(name=f'{loadingdesc}', value="\u200b")
-									msg400 = await message.channel.send(embed=embed400)
-
-									cursor.execute(f"SELECT ID FROM levels WHERE requester = {userid} ORDER BY ID ASC")
-									many2 = cursor.fetchall()
-									print(many2)
-									try:
-										manyinferior2 = many2[inferior]
-									except IndexError:
-										manyinferior2 = many2[inferior-1]
-
-									try:
-										manysuperior2 = many2[superior]
-									except IndexError:
-										try:
-											manysuperior2 = many2[superior-1]
-										except IndexError:
-											try:
-												manysuperior2 = many2[superior-2]
-											except IndexError:
-												try:
-													manysuperior2 = many2[superior-3]
-												except IndexError:
-													try:
-														manysuperior2 = many2[superior-4]
-													except IndexError:
-														manysuperior2 = many2[superior-5]
-
-									manyinferior = manyinferior2[0]
-									manysuperior = manysuperior2[0]
-									var = message.guild.id
-									cursor.execute(f"SELECT levelid,server FROM levels WHERE requester = {userid} AND ID BETWEEN {manyinferior} AND {manysuperior} ORDER BY ID ASC LIMIT 5")
-									row = cursor.fetchone()
-									while row is not None:
-										number += 1
-										print(row)
-										levelid = row[0]
-										levelfinder(levelid)
-										stars,objectplus,levelname,creator,ratingemote,stars,downloads,likes,likesemote = levelfinder(levelid)
-
-										serverid = row[1]
-										servers = client.get_guild(serverid)
-										if int(stars) == 0:
-											if int(objectplus) >= 40000:
-												embed2.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"__({requestedserver} `{servers}`)__", inline=False)
-											elif int(objectplus) <= 39999:
-												embed2.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote}\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"__({requestedserver} `{servers}`)__", inline=False)
-										elif stars is not "0":
-											if int(objectplus) >= 40000:
-												embed2.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003> <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"__({requestedserver} `{servers}`)__", inline=False)
-											elif int(objectplus) <= 39999:
-												embed2.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"__({requestedserver} `{servers}`)__", inline=False)
-										row = cursor.fetchone()
-									await msg400.delete()
-									embed2.add_field(name=f"{information}", value=f"{page} 2/3 - {scrollpage}", inline=False)
-									terminated = "yes"
-							elif index == 2:
-								if terminated2 == "no":
-									embed400 = discord.Embed(title=f"{loadingtitle}", color=0xffce08)
-									embed400.add_field(name=f'{loadingdesc}', value="\u200b")
-									msg400 = await message.channel.send(embed=embed400)
-
-									cursor.execute(f"SELECT ID FROM levels WHERE requester = {userid} ORDER BY ID ASC")
-									many2 = cursor.fetchall()
-									print(many2)
-									try:
-										manyinferior2 = many2[inferior]
-									except IndexError:
-										manyinferior2 = many2[inferior-1]
-
-									try:
-										manysuperior2 = many2[superior]
-									except IndexError:
-										try:
-											manysuperior2 = many2[superior-1]
-										except IndexError:
-											try:
-												manysuperior2 = many2[superior-2]
-											except IndexError:
-												try:
-													manysuperior2 = many2[superior-3]
-												except IndexError:
-													try:
-														manysuperior2 = many2[superior-4]
-													except IndexError:
-														manysuperior2 = many2[superior-5]
-
-									manyinferior = manyinferior2[0]
-									manysuperior = manysuperior2[0]
-									var = message.guild.id
-									cursor.execute(f"SELECT levelid,server FROM levels WHERE requester = {userid} AND ID BETWEEN {manyinferior} AND {manysuperior} ORDER BY ID ASC LIMIT 5")
-									row = cursor.fetchone()
-									while row is not None:
-										number += 1
-										print(row)
-										levelid = row[0]
-										levelfinder(levelid)
-										stars,objectplus,levelname,creator,ratingemote,stars,downloads,likes,likesemote = levelfinder(levelid)
-
-										serverid = row[1]
-										servers = client.get_guild(serverid)
-										if int(stars) == 0:
-											if int(objectplus) >= 40000:
-												embed3.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"__({requestedserver} `{servers}`)__", inline=False)
-											elif int(objectplus) <= 39999:
-												embed3.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote}\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"__({requestedserver} `{servers}`)__", inline=False)
-										elif stars is not "0":
-											if int(objectplus) >= 40000:
-												embed3.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003> <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"__({requestedserver} `{servers}`)__", inline=False)
-											elif int(objectplus) <= 39999:
-												embed3.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"__({requestedserver} `{servers}`)__", inline=False)
-										row = cursor.fetchone()
-									await msg400.delete()
-									embed3.add_field(name=f"{information}", value=f"{page} 3/3 - {scrollpage}", inline=False)
-									terminated2 = "yes"
-							elif index == 3:
-								if terminated3 == "no":
-									embed400 = discord.Embed(title=f"{loadingtitle}", color=0xffce08)
-									embed400.add_field(name=f'{loadingdesc}', value="\u200b")
-									msg400 = await message.channel.send(embed=embed400)
-
-									cursor.execute(f"SELECT ID FROM levels WHERE requester = {userid} ORDER BY ID ASC")
-									many2 = cursor.fetchall()
-									print(many2)
-									try:
-										manyinferior2 = many2[inferior]
-									except IndexError:
-										manyinferior2 = many2[inferior-1]
-
-									try:
-										manysuperior2 = many2[superior]
-									except IndexError:
-										try:
-											manysuperior2 = many2[superior-1]
-										except IndexError:
-											try:
-												manysuperior2 = many2[superior-2]
-											except IndexError:
-												try:
-													manysuperior2 = many2[superior-3]
-												except IndexError:
-													try:
-														manysuperior2 = many2[superior-4]
-													except IndexError:
-														manysuperior2 = many2[superior-5]
-
-									manyinferior = manyinferior2[0]
-									manysuperior = manysuperior2[0]
-									var = message.guild.id
-									cursor.execute(f"SELECT levelid,server FROM levels WHERE requester = {userid} AND ID BETWEEN {manyinferior} AND {manysuperior} ORDER BY ID ASC LIMIT 5")
-									row = cursor.fetchone()
-									while row is not None:
-										number += 1
-										print(row)
-										levelid = row[0]
-										levelfinder(levelid)
-										stars,objectplus,levelname,creator,ratingemote,stars,downloads,likes,likesemote = levelfinder(levelid)
-
-										serverid = row[1]
-										servers = client.get_guild(serverid)
-										if int(stars) == 0:
-											if int(objectplus) >= 40000:
-												embed4.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"__({requestedserver} `{servers}`)__", inline=False)
-											elif int(objectplus) <= 39999:
-												embed4.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote}\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"__({requestedserver} `{servers}`)__", inline=False)
-										elif stars is not "0":
-											if int(objectplus) >= 40000:
-												embed4.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003> <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"__({requestedserver} `{servers}`)__", inline=False)
-											elif int(objectplus) <= 39999:
-												embed4.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"__({requestedserver} `{servers}`)__", inline=False)
-										row = cursor.fetchone()
-									await msg400.delete()
-									embed4.add_field(name=f"{information}", value=f"{page} 3/3 - {scrollpage}", inline=False)
-									terminated3 = "yes"
-							elif index == 4:
-								if terminated4 == "no":
-									embed400 = discord.Embed(title=f"{loadingtitle}", color=0xffce08)
-									embed400.add_field(name=f'{loadingdesc}', value="\u200b")
-									msg400 = await message.channel.send(embed=embed400)
-
-									cursor.execute(f"SELECT ID FROM levels WHERE requester = {userid} ORDER BY ID ASC")
-									many2 = cursor.fetchall()
-									print(many2)
-									try:
-										manyinferior2 = many2[inferior]
-									except IndexError:
-										manyinferior2 = many2[inferior-1]
-
-									try:
-										manysuperior2 = many2[superior]
-									except IndexError:
-										try:
-											manysuperior2 = many2[superior-1]
-										except IndexError:
-											try:
-												manysuperior2 = many2[superior-2]
-											except IndexError:
-												try:
-													manysuperior2 = many2[superior-3]
-												except IndexError:
-													try:
-														manysuperior2 = many2[superior-4]
-													except IndexError:
-														manysuperior2 = many2[superior-5]
-
-									manyinferior = manyinferior2[0]
-									manysuperior = manysuperior2[0]
-									var = message.guild.id
-									cursor.execute(f"SELECT levelid,server FROM levels WHERE requester = {userid} AND ID BETWEEN {manyinferior} AND {manysuperior} ORDER BY ID ASC LIMIT 5")
-									row = cursor.fetchone()
-									while row is not None:
-										number += 1
-										print(row)
-										levelid = row[0]
-										levelfinder(levelid)
-										stars,objectplus,levelname,creator,ratingemote,stars,downloads,likes,likesemote = levelfinder(levelid)
-
-										serverid = row[1]
-										servers = client.get_guild(serverid)
-										if int(stars) == 0:
-											if int(objectplus) >= 40000:
-												embed5.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"__({requestedserver} `{servers}`)__", inline=False)
-											elif int(objectplus) <= 39999:
-												embed5.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote}\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"__({requestedserver} `{servers}`)__", inline=False)
-										elif stars is not "0":
-											if int(objectplus) >= 40000:
-												embed5.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003> <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"__({requestedserver} `{servers}`)__", inline=False)
-											elif int(objectplus) <= 39999:
-												embed5.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"__({requestedserver} `{servers}`)__", inline=False)
-										row = cursor.fetchone()
-									await msg400.delete()
-									embed4.add_field(name=f"{information}", value=f"{page} 3/3 - {scrollpage}", inline=False)
-									terminated5 = "yes"
-							elif index == 5:
-								if terminated5 == "no":
-									embed400 = discord.Embed(title=f"{loadingtitle}", color=0xffce08)
-									embed400.add_field(name=f'{loadingdesc}', value="\u200b")
-									msg400 = await message.channel.send(embed=embed400)
-
-									cursor.execute(f"SELECT ID FROM levels WHERE requester = {userid} ORDER BY ID ASC")
-									many2 = cursor.fetchall()
-									print(many2)
-									try:
-										manyinferior2 = many2[inferior]
-									except IndexError:
-										manyinferior2 = many2[inferior-1]
-
-									try:
-										manysuperior2 = many2[superior]
-									except IndexError:
-										try:
-											manysuperior2 = many2[superior-1]
-										except IndexError:
-											try:
-												manysuperior2 = many2[superior-2]
-											except IndexError:
-												try:
-													manysuperior2 = many2[superior-3]
-												except IndexError:
-													try:
-														manysuperior2 = many2[superior-4]
-													except IndexError:
-														manysuperior2 = many2[superior-5]
-
-									manyinferior = manyinferior2[0]
-									manysuperior = manysuperior2[0]
-									var = message.guild.id
-									cursor.execute(f"SELECT levelid,server FROM levels WHERE requester = {userid} AND ID BETWEEN {manyinferior} AND {manysuperior} ORDER BY ID ASC LIMIT 5")
-									row = cursor.fetchone()
-									while row is not None:
-										number += 1
-										print(row)
-										levelid = row[0]
-										levelfinder(levelid)
-										stars,objectplus,levelname,creator,ratingemote,stars,downloads,likes,likesemote = levelfinder(levelid)
-
-										serverid = row[1]
-										servers = client.get_guild(serverid)
-										if int(stars) == 0:
-											if int(objectplus) >= 40000:
-												embed6.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"__({requestedserver} `{servers}`)__", inline=False)
-											elif int(objectplus) <= 39999:
-												embed6.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote}\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"__({requestedserver} `{servers}`)__", inline=False)
-										elif stars is not "0":
-											if int(objectplus) >= 40000:
-												embed6.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003> <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"__({requestedserver} `{servers}`)__", inline=False)
-											elif int(objectplus) <= 39999:
-												embed6.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"__({requestedserver} `{servers}`)__", inline=False)
-										row = cursor.fetchone()
-									await msg400.delete()
-									embed6.add_field(name=f"{information}", value=f"{page} 3/3 - {scrollpage}", inline=False)
-									terminated5 = "yes"
-							elif index == 6:
-								if terminated6 == "no":
-									embed400 = discord.Embed(title=f"{loadingtitle}", color=0xffce08)
-									embed400.add_field(name=f'{loadingdesc}', value="\u200b")
-									msg400 = await message.channel.send(embed=embed400)
-
-									cursor.execute(f"SELECT ID FROM levels WHERE requester = {userid} ORDER BY ID ASC")
-									many2 = cursor.fetchall()
-									print(many2)
-									try:
-										manyinferior2 = many2[inferior]
-									except IndexError:
-										manyinferior2 = many2[inferior-1]
-
-									try:
-										manysuperior2 = many2[superior]
-									except IndexError:
-										try:
-											manysuperior2 = many2[superior-1]
-										except IndexError:
-											try:
-												manysuperior2 = many2[superior-2]
-											except IndexError:
-												try:
-													manysuperior2 = many2[superior-3]
-												except IndexError:
-													try:
-														manysuperior2 = many2[superior-4]
-													except IndexError:
-														manysuperior2 = many2[superior-5]
-
-									manyinferior = manyinferior2[0]
-									manysuperior = manysuperior2[0]
-									var = message.guild.id
-									cursor.execute(f"SELECT levelid,server FROM levels WHERE requester = {userid} AND ID BETWEEN {manyinferior} AND {manysuperior} ORDER BY ID ASC LIMIT 5")
-									row = cursor.fetchone()
-									while row is not None:
-										number += 1
-										print(row)
-										levelid = row[0]
-										levelfinder(levelid)
-										stars,objectplus,levelname,creator,ratingemote,stars,downloads,likes,likesemote = levelfinder(levelid)
-
-										serverid = row[1]
-										servers = client.get_guild(serverid)
-										if int(stars) == 0:
-											if int(objectplus) >= 40000:
-												embed7.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"__({requestedserver} `{servers}`)__", inline=False)
-											elif int(objectplus) <= 39999:
-												embed7.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote}\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"__({requestedserver} `{servers}`)__", inline=False)
-										elif stars is not "0":
-											if int(objectplus) >= 40000:
-												embed7.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003> <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"__({requestedserver} `{servers}`)__", inline=False)
-											elif int(objectplus) <= 39999:
-												embed7.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"__({requestedserver} `{servers}`)__", inline=False)
-										row = cursor.fetchone()
-									await msg400.delete()
-									embed7.add_field(name=f"{information}", value=f"{page} 3/3 - {scrollpage}", inline=False)
-									terminated6 = "yes"
-							elif index == 7:
-								if terminated7 == "no":
-									embed400 = discord.Embed(title=f"{loadingtitle}", color=0xffce08)
-									embed400.add_field(name=f'{loadingdesc}', value="\u200b")
-									msg400 = await message.channel.send(embed=embed400)
-
-									cursor.execute(f"SELECT ID FROM levels WHERE requester = {userid} ORDER BY ID ASC")
-									many2 = cursor.fetchall()
-									print(many2)
-									try:
-										manyinferior2 = many2[inferior]
-									except IndexError:
-										manyinferior2 = many2[inferior-1]
-
-									try:
-										manysuperior2 = many2[superior]
-									except IndexError:
-										try:
-											manysuperior2 = many2[superior-1]
-										except IndexError:
-											try:
-												manysuperior2 = many2[superior-2]
-											except IndexError:
-												try:
-													manysuperior2 = many2[superior-3]
-												except IndexError:
-													try:
-														manysuperior2 = many2[superior-4]
-													except IndexError:
-														manysuperior2 = many2[superior-5]
-
-									manyinferior = manyinferior2[0]
-									manysuperior = manysuperior2[0]
-									var = message.guild.id
-									cursor.execute(f"SELECT levelid,server FROM levels WHERE requester = {userid} AND ID BETWEEN {manyinferior} AND {manysuperior} ORDER BY ID ASC LIMIT 5")
-									row = cursor.fetchone()
-									while row is not None:
-										number += 1
-										print(row)
-										levelid = row[0]
-										levelfinder(levelid)
-										stars,objectplus,levelname,creator,ratingemote,stars,downloads,likes,likesemote = levelfinder(levelid)
-
-										serverid = row[1]
-										servers = client.get_guild(serverid)
-										if int(stars) == 0:
-											if int(objectplus) >= 40000:
-												embed8.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"__({requestedserver} `{servers}`)__", inline=False)
-											elif int(objectplus) <= 39999:
-												embed8.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote}\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"__({requestedserver} `{servers}`)__", inline=False)
-										elif stars is not "0":
-											if int(objectplus) >= 40000:
-												embed8.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003> <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"__({requestedserver} `{servers}`)__", inline=False)
-											elif int(objectplus) <= 39999:
-												embed8.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"__({requestedserver} `{servers}`)__", inline=False)
-										row = cursor.fetchone()
-									await msg400.delete()
-									embed8.add_field(name=f"{information}", value=f"{page} 3/3 - {scrollpage}", inline=False)
-									terminated7 = "yes"
-							elif index == 8:
-								if terminated8 == "no":
-									embed400 = discord.Embed(title=f"{loadingtitle}", color=0xffce08)
-									embed400.add_field(name=f'{loadingdesc}', value="\u200b")
-									msg400 = await message.channel.send(embed=embed400)
-
-									cursor.execute(f"SELECT ID FROM levels WHERE requester = {userid} ORDER BY ID ASC")
-									many2 = cursor.fetchall()
-									print(many2)
-									try:
-										manyinferior2 = many2[inferior]
-									except IndexError:
-										manyinferior2 = many2[inferior-1]
-
-									try:
-										manysuperior2 = many2[superior]
-									except IndexError:
-										try:
-											manysuperior2 = many2[superior-1]
-										except IndexError:
-											try:
-												manysuperior2 = many2[superior-2]
-											except IndexError:
-												try:
-													manysuperior2 = many2[superior-3]
-												except IndexError:
-													try:
-														manysuperior2 = many2[superior-4]
-													except IndexError:
-														manysuperior2 = many2[superior-5]
-
-									manyinferior = manyinferior2[0]
-									manysuperior = manysuperior2[0]
-									var = message.guild.id
-									cursor.execute(f"SELECT levelid,server FROM levels WHERE requester = {userid} AND ID BETWEEN {manyinferior} AND {manysuperior} ORDER BY ID ASC LIMIT 5")
-									row = cursor.fetchone()
-									while row is not None:
-										number += 1
-										print(row)
-										levelid = row[0]
-										levelfinder(levelid)
-										stars,objectplus,levelname,creator,ratingemote,stars,downloads,likes,likesemote = levelfinder(levelid)
-
-										serverid = row[1]
-										servers = client.get_guild(serverid)
-										if int(stars) == 0:
-											if int(objectplus) >= 40000:
-												embed9.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"__({requestedserver} `{servers}`)__", inline=False)
-											elif int(objectplus) <= 39999:
-												embed9.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote}\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"__({requestedserver} `{servers}`)__", inline=False)
-										elif stars is not "0":
-											if int(objectplus) >= 40000:
-												embed9.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003> <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"__({requestedserver} `{servers}`)__", inline=False)
-											elif int(objectplus) <= 39999:
-												embed9.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"__({requestedserver} `{servers}`)__", inline=False)
-										row = cursor.fetchone()
-									await msg400.delete()
-									embed9.add_field(name=f"{information}", value=f"{page} 3/3 - {scrollpage}", inline=False)
-									terminated8 = "yes"
-							elif index == 9:
-								if terminated9 == "no":
-									embed400 = discord.Embed(title=f"{loadingtitle}", color=0xffce08)
-									embed400.add_field(name=f'{loadingdesc}', value="\u200b")
-									msg400 = await message.channel.send(embed=embed400)
-
-									cursor.execute(f"SELECT ID FROM levels WHERE requester = {userid} ORDER BY ID ASC")
-									many2 = cursor.fetchall()
-									print(many2)
-									try:
-										manyinferior2 = many2[inferior]
-									except IndexError:
-										manyinferior2 = many2[inferior-1]
-
-									try:
-										manysuperior2 = many2[superior]
-									except IndexError:
-										try:
-											manysuperior2 = many2[superior-1]
-										except IndexError:
-											try:
-												manysuperior2 = many2[superior-2]
-											except IndexError:
-												try:
-													manysuperior2 = many2[superior-3]
-												except IndexError:
-													try:
-														manysuperior2 = many2[superior-4]
-													except IndexError:
-														manysuperior2 = many2[superior-5]
-
-									manyinferior = manyinferior2[0]
-									manysuperior = manysuperior2[0]
-									var = message.guild.id
-									cursor.execute(f"SELECT levelid,server FROM levels WHERE requester = {userid} AND ID BETWEEN {manyinferior} AND {manysuperior} ORDER BY ID ASC LIMIT 5")
-									row = cursor.fetchone()
-									while row is not None:
-										number += 1
-										print(row)
-										levelid = row[0]
-										levelfinder(levelid)
-										stars,objectplus,levelname,creator,ratingemote,stars,downloads,likes,likesemote = levelfinder(levelid)
-
-										serverid = row[1]
-										servers = client.get_guild(serverid)
-										if int(stars) == 0:
-											if int(objectplus) >= 40000:
-												embed10.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"__({requestedserver} `{servers}`)__", inline=False)
-											elif int(objectplus) <= 39999:
-												embed10.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote}\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"__({requestedserver} `{servers}`)__", inline=False)
-										elif stars is not "0":
-											if int(objectplus) >= 40000:
-												embed10.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003> <:object_overflow:472908865953071115>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"__({requestedserver} `{servers}`)__", inline=False)
-											elif int(objectplus) <= 39999:
-												embed10.add_field(name=f"#{number} `{levelid}` {levelname} {by} {creator} {ratingemote} {stars}<:starrate:718204629858517003>\n<:downloads:472907713727430658> : {downloads}\n{likesemote} : {likes}", value=f"__({requestedserver} `{servers}`)__", inline=False)
-										row = cursor.fetchone()
-									await msg400.delete()
-									embed10.add_field(name=f"{information}", value=f"{page} 3/3 - {scrollpage}", inline=False)
-									terminated9 = "yes"
-						action = msg.edit
-					return
+				await msg1.add_reaction(right)
+
+				while True:
+					if str(reaction) == right:
+						i += 1
+						if i+1>=maxpage:
+							await msg1.clear_reactions()
+							await msg1.add_reaction(left)
+							await msg1.edit(embed = pages[i])
+						else:
+							await msg1.add_reaction(left)
+							await msg1.add_reaction(right)
+							await msg1.edit(embed = pages[i])
+					if str(reaction) == left:
+						i -= 1
+						if i<=minpage:
+							await msg1.clear_reactions()
+							await msg1.add_reaction(right)
+							await msg1.edit(embed = pages[i])
+						else:
+							await msg1.add_reaction(left)
+							await msg1.add_reaction(right)
+							await msg1.edit(embed = pages[i])
+
+					try:
+						reaction, user = await client.wait_for('reaction_add', timeout = 15.0, check = check)
+						await msg1.remove_reaction(reaction, user)
+					except:
+						break
+				await msg1.clear_reactions()
+				return
 
 		if msg.startswith("review"):
 			try:
@@ -10903,6 +5527,19 @@ async def on_message(message):
 					return
 			else:
 				conn.cursor(buffered=True)
+
+				maincommand = "reqreview"
+				checkmaintenance = checkmaintenance(maincommand)
+				if checkmaintenance == "yes":
+					embed = discord.Embed(title="", color=0xff0000)
+					embed.add_field(name=f'Error. <:error:472907618386575370>', value=f"**The command is under maintenance, please try again later.**")
+					msg2 = await message.channel.send(embed=embed)
+					time.sleep(5)
+					await msg2.delete()
+					return
+				
+				args = [x for ar in args for x in ar.split('\n')]
+
 				try:
 					level = args[1]
 				except IndexError as error:
@@ -10961,11 +5598,50 @@ async def on_message(message):
 
 				levelapprovedserver = translate_messages_server[6]
 				levelunapprovedserver = translate_messages_server[7]
+				
+				translate_messages_search = open(f"language/client/reqsearch/{language2}.txt").read().splitlines()
 
+				searchresult = translate_messages_search[3]
+				by = translate_messages_search[4]
+				desc = translate_messages_search[5]
+				none = translate_messages_search[6]
+				coinstitle = translate_messages_search[7]
+				sizetitle = translate_messages_search[8]
+				newgroundsplay = translate_messages_search[9]
+				downloadsong = translate_messages_search[10]
+				detailledsong = translate_messages_search[11]
+				idleveltitle = translate_messages_search[12]
+				levelversiontitle = translate_messages_search[13]
+				minimumgdver = translate_messages_search[14]
+				objectcount = translate_messages_search[15]
+				lagtitleobject = translate_messages_search[16]
+				youtubelink = translate_messages_search[17]
+				officialsongtitle = translate_messages_search[18]
+				
+				translate_cooldown_messages = open(f"language/client/cooldown-{language2}.txt").read().splitlines()
+				errorcooldown1 = translate_cooldown_messages[0]
+				errorcooldown2 = translate_cooldown_messages[1]
+				
+				#cooldowncheck(author)
+				alwayscooldown,secondcooldown = cooldowncheck(author)
+				
+				if alwayscooldown == 1:
+					embed = discord.Embed(title="", color=0xff0000)
+					embed.add_field(name=f'{errormessage}', value=f"{errorcooldown1} {secondcooldown} {errorcooldown2}")
+					msg2 = await message.channel.send(embed=embed)
+					time.sleep(5)
+					await msg2.delete()
+					return
+				sql = "INSERT INTO cooldowns (userid, cooldown) VALUES (%s, %s)"
+				datetime_object_cooldown = datetime_object + datetime.timedelta(seconds=30)
+				val = (author, datetime_object_cooldown)
+				cursor.execute(sql,val)
+				conn.commit()
+				
 				data = f"gameVersion=21&binaryVersion=35&gdw=0&type=0&str={level}&diff=-&len=-&page=0&total=0&secret=Wmfd2893gb7".encode()
 				result = urlopen("http://www.boomlings.com/database/getGJLevels21.php",data).read().decode()
 				if result == "-1":
-					cursor.execute(f"DELETE FROM levels WHERE levelid = {level}")
+					cursor.execute(f"DELETE FROM levels WHERE levelid = %s", (level, ))
 					conn.commit()
 					embed = discord.Embed(title="", color=0xff0000)
 					#embed.set_thumbnail(url="https://cdn.discordapp.com/emojis/472907618386575370.png")
@@ -10989,7 +5665,7 @@ async def on_message(message):
 					await msg2.delete()
 					return
 
-				pog = cursor.execute(f"SELECT levelid FROM levels WHERE server = {serverid} AND levelid = {level}")
+				pog = cursor.execute(f"SELECT levelid FROM levels WHERE server = %s AND levelid = %s", (serverid, level))
 				maybe_number = cursor.fetchone()
 				while maybe_number:
 					if str(maybe_number[0]) == level:
@@ -11003,7 +5679,7 @@ async def on_message(message):
 							poggare = cursor.execute(f"SELECT userid FROM banned WHERE userid = {jaj} LIMIT 1")
 							maybe_number3 = cursor.fetchone()
 							if maybe_number3 is None:
-								nani = cursor.execute(f"SELECT requester FROM levels WHERE levelid = {level} LIMIT 1")
+								nani = cursor.execute(f"SELECT requester FROM levels WHERE levelid = %s LIMIT 1", (level, ))
 								user1 = cursor.fetchone()[0]
 								username = client.get_user(int(user1))
 								if validation == "yes":
@@ -11023,12 +5699,65 @@ async def on_message(message):
 												gdmod = None
 											if gdmod is not None:
 												embed2 = discord.Embed(title=f'{leveltitle} {levelname} {byserver} {creator} (`{level}`) {reviewed} <:downloads:472907713727430658>', description=f"<:success:472908961176092702> - {sentence}", color=0x00ff00)
+												
+												#reqsearch(level)
+												stars,objectplus,levelname,creator,ratingemote,stars,downloads,likes,likesemote,description,coins,verifiedcoins,lengthvalue,idlevel,version,gdversion,color = reqsearch(level)
+												description += '=' * (-len(description) % 4)
+												base64_bytes = description.encode('ascii')
+												print(base64_bytes)
+												message_bytes = base64.urlsafe_b64decode(base64_bytes)
+												descbase64 = message_bytes.decode('ascii')
+
+												embed2.set_thumbnail(url=f"{ratingemote}")
+												if int(objectplus) >= 40000:
+													embed2.add_field(name=f'<:play:472908887859789835> __{levelname}__ {by} {creator} <:object_overflow:472908865953071115>', value=f"{desc} {descbase64}", inline=False)
+												elif int(objectplus) <= 39999:
+													embed2.add_field(name=f'<:play:472908887859789835> __{levelname}__ {by} {creator}', value=f"{desc} {descbase64}", inline=False)
+
+												if int(coins) == 0:
+													coinsvalue = f"{none}"
+												elif int(coins) == 1:
+													coinsvalue = "<:user_coin_unverified:472908993832943631>"
+												elif int(coins) == 2:
+													coinsvalue = "<:user_coin_unverified:472908993832943631> <:user_coin_unverified:472908993832943631>"
+												elif int(coins) == 3:
+													coinsvalue = "<:user_coin_unverified:472908993832943631> <:user_coin_unverified:472908993832943631> <:user_coin_unverified:472908993832943631>"
+
+												try:
+													if int(verifiedcoins) == 1:
+														if int(coins) == 0:
+															coinsvalue = f"{none}"
+														elif int(coins) == 1:
+															coinsvalue = "<:user_coin:472908993711308800>"
+														elif int(coins) == 2:
+															coinsvalue = "<:user_coin:472908993711308800> <:user_coin:472908993711308800>"
+														elif int(coins) == 3:
+															coinsvalue = "<:user_coin:472908993711308800> <:user_coin:472908993711308800> <:user_coin:472908993711308800>"
+												except ValueError:
+													pass
+
+												embed2.add_field(name=f'{coinstitle}: {coinsvalue}', value=f"<:downloads:472907713727430658> `{downloads}`\n{likesemote} `{likes}`\n<:length:472908680459976704> `{lengthvalue}`\n", inline=False)
+
+												#reqsearch2(level)
+												try:
+													songname,songauthor,songid,sizesong,songlink,officialsong = reqsearch2(level)
+												except ValueError:
+													songname,songauthor,songid,sizesong,songlink = reqsearch2(level)
+
+												songlink2 = unquote(f"{songlink}")
+												try:
+													officialsong2 = int(officialsong)
+												except UnboundLocalError:
+													embed2.add_field(name=f':musical_note:  __{songname}__ {by} {songauthor}', value=f"SongID: {songid} - {sizetitle}: {sizesong}MB\n<:play:472908887859789835> [{newgroundsplay}](https://newgrounds.com/audio/load/{songid}) <:download_song:472907696685711370> [{downloadsong}]({songlink2})", inline=False)
+												else:
+													embed2.add_field(name=f':musical_note: :white_check_mark:   __**{songname}**__ {by} {songauthor}', value=f"SongID: {songid} - {sizetitle}: {sizesong}MB\n<:play:472908887859789835> [{newgroundsplay}](https://newgrounds.com/audio/load/{songid}) <:download_song:472907696685711370> [{youtubelink}]({songlink2})", inline=False)
+												
 												embed2.set_footer(text=f"{reviewedby} {message.author}")
 												await channel2.send(f"<@{user1}>",embed=embed2)
-												cursor.execute(f"UPDATE levels SET reviewed = 'yes' WHERE levelid = {level} AND server = {serverid}")
+												cursor.execute(f"UPDATE levels SET reviewed = 'yes' WHERE levelid = %s AND server = {serverid}", (level, ))
 												channel = await username.create_dm()
 
-												cursor.execute(f"SELECT language FROM users WHERE userid = {user1}")
+												cursor.execute(f"SELECT language FROM users WHERE userid = %s", (user1, ))
 												try:
 													language_author = cursor.fetchone()[0]
 												except TypeError:
@@ -11045,6 +5774,20 @@ async def on_message(message):
 												except discord.errors.Forbidden:
 													pass
 												await msg.delete()
+												
+												cursor.execute(f"SELECT messageid FROM levels WHERE server = {serverid} AND levelid = {level}")
+												messages = cursor.fetchall()
+												for row in messages:
+													try:
+														msg101 = await message.channel.fetch_message(int(row[0]))
+													except:
+														msg101 = None
+													else:
+														try:
+															await msg101.delete()
+														except TypeError:
+															pass
+												
 												embed3 = discord.Embed(title=f'{successtitle}', color=0x00ff00)
 												embed3.add_field(name=f'`{level}` (**{levelname}** {byclient2} **{creator}**) {successreviewed}', value='\u200b')
 												await message.channel.send(embed=embed3)
@@ -11055,11 +5798,14 @@ async def on_message(message):
 												embed4.add_field(name=f'`{level}` (**{levelname}** {byserver} **{creator}**)', value='\u200b')
 												pognyanya = cursor.execute(f"SELECT userid FROM GDmoderators WHERE serverid = {serverid} LIMIT 1")
 												gdmodchannel1234 = cursor.fetchone()
-												await channel3.send(f"<@{gdmodchannel1234[0]}>",embed=embed4)
+												msgmod = await channel3.send(f"<@{gdmodchannel1234[0]}>",embed=embed4)
+												
+												cursor.execute(f"UPDATE levels SET messageid = {msgmod} WHERE server = {serverid} AND levelid = {level}")
+												conn.commit()
 
 												cursor.execute(f"SELECT levelreviewedcount FROM users WHERE userid = {jaj}")
 												counted = cursor.fetchone()[0]
-												counted += 1
+												counted = counted + 1
 												cursor.execute(f'UPDATE users SET levelreviewedcount = {counted} WHERE userid = {jaj}')
 												conn.commit()
 												if counted >= 1:
@@ -11153,18 +5899,18 @@ async def on_message(message):
 													else:
 														pass
 
-												cursor.execute(f"SELECT levelreviewapprovedcount FROM users WHERE userid = {user1}")
+												cursor.execute(f"SELECT levelreviewapprovedcount FROM users WHERE userid = %s", (user1, ))
 												counted2 = cursor.fetchone()[0]
 												counted2 += 1
-												cursor.execute(f'UPDATE users SET levelreviewapprovedcount = {counted2} WHERE userid = {user1}')
+												cursor.execute(f'UPDATE users SET levelreviewapprovedcount = {counted2} WHERE userid = %s', (user1, ))
 												conn.commit()
 												if counted2 >= 1:
-													cursor.execute(f'SELECT reviewapprovedachievement1 FROM users WHERE userid = {user1}')
+													cursor.execute(f'SELECT reviewapprovedachievement1 FROM users WHERE userid = %s', (user1, ))
 													yesvalue = cursor.fetchone()[0]
 													if yesvalue == "yes":
 														pass
 													elif yesvalue == "no":
-														cursor.execute(f'UPDATE users SET reviewapprovedachievement1 = "yes" WHERE userid = {user1}')
+														cursor.execute(f'UPDATE users SET reviewapprovedachievement1 = "yes" WHERE userid = %s', (user1, ))
 														conn.commit()
 														reviewapprovedachievement1(user1)
 														embed5 = reviewapprovedachievement1(user1)
@@ -11251,6 +5997,59 @@ async def on_message(message):
 												return
 											else:
 												embed2 = discord.Embed(title=f'{leveltitle} {levelname} {byserver} {creator} (`{level}`) {reviewed} <:downloads:472907713727430658>', description=f"<:success:472908961176092702> - {sentence}", color=0x00ff00)
+												
+												#reqsearch(level)
+												stars,objectplus,levelname,creator,ratingemote,stars,downloads,likes,likesemote,description,coins,verifiedcoins,lengthvalue,idlevel,version,gdversion,color = reqsearch(level)
+												description += '=' * (-len(description) % 4)
+												base64_bytes = description.encode('ascii')
+												print(base64_bytes)
+												message_bytes = base64.urlsafe_b64decode(base64_bytes)
+												descbase64 = message_bytes.decode('ascii')
+
+												embed2.set_thumbnail(url=f"{ratingemote}")
+												if int(objectplus) >= 40000:
+													embed2.add_field(name=f'<:play:472908887859789835> __{levelname}__ {by} {creator} <:object_overflow:472908865953071115>', value=f"{desc} {descbase64}", inline=False)
+												elif int(objectplus) <= 39999:
+													embed2.add_field(name=f'<:play:472908887859789835> __{levelname}__ {by} {creator}', value=f"{desc} {descbase64}", inline=False)
+
+												if int(coins) == 0:
+													coinsvalue = f"{none}"
+												elif int(coins) == 1:
+													coinsvalue = "<:user_coin_unverified:472908993832943631>"
+												elif int(coins) == 2:
+													coinsvalue = "<:user_coin_unverified:472908993832943631> <:user_coin_unverified:472908993832943631>"
+												elif int(coins) == 3:
+													coinsvalue = "<:user_coin_unverified:472908993832943631> <:user_coin_unverified:472908993832943631> <:user_coin_unverified:472908993832943631>"
+
+												try:
+													if int(verifiedcoins) == 1:
+														if int(coins) == 0:
+															coinsvalue = f"{none}"
+														elif int(coins) == 1:
+															coinsvalue = "<:user_coin:472908993711308800>"
+														elif int(coins) == 2:
+															coinsvalue = "<:user_coin:472908993711308800> <:user_coin:472908993711308800>"
+														elif int(coins) == 3:
+															coinsvalue = "<:user_coin:472908993711308800> <:user_coin:472908993711308800> <:user_coin:472908993711308800>"
+												except ValueError:
+													pass
+
+												embed2.add_field(name=f'{coinstitle}: {coinsvalue}', value=f"<:downloads:472907713727430658> `{downloads}`\n{likesemote} `{likes}`\n<:length:472908680459976704> `{lengthvalue}`\n", inline=False)
+
+												#reqsearch2(level)
+												try:
+													songname,songauthor,songid,sizesong,songlink,officialsong = reqsearch2(level)
+												except ValueError:
+													songname,songauthor,songid,sizesong,songlink = reqsearch2(level)
+
+												songlink2 = unquote(f"{songlink}")
+												try:
+													officialsong2 = int(officialsong)
+												except UnboundLocalError:
+													embed2.add_field(name=f':musical_note:  __{songname}__ {by} {songauthor}', value=f"SongID: {songid} - {sizetitle}: {sizesong}MB\n<:play:472908887859789835> [{newgroundsplay}](https://newgrounds.com/audio/load/{songid}) <:download_song:472907696685711370> [{downloadsong}]({songlink2})", inline=False)
+												else:
+													embed2.add_field(name=f':musical_note: :white_check_mark:   __**{songname}**__ {by} {songauthor}', value=f"SongID: {songid} - {sizetitle}: {sizesong}MB\n<:play:472908887859789835> [{newgroundsplay}](https://newgrounds.com/audio/load/{songid}) <:download_song:472907696685711370> [{youtubelink}]({songlink2})", inline=False)
+												
 												embed2.set_footer(text=f"{reviewedby} {message.author}")
 												await channel2.send(f"<@{user1}>",embed=embed2)
 												channel = await username.create_dm()
@@ -11272,15 +6071,29 @@ async def on_message(message):
 												except discord.errors.Forbidden:
 													pass
 												await msg.delete()
+												
+												cursor.execute(f"SELECT messageid FROM levels WHERE server = {serverid} AND levelid = {level}")
+												messages = cursor.fetchall()
+												for row in messages:
+													try:
+														msg101 = await message.channel.fetch_message(int(row[0]))
+													except:
+														msg101 = None
+													else:
+														try:
+															await msg101.delete()
+														except TypeError:
+															pass
+												
 												embed3 = discord.Embed(title=f'{successtitle}', color=0x00ff00)
 												embed3.add_field(name=f'`{level}` (**{levelname}** {byclient2} **{creator}**) {successreviewed}', value='\u200b')
 												await message.channel.send(embed=embed3)
-												delete = cursor.execute(f"DELETE FROM levels WHERE levelid = {level}")
+												delete = cursor.execute(f"DELETE FROM levels WHERE levelid = %s", (level, ))
 												conn.commit()
 
 												cursor.execute(f"SELECT levelreviewedcount FROM users WHERE userid = {jaj}")
 												counted = cursor.fetchone()[0]
-												counted += 1
+												counted = counted + 1
 												cursor.execute(f'UPDATE users SET levelreviewedcount = {counted} WHERE userid = {jaj}')
 												conn.commit()
 												if counted >= 1:
@@ -11493,12 +6306,65 @@ async def on_message(message):
 												gdmod = None
 											if gdmod is not None:
 												embed2 = discord.Embed(title=f'{leveltitle} {levelname} {byserver} {creator} (`{level}`) {reviewed} <:downloads:472907713727430658>', description=f"<:success:472908961176092702> - __{levelapprovedserver}__", color=0x00ff00)
+												
+												#reqsearch(level)
+												stars,objectplus,levelname,creator,ratingemote,stars,downloads,likes,likesemote,description,coins,verifiedcoins,lengthvalue,idlevel,version,gdversion,color = reqsearch(level)
+												description += '=' * (-len(description) % 4)
+												base64_bytes = description.encode('ascii')
+												print(base64_bytes)
+												message_bytes = base64.urlsafe_b64decode(base64_bytes)
+												descbase64 = message_bytes.decode('ascii')
+
+												embed2.set_thumbnail(url=f"{ratingemote}")
+												if int(objectplus) >= 40000:
+													embed2.add_field(name=f'<:play:472908887859789835> __{levelname}__ {by} {creator} <:object_overflow:472908865953071115>', value=f"{desc} {descbase64}", inline=False)
+												elif int(objectplus) <= 39999:
+													embed2.add_field(name=f'<:play:472908887859789835> __{levelname}__ {by} {creator}', value=f"{desc} {descbase64}", inline=False)
+
+												if int(coins) == 0:
+													coinsvalue = f"{none}"
+												elif int(coins) == 1:
+													coinsvalue = "<:user_coin_unverified:472908993832943631>"
+												elif int(coins) == 2:
+													coinsvalue = "<:user_coin_unverified:472908993832943631> <:user_coin_unverified:472908993832943631>"
+												elif int(coins) == 3:
+													coinsvalue = "<:user_coin_unverified:472908993832943631> <:user_coin_unverified:472908993832943631> <:user_coin_unverified:472908993832943631>"
+
+												try:
+													if int(verifiedcoins) == 1:
+														if int(coins) == 0:
+															coinsvalue = f"{none}"
+														elif int(coins) == 1:
+															coinsvalue = "<:user_coin:472908993711308800>"
+														elif int(coins) == 2:
+															coinsvalue = "<:user_coin:472908993711308800> <:user_coin:472908993711308800>"
+														elif int(coins) == 3:
+															coinsvalue = "<:user_coin:472908993711308800> <:user_coin:472908993711308800> <:user_coin:472908993711308800>"
+												except ValueError:
+													pass
+
+												embed2.add_field(name=f'{coinstitle}: {coinsvalue}', value=f"<:downloads:472907713727430658> `{downloads}`\n{likesemote} `{likes}`\n<:length:472908680459976704> `{lengthvalue}`\n", inline=False)
+
+												#reqsearch2(level)
+												try:
+													songname,songauthor,songid,sizesong,songlink,officialsong = reqsearch2(level)
+												except ValueError:
+													songname,songauthor,songid,sizesong,songlink = reqsearch2(level)
+
+												songlink2 = unquote(f"{songlink}")
+												try:
+													officialsong2 = int(officialsong)
+												except UnboundLocalError:
+													embed2.add_field(name=f':musical_note:  __{songname}__ {by} {songauthor}', value=f"SongID: {songid} - {sizetitle}: {sizesong}MB\n<:play:472908887859789835> [{newgroundsplay}](https://newgrounds.com/audio/load/{songid}) <:download_song:472907696685711370> [{downloadsong}]({songlink2})", inline=False)
+												else:
+													embed2.add_field(name=f':musical_note: :white_check_mark:   __**{songname}**__ {by} {songauthor}', value=f"SongID: {songid} - {sizetitle}: {sizesong}MB\n<:play:472908887859789835> [{newgroundsplay}](https://newgrounds.com/audio/load/{songid}) <:download_song:472907696685711370> [{youtubelink}]({songlink2})", inline=False)
+												
 												embed2.set_footer(text=f"{reviewedby} {message.author}")
 												await channel2.send(f"<@{user1}>",embed=embed2)
-												cursor.execute(f"UPDATE levels SET reviewed = 'yes' WHERE levelid = {level} AND server = {serverid}")
+												cursor.execute(f"UPDATE levels SET reviewed = 'yes' WHERE levelid = %s AND server = %s", (level, serverid))
 												channel = await username.create_dm()
 
-												cursor.execute(f"SELECT language FROM users WHERE userid = {user1}")
+												cursor.execute(f"SELECT language FROM users WHERE userid = %s", (user1, ))
 												try:
 													language_author = cursor.fetchone()[0]
 												except TypeError:
@@ -11514,6 +6380,20 @@ async def on_message(message):
 													await channel.send(f"{yourlevel} {levelname} {byclient} {creator} {havebeenreviewed} `{servername}` !",embed=embed2)
 												except discord.errors.Forbidden:
 													pass
+													
+												cursor.execute(f"SELECT messageid FROM levels WHERE server = {serverid} AND levelid = {level}")
+												messages = cursor.fetchall()
+												for row in messages:
+													try:
+														msg101 = await message.channel.fetch_message(int(row[0]))
+													except:
+														msg101 = None
+													else:
+														try:
+															await msg101.delete()
+														except TypeError:
+															pass
+												
 												await msg.delete()
 												embed3 = discord.Embed(title=f'{successtitle}', color=0x00ff00)
 												embed3.add_field(name=f'`{level}` (**{levelname}** {byclient2} **{creator}**) {successreviewed}', value='\u200b')
@@ -11525,11 +6405,14 @@ async def on_message(message):
 												embed4.add_field(name=f'`{level}` (**{levelname}** {byserver} **{creator}**)', value='\u200b')
 												pognyanya = cursor.execute(f"SELECT userid FROM GDmoderators WHERE serverid = {serverid} LIMIT 1")
 												gdmodchannel1234 = cursor.fetchone()[0]
-												await channel3.send(f"<@{gdmodchannel1234}>",embed=embed4)
+												msgmod = await channel3.send(f"<@{gdmodchannel1234}>",embed=embed4)
+												
+												cursor.execute(f"UPDATE levels SET messageid = {msgmod} WHERE server = {serverid} AND levelid = {level}")
+												conn.commit()
 
 												cursor.execute(f"SELECT levelreviewedcount FROM users WHERE userid = {jaj}")
 												counted = cursor.fetchone()[0]
-												counted += 1
+												counted = counted + 1
 												cursor.execute(f'UPDATE users SET levelreviewedcount = {counted} WHERE userid = {jaj}')
 												conn.commit()
 												if counted >= 1:
@@ -11721,6 +6604,59 @@ async def on_message(message):
 												return
 											else:
 												embed2 = discord.Embed(title=f'{leveltitle} {levelname} {byserver} {creator} (`{level}`) {reviewed} <:downloads:472907713727430658>', description=f"<:success:472908961176092702> - __{levelapprovedserver}__", color=0x00ff00)
+												
+												#reqsearch(level)
+												stars,objectplus,levelname,creator,ratingemote,stars,downloads,likes,likesemote,description,coins,verifiedcoins,lengthvalue,idlevel,version,gdversion,color = reqsearch(level)
+												description += '=' * (-len(description) % 4)
+												base64_bytes = description.encode('ascii')
+												print(base64_bytes)
+												message_bytes = base64.urlsafe_b64decode(base64_bytes)
+												descbase64 = message_bytes.decode('ascii')
+
+												embed2.set_thumbnail(url=f"{ratingemote}")
+												if int(objectplus) >= 40000:
+													embed2.add_field(name=f'<:play:472908887859789835> __{levelname}__ {by} {creator} <:object_overflow:472908865953071115>', value=f"{desc} {descbase64}", inline=False)
+												elif int(objectplus) <= 39999:
+													embed2.add_field(name=f'<:play:472908887859789835> __{levelname}__ {by} {creator}', value=f"{desc} {descbase64}", inline=False)
+
+												if int(coins) == 0:
+													coinsvalue = f"{none}"
+												elif int(coins) == 1:
+													coinsvalue = "<:user_coin_unverified:472908993832943631>"
+												elif int(coins) == 2:
+													coinsvalue = "<:user_coin_unverified:472908993832943631> <:user_coin_unverified:472908993832943631>"
+												elif int(coins) == 3:
+													coinsvalue = "<:user_coin_unverified:472908993832943631> <:user_coin_unverified:472908993832943631> <:user_coin_unverified:472908993832943631>"
+
+												try:
+													if int(verifiedcoins) == 1:
+														if int(coins) == 0:
+															coinsvalue = f"{none}"
+														elif int(coins) == 1:
+															coinsvalue = "<:user_coin:472908993711308800>"
+														elif int(coins) == 2:
+															coinsvalue = "<:user_coin:472908993711308800> <:user_coin:472908993711308800>"
+														elif int(coins) == 3:
+															coinsvalue = "<:user_coin:472908993711308800> <:user_coin:472908993711308800> <:user_coin:472908993711308800>"
+												except ValueError:
+													pass
+
+												embed2.add_field(name=f'{coinstitle}: {coinsvalue}', value=f"<:downloads:472907713727430658> `{downloads}`\n{likesemote} `{likes}`\n<:length:472908680459976704> `{lengthvalue}`\n", inline=False)
+
+												#reqsearch2(level)
+												try:
+													songname,songauthor,songid,sizesong,songlink,officialsong = reqsearch2(level)
+												except ValueError:
+													songname,songauthor,songid,sizesong,songlink = reqsearch2(level)
+
+												songlink2 = unquote(f"{songlink}")
+												try:
+													officialsong2 = int(officialsong)
+												except UnboundLocalError:
+													embed2.add_field(name=f':musical_note:  __{songname}__ {by} {songauthor}', value=f"SongID: {songid} - {sizetitle}: {sizesong}MB\n<:play:472908887859789835> [{newgroundsplay}](https://newgrounds.com/audio/load/{songid}) <:download_song:472907696685711370> [{downloadsong}]({songlink2})", inline=False)
+												else:
+													embed2.add_field(name=f':musical_note: :white_check_mark:   __**{songname}**__ {by} {songauthor}', value=f"SongID: {songid} - {sizetitle}: {sizesong}MB\n<:play:472908887859789835> [{newgroundsplay}](https://newgrounds.com/audio/load/{songid}) <:download_song:472907696685711370> [{youtubelink}]({songlink2})", inline=False)
+												
 												embed2.set_footer(text=f"{reviewedby} {message.author}")
 												await channel2.send(f"<@{user1}>",embed=embed2)
 												channel = await username.create_dm()
@@ -11741,16 +6677,30 @@ async def on_message(message):
 													await channel.send(f"{yourlevel} {levelname} {byclient} {creator} {havebeenreviewed} `{servername}` !",embed=embed2)
 												except discord.errors.Forbidden:
 													pass
+													
+												cursor.execute(f"SELECT messageid FROM levels WHERE server = {serverid} AND levelid = {level}")
+												messages = cursor.fetchall()
+												for row in messages:
+													try:
+														msg101 = await message.channel.fetch_message(int(row[0]))
+													except:
+														msg101 = None
+													else:
+														try:
+															await msg101.delete()
+														except TypeError:
+															pass
+												
 												await msg.delete()
 												embed3 = discord.Embed(title=f'{successtitle}', color=0x00ff00)
 												embed3.add_field(name=f'`{level}` (**{levelname}** {byclient2} **{creator}**) {successreviewed}', value='\u200b')
 												await message.channel.send(embed=embed3)
-												delete = cursor.execute(f"DELETE FROM levels WHERE levelid = {level}")
+												delete = cursor.execute(f"DELETE FROM levels WHERE levelid = %s", (level, ))
 												conn.commit()
 
 												cursor.execute(f"SELECT levelreviewedcount FROM users WHERE userid = {jaj}")
 												counted = cursor.fetchone()[0]
-												counted += 1
+												counted = counted + 1
 												cursor.execute(f'UPDATE users SET levelreviewedcount = {counted} WHERE userid = {jaj}')
 												conn.commit()
 												if counted >= 1:
@@ -11959,6 +6909,59 @@ async def on_message(message):
 										if checkedreviewchannel is not None:
 											channel2 = client.get_channel(int(checkedreviewchannel))
 											embed2 = discord.Embed(title=f'{leveltitle} {levelname} {byserver} {creator} (`{level}`) {reviewed} <:downloads:472907713727430658>', description=f"<:error:472907618386575370> - {sentence}", color=0xff0000)
+											
+											#reqsearch(level)
+											stars,objectplus,levelname,creator,ratingemote,stars,downloads,likes,likesemote,description,coins,verifiedcoins,lengthvalue,idlevel,version,gdversion,color = reqsearch(level)
+											description += '=' * (-len(description) % 4)
+											base64_bytes = description.encode('ascii')
+											print(base64_bytes)
+											message_bytes = base64.urlsafe_b64decode(base64_bytes)
+											descbase64 = message_bytes.decode('ascii')
+
+											embed2.set_thumbnail(url=f"{ratingemote}")
+											if int(objectplus) >= 40000:
+												embed2.add_field(name=f'<:play:472908887859789835> __{levelname}__ {by} {creator} <:object_overflow:472908865953071115>', value=f"{desc} {descbase64}", inline=False)
+											elif int(objectplus) <= 39999:
+												embed2.add_field(name=f'<:play:472908887859789835> __{levelname}__ {by} {creator}', value=f"{desc} {descbase64}", inline=False)
+
+											if int(coins) == 0:
+												coinsvalue = f"{none}"
+											elif int(coins) == 1:
+												coinsvalue = "<:user_coin_unverified:472908993832943631>"
+											elif int(coins) == 2:
+												coinsvalue = "<:user_coin_unverified:472908993832943631> <:user_coin_unverified:472908993832943631>"
+											elif int(coins) == 3:
+												coinsvalue = "<:user_coin_unverified:472908993832943631> <:user_coin_unverified:472908993832943631> <:user_coin_unverified:472908993832943631>"
+
+											try:
+												if int(verifiedcoins) == 1:
+													if int(coins) == 0:
+														coinsvalue = f"{none}"
+													elif int(coins) == 1:
+														coinsvalue = "<:user_coin:472908993711308800>"
+													elif int(coins) == 2:
+														coinsvalue = "<:user_coin:472908993711308800> <:user_coin:472908993711308800>"
+													elif int(coins) == 3:
+														coinsvalue = "<:user_coin:472908993711308800> <:user_coin:472908993711308800> <:user_coin:472908993711308800>"
+											except ValueError:
+												pass
+
+											embed2.add_field(name=f'{coinstitle}: {coinsvalue}', value=f"<:downloads:472907713727430658> `{downloads}`\n{likesemote} `{likes}`\n<:length:472908680459976704> `{lengthvalue}`\n", inline=False)
+
+											#reqsearch2(level)
+											try:
+												songname,songauthor,songid,sizesong,songlink,officialsong = reqsearch2(level)
+											except ValueError:
+												songname,songauthor,songid,sizesong,songlink = reqsearch2(level)
+
+											songlink2 = unquote(f"{songlink}")
+											try:
+												officialsong2 = int(officialsong)
+											except UnboundLocalError:
+												embed2.add_field(name=f':musical_note:  __{songname}__ {by} {songauthor}', value=f"SongID: {songid} - {sizetitle}: {sizesong}MB\n<:play:472908887859789835> [{newgroundsplay}](https://newgrounds.com/audio/load/{songid}) <:download_song:472907696685711370> [{downloadsong}]({songlink2})", inline=False)
+											else:
+												embed2.add_field(name=f':musical_note: :white_check_mark:   __**{songname}**__ {by} {songauthor}', value=f"SongID: {songid} - {sizetitle}: {sizesong}MB\n<:play:472908887859789835> [{newgroundsplay}](https://newgrounds.com/audio/load/{songid}) <:download_song:472907696685711370> [{youtubelink}]({songlink2})", inline=False)
+												
 											embed2.set_footer(text=f"{reviewedby} {message.author}")
 											await channel2.send(f"<@{user1}>",embed=embed2)
 											channel = await username.create_dm()
@@ -11979,16 +6982,30 @@ async def on_message(message):
 												await channel.send(f"{yourlevel} {levelname} {byclient} {creator} {havebeenreviewed} `{servername}` !",embed=embed2)
 											except discord.errors.Forbidden:
 												pass
+												
+											cursor.execute(f"SELECT messageid FROM levels WHERE server = {serverid} AND levelid = {level}")
+											messages = cursor.fetchall()
+											for row in messages:
+												try:
+													msg101 = await message.channel.fetch_message(int(row[0]))
+												except:
+													msg101 = None
+												else:
+													try:
+														await msg101.delete()
+													except TypeError:
+														pass
+											
 											await msg.delete()
 											embed3 = discord.Embed(title=f'{successtitle}', color=0x00ff00)
 											embed3.add_field(name=f'`{level}` (**{levelname}** {byclient2} **{creator}**) {successreviewed}', value='\u200b')
 											await message.channel.send(embed=embed3)
-											delete = cursor.execute(f"DELETE FROM levels WHERE levelid = {level}")
+											delete = cursor.execute(f"DELETE FROM levels WHERE levelid = %s AND server = %s", (level, serverid))
 											conn.commit()
 
 											cursor.execute(f"SELECT levelreviewedcount FROM users WHERE userid = {jaj}")
 											counted = cursor.fetchone()[0]
-											counted += 1
+											counted = counted + 1
 											cursor.execute(f'UPDATE users SET levelreviewedcount = {counted} WHERE userid = {jaj}')
 											conn.commit()
 											if counted >= 1:
@@ -12195,6 +7212,59 @@ async def on_message(message):
 										if checkedreviewchannel is not None:
 											channel2 = client.get_channel(int(checkedreviewchannel))
 											embed2 = discord.Embed(title=f'{leveltitle} {levelname} {byserver} {creator} (`{level}`) {reviewed} <:downloads:472907713727430658>', description=f"<:error:472907618386575370> - __{levelunapprovedserver}__", color=0xff0000)
+											
+											#reqsearch(level)
+											stars,objectplus,levelname,creator,ratingemote,stars,downloads,likes,likesemote,description,coins,verifiedcoins,lengthvalue,idlevel,version,gdversion,color = reqsearch(level)
+											description += '=' * (-len(description) % 4)
+											base64_bytes = description.encode('ascii')
+											print(base64_bytes)
+											message_bytes = base64.urlsafe_b64decode(base64_bytes)
+											descbase64 = message_bytes.decode('ascii')
+
+											embed2.set_thumbnail(url=f"{ratingemote}")
+											if int(objectplus) >= 40000:
+												embed2.add_field(name=f'<:play:472908887859789835> __{levelname}__ {by} {creator} <:object_overflow:472908865953071115>', value=f"{desc} {descbase64}", inline=False)
+											elif int(objectplus) <= 39999:
+												embed2.add_field(name=f'<:play:472908887859789835> __{levelname}__ {by} {creator}', value=f"{desc} {descbase64}", inline=False)
+
+											if int(coins) == 0:
+												coinsvalue = f"{none}"
+											elif int(coins) == 1:
+												coinsvalue = "<:user_coin_unverified:472908993832943631>"
+											elif int(coins) == 2:
+												coinsvalue = "<:user_coin_unverified:472908993832943631> <:user_coin_unverified:472908993832943631>"
+											elif int(coins) == 3:
+												coinsvalue = "<:user_coin_unverified:472908993832943631> <:user_coin_unverified:472908993832943631> <:user_coin_unverified:472908993832943631>"
+
+											try:
+												if int(verifiedcoins) == 1:
+													if int(coins) == 0:
+														coinsvalue = f"{none}"
+													elif int(coins) == 1:
+														coinsvalue = "<:user_coin:472908993711308800>"
+													elif int(coins) == 2:
+														coinsvalue = "<:user_coin:472908993711308800> <:user_coin:472908993711308800>"
+													elif int(coins) == 3:
+														coinsvalue = "<:user_coin:472908993711308800> <:user_coin:472908993711308800> <:user_coin:472908993711308800>"
+											except ValueError:
+												pass
+
+											embed2.add_field(name=f'{coinstitle}: {coinsvalue}', value=f"<:downloads:472907713727430658> `{downloads}`\n{likesemote} `{likes}`\n<:length:472908680459976704> `{lengthvalue}`\n", inline=False)
+
+											#reqsearch2(level)
+											try:
+												songname,songauthor,songid,sizesong,songlink,officialsong = reqsearch2(level)
+											except ValueError:
+												songname,songauthor,songid,sizesong,songlink = reqsearch2(level)
+
+											songlink2 = unquote(f"{songlink}")
+											try:
+												officialsong2 = int(officialsong)
+											except UnboundLocalError:
+												embed2.add_field(name=f':musical_note:  __{songname}__ {by} {songauthor}', value=f"SongID: {songid} - {sizetitle}: {sizesong}MB\n<:play:472908887859789835> [{newgroundsplay}](https://newgrounds.com/audio/load/{songid}) <:download_song:472907696685711370> [{downloadsong}]({songlink2})", inline=False)
+											else:
+												embed2.add_field(name=f':musical_note: :white_check_mark:   __**{songname}**__ {by} {songauthor}', value=f"SongID: {songid} - {sizetitle}: {sizesong}MB\n<:play:472908887859789835> [{newgroundsplay}](https://newgrounds.com/audio/load/{songid}) <:download_song:472907696685711370> [{youtubelink}]({songlink2})", inline=False)
+												
 											embed2.set_footer(text=f"{reviewedby} {message.author}")
 											await channel2.send(f"<@{user1}>",embed=embed2)
 											channel = await username.create_dm()
@@ -12215,16 +7285,30 @@ async def on_message(message):
 												await channel.send(f"{yourlevel} {levelname} {byclient} {creator} {havebeenreviewed} `{servername}` !",embed=embed2)
 											except discord.errors.Forbidden:
 												pass
+												
+											cursor.execute(f"SELECT messageid FROM levels WHERE server = {serverid} AND levelid = {level}")
+											messages = cursor.fetchall()
+											for row in messages:
+												try:
+													msg101 = await message.channel.fetch_message(int(row[0]))
+												except:
+													msg101 = None
+												else:
+													try:
+														await msg101.delete()
+													except TypeError:
+														pass
+											
 											await msg.delete()
 											embed3 = discord.Embed(title=f'{successtitle}', color=0x00ff00)
 											embed3.add_field(name=f'`{level}` (**{levelname}** {byclient2} **{creator}**) {successreviewed}', value='\u200b')
 											await message.channel.send(embed=embed3)
-											delete = cursor.execute(f"DELETE FROM levels WHERE levelid = {level}")
+											delete = cursor.execute(f"DELETE FROM levels WHERE levelid = %s AND server = %s", (level, server))
 											conn.commit()
 
 											cursor.execute(f"SELECT levelreviewedcount FROM users WHERE userid = {jaj}")
 											counted = cursor.fetchone()[0]
-											counted += 1
+											counted = counted + 1
 											cursor.execute(f'UPDATE users SET levelreviewedcount = {counted} WHERE userid = {jaj}')
 											conn.commit()
 											if counted >= 1:
@@ -12474,8 +7558,22 @@ async def on_message(message):
 					return
 			else:
 				conn.cursor(buffered=True)
+
+				maincommand = "reqsend"
+				checkmaintenance = checkmaintenance(maincommand)
+				if checkmaintenance == "yes":
+					embed = discord.Embed(title="", color=0xff0000)
+					embed.add_field(name=f'Error. <:error:472907618386575370>', value=f"**The command is under maintenance, please try again later.**")
+					msg2 = await message.channel.send(embed=embed)
+					time.sleep(5)
+					await msg2.delete()
+					return
+				
+				args = [x for ar in args for x in ar.split('\n')]
+
 				author = message.author.id
 				serverid = message.guild.id
+				
 				try:
 					level = args[1]
 				except IndexError as error:
@@ -12499,6 +7597,12 @@ async def on_message(message):
 					language = cursor.fetchone()[0]
 				except TypeError:
 					language = language_default
+					
+				cursor.execute(f"SELECT language FROM setup WHERE serverid = {serverid}")
+				try:
+					languageserver = cursor.fetchone()[0]
+				except TypeError:
+					languageserver = language_default
 				language2 = language
 				translate_messages = open(f"language/client/reqsend/{language2}.txt").read().splitlines()
 
@@ -12518,424 +7622,102 @@ async def on_message(message):
 				thelevel = translate_messages[13]
 				by = translate_messages[14]
 				successsend = translate_messages[15]
+				
+				translate_messages_search = open(f"language/server/reqsearch/{languageserver}.txt").read().splitlines()
+
+				searchresult = translate_messages_search[3]
+				desc = translate_messages_search[5]
+				none = translate_messages_search[6]
+				coinstitle = translate_messages_search[7]
+				sizetitle = translate_messages_search[8]
+				newgroundsplay = translate_messages_search[9]
+				downloadsong = translate_messages_search[10]
+				detailledsong = translate_messages_search[11]
+				idleveltitle = translate_messages_search[12]
+				levelversiontitle = translate_messages_search[13]
+				minimumgdver = translate_messages_search[14]
+				objectcount = translate_messages_search[15]
+				lagtitleobject = translate_messages_search[16]
+				youtubelink = translate_messages_search[17]
+				officialsongtitle = translate_messages_search[18]
+				
+				translate_messages_send = open(f"language/server/reqsend/{languageserver}.txt").read().splitlines()
+				
+				sendfor = translate_messages_send[0]
 
 				data = f"gameVersion=21&binaryVersion=35&gdw=0&type=0&str={level}&diff=-&len=-&page=0&total=0&secret=Wmfd2893gb7".encode()
 				result = urlopen("http://www.boomlings.com/database/getGJLevels21.php",data).read().decode()
 				embed = discord.Embed(title=f"{loadingtitle}", color=0xffce08)
 				embed.add_field(name=f'{loadingdesc}', value="\u200b")
 				msg = await message.channel.send(embed=embed)
-				pog = cursor.execute(f"SELECT userid FROM GDmoderators WHERE userid = {author} AND serverid = {serverid} LIMIT 1")
+				pog = cursor.execute(f"SELECT userid FROM GDmoderators WHERE userid = {author} LIMIT 1")
 				gdmod = cursor.fetchone()
 				if gdmod is not None:
 					result = result.split(":")
 					levelname = result[3]
 					creator = convertinfo("u","n",result[7])
-					poggery = cursor.execute(f"SELECT isBlacklist FROM reports WHERE levelid = {level} LIMIT 1")
-					maybe_number2 = cursor.fetchone()
-					if maybe_number2 is None:
-						poggare = cursor.execute(f"SELECT userid FROM banned WHERE userid = {author} LIMIT 1")
-						maybe_number3 = cursor.fetchone()
-						if maybe_number3 is None:
-							pogaga = cursor.execute(f"SELECT levelid FROM levels WHERE server = {serverid} AND levelid = {level} LIMIT 1")
-							try:
-								maybe_number4 = cursor.fetchone()[0]
-							except TypeError:
-								await msg.delete()
-								embed = discord.Embed(title="", color=0xff0000)
-								#embed.set_thumbnail(url="https://cdn.discordapp.com/emojis/472907618386575370.png")
-								embed.add_field(name=f'{errormessage}', value=f'{errorqueue1} `{level}` {errorqueue2}')
-								msg2 = await message.channel.send(embed=embed)
-								time.sleep(5)
-								await msg2.delete()
-								return
-							if str(maybe_number4) == str(level):
-								if validation == "star":
-									nyaya = cursor.execute(f"SELECT requester FROM levels WHERE levelid = {level} LIMIT 1")
-									user1 = cursor.fetchone()[0]
-									username = client.get_user(int(user1))
-
-									cursor.execute(f"SELECT language FROM users WHERE userid = {user1}")
-									try:
-										language_requester = cursor.fetchone()[0]
-									except TypeError:
-										language_requester = language_default
-									language2_requester = language_requester
-									translate_messages_requester = open(f"language/requester/reqsend/{language2}.txt").read().splitlines()
-
-									successtitlerequester = translate_messages_requester[0]
-									thelevelyourequested = translate_messages_requester[1]
-									byrequester = translate_messages_requester[2]
-									sendtorobtop = translate_messages_requester[3]
-									fortext = translate_messages_requester[4]
-
-									if star == "1":
-										await msg.delete()
-										papa = cursor.execute(f"SELECT moderatorname FROM GDmoderators WHERE userid = {author} LIMIT 1")
-										gdmodname = cursor.fetchone()[0]
-										embed3 = discord.Embed(title=f'{successtitlerequester}', color=0x00ff00)
-										embed3.set_thumbnail(url="https://cdn.discordapp.com/emojis/472907799987486768.png?v=1")
-										embed3.add_field(name=f'{thelevelyourequested} `{level}` (**{levelname}** {byrequester} **{creator}**) {sendtorobtop} {gdmodname} {fortext} **AUTO 1<:starrate:718204629858517003> RATE**', value='\u200b')
-										if message.attachments:
-											fileimage = message.attachments[0]
-											imageurl = fileimage.url
-											for ext in pic_ext:
-												if imageurl.endswith(ext):
-													embed3.set_image(url=f"{imageurl}")
-										channel = await username.create_dm()
-										try:
-											await channel.send(embed=embed3)
-										except discord.errors.Forbidden:
-											pass
-										nani = cursor.execute(f"SELECT requester FROM levels WHERE levelid = {level} LIMIT 1")
+					if message.author.guild_permissions.administrator:
+						poggery = cursor.execute(f"SELECT isBlacklist FROM reports WHERE levelid = %s", (level, ))
+						maybe_number2 = cursor.fetchone()
+						if maybe_number2 is None:
+							poggare = cursor.execute(f"SELECT userid FROM banned WHERE userid = {author}")
+							maybe_number3 = cursor.fetchone()
+							if maybe_number3 is None:
+								pogaga = cursor.execute(f"SELECT levelid FROM levels WHERE server = {serverid} AND levelid = %s LIMIT 1", (level, ))
+								try:
+									maybe_number4 = cursor.fetchone()[0]
+								except TypeError:
+									await msg.delete()
+									embed = discord.Embed(title="", color=0xff0000)
+									#embed.set_thumbnail(url="https://cdn.discordapp.com/emojis/472907618386575370.png")
+									embed.add_field(name=f'{errormessage}', value=f'{errorqueue1} `{level}` {errorqueue2}')
+									msg2 = await message.channel.send(embed=embed)
+									time.sleep(5)
+									await msg2.delete()
+									return
+								cursor.execute(f"SELECT server FROM levels WHERE server = {serverid} AND levelid = %s LIMIT 1", (level, ))
+								try:
+									maybe_number12345 = cursor.fetchone()[0]
+								except TypeError:
+									await msg.delete()
+									embed = discord.Embed(title="", color=0xff0000)
+									#embed.set_thumbnail(url="https://cdn.discordapp.com/emojis/472907618386575370.png")
+									embed.add_field(name=f'{errormessage}', value=f'{errorqueue1} `{level}` {errorqueue2}')
+									msg2 = await message.channel.send(embed=embed)
+									time.sleep(5)
+									await msg2.delete()
+									return
+								if str(maybe_number4) == str(level):
+									#reqsearch(level)
+									stars,objectplus,levelname,creator,ratingemote,stars,downloads,likes,likesemote,description,coins,verifiedcoins,lengthvalue,idlevel,version,gdversion,color = reqsearch(level)
+									
+									embed13 = discord.Embed(title=f'`{level}` (**{levelname}** {by} **{creator}**)', color=0x00ff00)
+									if validation == "star":
+										nyaya = cursor.execute(f"SELECT requester FROM levels WHERE levelid = %s AND server = %s LIMIT 1", (level, serverid))
 										user1 = cursor.fetchone()[0]
 										username = client.get_user(int(user1))
-										embed4 = discord.Embed(title=f'{successtitle}', color=0x00ff00)
-										embed4.add_field(name=f'{thelevel} `{level}` (**{levelname}** {by} **{creator}**) {successsend} **AUTO 1<:starrate:718204629858517003> RATE** !', value='\u200b')
-										await message.channel.send(embed=embed4)
-										delete = cursor.execute(f"DELETE FROM levels WHERE levelid = {level}")
-										conn.commit()
 
-										cursor.execute(f'SELECT levelsentbygdmod FROM users WHERE userid = {user1}')
-										yesvalue = cursor.fetchone()[0]
-										if yesvalue == "yes":
-											pass
-										elif yesvalue == "no":
-											cursor.execute(f'UPDATE users SET levelsentbygdmod = "yes" WHERE userid = {user1}')
-											conn.commit()
-											levelsentbygdmod(user1)
-											embed5 = levelsentbygdmod(user1)
-											username = client.get_user(int(user1))
-											channel = await username.create_dm()
-											await channel.send(embed=embed5)
-										return
-									elif star == "2":
-										await msg.delete()
-										papa = cursor.execute(f"SELECT moderatorname FROM GDmoderators WHERE userid = {author} LIMIT 1")
-										gdmodname = cursor.fetchone()[0]
-										embed3 = discord.Embed(title=f'{successtitlerequester}', color=0x00ff00)
-										embed3.set_thumbnail(url="https://cdn.discordapp.com/emojis/472908189059383296.png?v=1")
-										embed3.add_field(name=f'{thelevelyourequested} `{level}` (**{levelname}** {byrequester} **{creator}**) {sendtorobtop} {gdmodname} {fortext} **EASY 2<:starrate:718204629858517003> RATE**', value='\u200b')
-										if message.attachments:
-											fileimage = message.attachments[0]
-											imageurl = fileimage.url
-											for ext in pic_ext:
-												if imageurl.endswith(ext):
-													embed3.set_image(url=f"{imageurl}")
-										channel = await username.create_dm()
+										cursor.execute(f"SELECT language FROM users WHERE userid = {user1}")
 										try:
-											await channel.send(embed=embed3)
-										except discord.errors.Forbidden:
-											pass
-										nani = cursor.execute(f"SELECT requester FROM levels WHERE levelid = {level} LIMIT 1")
-										user1 = cursor.fetchone()[0]
-										username = client.get_user(int(user1))
-										embed4 = discord.Embed(title=f'{successtitle}', color=0x00ff00)
-										embed4.add_field(name=f'{thelevel} `{level}` (**{levelname}** {by} **{creator}**) {successsend} **EASY 2<:starrate:718204629858517003> RATE** !', value='\u200b')
-										await message.channel.send(embed=embed4)
-										delete = cursor.execute(f"DELETE FROM levels WHERE levelid = {level}")
-										conn.commit()
+											language_requester = cursor.fetchone()[0]
+										except TypeError:
+											language_requester = language_default
+										language2_requester = language_requester
+										translate_messages_requester = open(f"language/requester/reqsend/{language2}.txt").read().splitlines()
 
-										cursor.execute(f'SELECT levelsentbygdmod FROM users WHERE userid = {user1}')
-										yesvalue = cursor.fetchone()[0]
-										if yesvalue == "yes":
-											pass
-										elif yesvalue == "no":
-											cursor.execute(f'UPDATE users SET levelsentbygdmod = "yes" WHERE userid = {user1}')
-											conn.commit()
-											levelsentbygdmod(user1)
-											embed5 = levelsentbygdmod(user1)
-											username = client.get_user(int(user1))
-											channel = await username.create_dm()
-											await channel.send(embed=embed5)
-										return
-									elif star == "3":
-										await msg.delete()
-										papa = cursor.execute(f"SELECT moderatorname FROM GDmoderators WHERE userid = {author} LIMIT 1")
-										gdmodname = cursor.fetchone()[0]
-										embed3 = discord.Embed(title=f'{successtitlerequester}', color=0x00ff00)
-										embed3.set_thumbnail(url="https://cdn.discordapp.com/emojis/472908581319213056.png?v=1")
-										embed3.add_field(name=f'{thelevelyourequested} `{level}` (**{levelname}** {byrequester} **{creator}**) {sendtorobtop} {gdmodname} {fortext} **NORMAL 3<:starrate:718204629858517003> RATE**', value='\u200b')
-										if message.attachments:
-											fileimage = message.attachments[0]
-											imageurl = fileimage.url
-											for ext in pic_ext:
-												if imageurl.endswith(ext):
-													embed3.set_image(url=f"{imageurl}")
-										channel = await username.create_dm()
-										try:
-											await channel.send(embed=embed3)
-										except discord.errors.Forbidden:
-											pass
-										nani = cursor.execute(f"SELECT requester FROM levels WHERE levelid = {level} LIMIT 1")
-										user1 = cursor.fetchone()[0]
-										username = client.get_user(int(user1))
-										embed4 = discord.Embed(title=f'{successtitle}', color=0x00ff00)
-										embed4.add_field(name=f'{thelevel} `{level}` (**{levelname}** {by} **{creator}**) {successsend} **NORMAL 3<:starrate:718204629858517003> RATE** !', value='\u200b')
-										await message.channel.send(embed=embed4)
-										delete = cursor.execute(f"DELETE FROM levels WHERE levelid = {level}")
-										conn.commit()
+										successtitlerequester = translate_messages_requester[0]
+										thelevelyourequested = translate_messages_requester[1]
+										byrequester = translate_messages_requester[2]
+										sendtorobtop = translate_messages_requester[3]
+										fortext = translate_messages_requester[4]
 
-										cursor.execute(f'SELECT levelsentbygdmod FROM users WHERE userid = {user1}')
-										yesvalue = cursor.fetchone()[0]
-										if yesvalue == "yes":
-											pass
-										elif yesvalue == "no":
-											cursor.execute(f'UPDATE users SET levelsentbygdmod = "yes" WHERE userid = {user1}')
-											conn.commit()
-											levelsentbygdmod(user1)
-											embed5 = levelsentbygdmod(user1)
-											username = client.get_user(int(user1))
-											channel = await username.create_dm()
-											await channel.send(embed=embed5)
-										return
-									elif star == "4":
-										await msg.delete()
-										papa = cursor.execute(f"SELECT moderatorname FROM GDmoderators WHERE userid = {author} LIMIT 1")
-										gdmodname = cursor.fetchone()[0]
-										embed3 = discord.Embed(title=f'{successtitlerequester}', color=0x00ff00)
-										embed3.set_thumbnail(url="https://cdn.discordapp.com/emojis/472908253408395296.png?v=1")
-										embed3.add_field(name=f'{thelevelyourequested} `{level}` (**{levelname}** {byrequester} **{creator}**) {sendtorobtop} {gdmodname} {fortext} **HARD 4<:starrate:718204629858517003> RATE**', value='\u200b')
-										if message.attachments:
-											fileimage = message.attachments[0]
-											imageurl = fileimage.url
-											for ext in pic_ext:
-												if imageurl.endswith(ext):
-													embed3.set_image(url=f"{imageurl}")
-										channel = await username.create_dm()
-										try:
-											await channel.send(embed=embed3)
-										except discord.errors.Forbidden:
-											pass
-										nani = cursor.execute(f"SELECT requester FROM levels WHERE levelid = {level} LIMIT 1")
-										user1 = cursor.fetchone()[0]
-										username = client.get_user(int(user1))
-										embed4 = discord.Embed(title=f'{successtitle}', color=0x00ff00)
-										embed4.add_field(name=f'{thelevel} `{level}` (**{levelname}** {by} **{creator}**) {successsend} **HARD 4<:starrate:718204629858517003> RATE** !', value='\u200b')
-										await message.channel.send(embed=embed4)
-										delete = cursor.execute(f"DELETE FROM levels WHERE levelid = {level}")
-										conn.commit()
-
-										cursor.execute(f'SELECT levelsentbygdmod FROM users WHERE userid = {user1}')
-										yesvalue = cursor.fetchone()[0]
-										if yesvalue == "yes":
-											pass
-										elif yesvalue == "no":
-											cursor.execute(f'UPDATE users SET levelsentbygdmod = "yes" WHERE userid = {user1}')
-											conn.commit()
-											levelsentbygdmod(user1)
-											embed5 = levelsentbygdmod(user1)
-											username = client.get_user(int(user1))
-											channel = await username.create_dm()
-											await channel.send(embed=embed5)
-										return
-									elif star == "5":
-										await msg.delete()
-										papa = cursor.execute(f"SELECT moderatorname FROM GDmoderators WHERE userid = {author} LIMIT 1")
-										gdmodname = cursor.fetchone()[0]
-										embed3 = discord.Embed(title=f'{successtitlerequester}', color=0x00ff00)
-										embed3.set_thumbnail(url="https://cdn.discordapp.com/emojis/472908253408395296.png?v=1")
-										embed3.add_field(name=f'{thelevelyourequested} `{level}` (**{levelname}** {byrequester} **{creator}**) {sendtorobtop} {gdmodname} {fortext} **HARD 5<:starrate:718204629858517003> RATE**', value='\u200b')
-										if message.attachments:
-											fileimage = message.attachments[0]
-											imageurl = fileimage.url
-											for ext in pic_ext:
-												if imageurl.endswith(ext):
-													embed3.set_image(url=f"{imageurl}")
-										channel = await username.create_dm()
-										try:
-											await channel.send(embed=embed3)
-										except discord.errors.Forbidden:
-											pass
-										nani = cursor.execute(f"SELECT requester FROM levels WHERE levelid = {level} LIMIT 1")
-										user1 = cursor.fetchone()[0]
-										username = client.get_user(int(user1))
-										embed4 = discord.Embed(title=f'{successtitle}', color=0x00ff00)
-										embed4.add_field(name=f'{thelevel} `{level}` (**{levelname}** {by} **{creator}**) {successsend} **HARD 5<:starrate:718204629858517003> RATE** !', value='\u200b')
-										await message.channel.send(embed=embed4)
-										delete = cursor.execute(f"DELETE FROM levels WHERE levelid = {level}")
-										conn.commit()
-
-										cursor.execute(f'SELECT levelsentbygdmod FROM users WHERE userid = {user1}')
-										yesvalue = cursor.fetchone()[0]
-										if yesvalue == "yes":
-											pass
-										elif yesvalue == "no":
-											cursor.execute(f'UPDATE users SET levelsentbygdmod = "yes" WHERE userid = {user1}')
-											conn.commit()
-											levelsentbygdmod(user1)
-											embed5 = levelsentbygdmod(user1)
-											username = client.get_user(int(user1))
-											channel = await username.create_dm()
-											await channel.send(embed=embed5)
-										return
-									elif star == "6":
-										await msg.delete()
-										papa = cursor.execute(f"SELECT moderatorname FROM GDmoderators WHERE userid = {author} LIMIT 1")
-										gdmodname = cursor.fetchone()[0]
-										embed3 = discord.Embed(title=f'{successtitlerequester}', color=0x00ff00)
-										embed3.set_thumbnail(url="https://cdn.discordapp.com/emojis/472908316301852683.png?v=1")
-										embed3.add_field(name=f'{thelevelyourequested} `{level}` (**{levelname}** {byrequester} **{creator}**) {sendtorobtop} {gdmodname} {fortext} **HARDER 6<:starrate:718204629858517003> RATE**', value='\u200b')
-										if message.attachments:
-											fileimage = message.attachments[0]
-											imageurl = fileimage.url
-											for ext in pic_ext:
-												if imageurl.endswith(ext):
-													embed3.set_image(url=f"{imageurl}")
-										channel = await username.create_dm()
-										try:
-											await channel.send(embed=embed3)
-										except discord.errors.Forbidden:
-											pass
-										nani = cursor.execute(f"SELECT requester FROM levels WHERE levelid = {level} LIMIT 1")
-										user1 = cursor.fetchone()[0]
-										username = client.get_user(int(user1))
-										embed4 = discord.Embed(title=f'{successtitle}', color=0x00ff00)
-										embed4.add_field(name=f'{thelevel} `{level}` (**{levelname}** {by} **{creator}**) {successsend} **HARDER 6<:starrate:718204629858517003> RATE** !', value='\u200b')
-										await message.channel.send(embed=embed4)
-										delete = cursor.execute(f"DELETE FROM levels WHERE levelid = {level}")
-										conn.commit()
-
-										cursor.execute(f'SELECT levelsentbygdmod FROM users WHERE userid = {user1}')
-										yesvalue = cursor.fetchone()[0]
-										if yesvalue == "yes":
-											pass
-										elif yesvalue == "no":
-											cursor.execute(f'UPDATE users SET levelsentbygdmod = "yes" WHERE userid = {user1}')
-											conn.commit()
-											levelsentbygdmod(user1)
-											embed5 = levelsentbygdmod(user1)
-											username = client.get_user(int(user1))
-											channel = await username.create_dm()
-											await channel.send(embed=embed5)
-										return
-									elif star == "7":
-										await msg.delete()
-										papa = cursor.execute(f"SELECT moderatorname FROM GDmoderators WHERE userid = {author} LIMIT 1")
-										gdmodname = cursor.fetchone()[0]
-										embed3 = discord.Embed(title=f'{successtitlerequester}', color=0x00ff00)
-										embed3.set_thumbnail(url="https://cdn.discordapp.com/emojis/472908316301852683.png?v=1")
-										embed3.add_field(name=f'{thelevelyourequested} `{level}` (**{levelname}** {byrequester} **{creator}**) {sendtorobtop} {gdmodname} {fortext} **HARDER 7<:starrate:718204629858517003> RATE**', value='\u200b')
-										if message.attachments:
-											fileimage = message.attachments[0]
-											imageurl = fileimage.url
-											for ext in pic_ext:
-												if imageurl.endswith(ext):
-													embed3.set_image(url=f"{imageurl}")
-										channel = await username.create_dm()
-										try:
-											await channel.send(embed=embed3)
-										except discord.errors.Forbidden:
-											pass
-										nani = cursor.execute(f"SELECT requester FROM levels WHERE levelid = {level} LIMIT 1")
-										user1 = cursor.fetchone()[0]
-										username = client.get_user(int(user1))
-										embed4 = discord.Embed(title=f'{successtitle}', color=0x00ff00)
-										embed4.add_field(name=f'{thelevel} `{level}` (**{levelname}** {by} **{creator}**) {successsend} **HARDER 7<:starrate:718204629858517003> RATE** !', value='\u200b')
-										await message.channel.send(embed=embed4)
-										delete = cursor.execute(f"DELETE FROM levels WHERE levelid = {level}")
-										conn.commit()
-
-										cursor.execute(f'SELECT levelsentbygdmod FROM users WHERE userid = {user1}')
-										yesvalue = cursor.fetchone()[0]
-										if yesvalue == "yes":
-											pass
-										elif yesvalue == "no":
-											cursor.execute(f'UPDATE users SET levelsentbygdmod = "yes" WHERE userid = {user1}')
-											conn.commit()
-											levelsentbygdmod(user1)
-											embed5 = levelsentbygdmod(user1)
-											username = client.get_user(int(user1))
-											channel = await username.create_dm()
-											await channel.send(embed=embed5)
-										return
-									elif star == "8":
-										await msg.delete()
-										papa = cursor.execute(f"SELECT moderatorname FROM GDmoderators WHERE userid = {author} LIMIT 1")
-										gdmodname = cursor.fetchone()[0]
-										embed3 = discord.Embed(title=f'{successtitlerequester}', color=0x00ff00)
-										embed3.set_thumbnail(url="https://cdn.discordapp.com/emojis/472908421209784320.png?v=1")
-										embed3.add_field(name=f'{thelevelyourequested} `{level}` (**{levelname}** {byrequester} **{creator}**) {sendtorobtop} {gdmodname} {fortext} **INSANE 8<:starrate:718204629858517003> RATE**', value='\u200b')
-										if message.attachments:
-											fileimage = message.attachments[0]
-											imageurl = fileimage.url
-											for ext in pic_ext:
-												if imageurl.endswith(ext):
-													embed3.set_image(url=f"{imageurl}")
-										channel = await username.create_dm()
-										try:
-											await channel.send(embed=embed3)
-										except discord.errors.Forbidden:
-											pass
-										nani = cursor.execute(f"SELECT requester FROM levels WHERE levelid = {level} LIMIT 1")
-										user1 = cursor.fetchone()[0]
-										username = client.get_user(int(user1))
-										embed4 = discord.Embed(title=f'{successtitle}', color=0x00ff00)
-										embed4.add_field(name=f'{thelevel} `{level}` (**{levelname}** {by} **{creator}**) {successsend} **INSANE 8<:starrate:718204629858517003> RATE** !', value='\u200b')
-										await message.channel.send(embed=embed4)
-										delete = cursor.execute(f"DELETE FROM levels WHERE levelid = {level}")
-										conn.commit()
-
-										cursor.execute(f'SELECT levelsentbygdmod FROM users WHERE userid = {user1}')
-										yesvalue = cursor.fetchone()[0]
-										if yesvalue == "yes":
-											pass
-										elif yesvalue == "no":
-											cursor.execute(f'UPDATE users SET levelsentbygdmod = "yes" WHERE userid = {user1}')
-											conn.commit()
-											levelsentbygdmod(user1)
-											embed5 = levelsentbygdmod(user1)
-											username = client.get_user(int(user1))
-											channel = await username.create_dm()
-											await channel.send(embed=embed5)
-										return
-									elif star == "9":
-										await msg.delete()
-										papa = cursor.execute(f"SELECT moderatorname FROM GDmoderators WHERE userid = {author} LIMIT 1")
-										gdmodname = cursor.fetchone()[0]
-										embed3 = discord.Embed(title=f'{successtitlerequester}', color=0x00ff00)
-										embed3.set_thumbnail(url="https://cdn.discordapp.com/emojis/472908421209784320.png?v=1")
-										embed3.add_field(name=f'{thelevelyourequested} `{level}` (**{levelname}** {byrequester} **{creator}**) {sendtorobtop} {gdmodname} {fortext} **INSANE 9<:starrate:718204629858517003> RATE**', value='\u200b')
-										if message.attachments:
-											fileimage = message.attachments[0]
-											imageurl = fileimage.url
-											for ext in pic_ext:
-												if imageurl.endswith(ext):
-													embed3.set_image(url=f"{imageurl}")
-										channel = await username.create_dm()
-										try:
-											await channel.send(embed=embed3)
-										except discord.errors.Forbidden:
-											pass
-										nani = cursor.execute(f"SELECT requester FROM levels WHERE levelid = {level} LIMIT 1")
-										user1 = cursor.fetchone()[0]
-										username = client.get_user(int(user1))
-										embed4 = discord.Embed(title=f'{successtitle}', color=0x00ff00)
-										embed4.add_field(name=f'{thelevel} `{level}` (**{levelname}** {by} **{creator}**) {successsend} **INSANE 9<:starrate:718204629858517003> RATE** !', value='\u200b')
-										await message.channel.send(embed=embed4)
-										delete = cursor.execute(f"DELETE FROM levels WHERE levelid = {level}")
-										conn.commit()
-
-										cursor.execute(f'SELECT levelsentbygdmod FROM users WHERE userid = {user1}')
-										yesvalue = cursor.fetchone()[0]
-										if yesvalue == "yes":
-											pass
-										elif yesvalue == "no":
-											cursor.execute(f'UPDATE users SET levelsentbygdmod = "yes" WHERE userid = {user1}')
-											conn.commit()
-											levelsentbygdmod(user1)
-											embed5 = levelsentbygdmod(user1)
-											username = client.get_user(int(user1))
-											channel = await username.create_dm()
-											await channel.send(embed=embed5)
-										return
-									elif star == "10":
-										if demon == "1":
+										if star == "1":
 											await msg.delete()
 											papa = cursor.execute(f"SELECT moderatorname FROM GDmoderators WHERE userid = {author} LIMIT 1")
 											gdmodname = cursor.fetchone()[0]
 											embed3 = discord.Embed(title=f'{successtitlerequester}', color=0x00ff00)
-											embed3.set_thumbnail(url="https://cdn.discordapp.com/emojis/472907861102559262.png?v=1")
-											embed3.add_field(name=f'{thelevelyourequested} `{level}` (**{levelname}** {byrequester} **{creator}**) {sendtorobtop} {gdmodname} {fortext} **EASY DEMON 10<:starrate:718204629858517003> RATE**', value='\u200b')
+											embed3.set_thumbnail(url="https://cdn.discordapp.com/emojis/472907799987486768.png?v=1")
+											embed3.add_field(name=f'{thelevelyourequested} `{level}` (**{levelname}** {byrequester} **{creator}**) {sendtorobtop} {gdmodname} {fortext} **AUTO 1<:starrate:718204629858517003> RATE**', value='\u200b')
 											if message.attachments:
 												fileimage = message.attachments[0]
 												imageurl = fileimage.url
@@ -12947,14 +7729,84 @@ async def on_message(message):
 												await channel.send(embed=embed3)
 											except discord.errors.Forbidden:
 												pass
-											nani = cursor.execute(f"SELECT requester FROM levels WHERE levelid = {level} LIMIT 1")
+											nani = cursor.execute(f"SELECT requester FROM levels WHERE levelid = %s AND server = %s LIMIT 1", (level, serverid))
 											user1 = cursor.fetchone()[0]
 											username = client.get_user(int(user1))
 											embed4 = discord.Embed(title=f'{successtitle}', color=0x00ff00)
-											embed4.add_field(name=f'{thelevel} `{level}` (**{levelname}** {by} **{creator}**) {successsend} **EASY DEMON 10<:starrate:718204629858517003> RATE** !', value='\u200b')
+											embed4.add_field(name=f'{thelevel} `{level}` (**{levelname}** {by} **{creator}**) {successsend} **AUTO 1<:starrate:718204629858517003> RATE** !', value='\u200b')
 											await message.channel.send(embed=embed4)
-											delete = cursor.execute(f"DELETE FROM levels WHERE levelid = {level}")
+											delete = cursor.execute(f"DELETE FROM levels WHERE levelid = %s and server = {serverid} AND server = {serverid}", (level, ))
 											conn.commit()
+											
+											cursor.execute(f"SELECT GDModCheckedChannel FROM setup WHERE serverid = {serverid} LIMIT 1")
+											try:
+												gdmodcheckedchannel = cursor.fetchone()[0]
+											except TypeError:
+												gdmodcheckedchannel = None
+											if gdmodcheckedchannel is not None:
+												channelmod = client.get_channel(int(gdmodcheckedchannel))
+												
+												embed13.add_field(name=f"{sendfor} **AUTO 1<:starrate:718204629858517003> RATE** ! <:success:472908961176092702>", value="\u200b")
+												embed13.set_thumbnail(url=f"https://cdn.discordapp.com/emojis/472907799987486768.png?v=1")
+		
+												description += '=' * (-len(description) % 4)
+												base64_bytes = description.encode('ascii')
+												print(base64_bytes)
+												message_bytes = base64.urlsafe_b64decode(base64_bytes)
+												descbase64 = message_bytes.decode('ascii')
+
+												if int(objectplus) >= 40000:
+													embed13.add_field(name=f'<:play:472908887859789835> __{levelname}__ {by} {creator} <:object_overflow:472908865953071115>', value=f"{desc} {descbase64}", inline=False)
+												elif int(objectplus) <= 39999:
+													embed13.add_field(name=f'<:play:472908887859789835> __{levelname}__ {by} {creator}', value=f"{desc} {descbase64}", inline=False)
+
+												if int(coins) == 0:
+													coinsvalue = f"{none}"
+												elif int(coins) == 1:
+													coinsvalue = "<:user_coin_unverified:472908993832943631>"
+												elif int(coins) == 2:
+													coinsvalue = "<:user_coin_unverified:472908993832943631> <:user_coin_unverified:472908993832943631>"
+												elif int(coins) == 3:
+													coinsvalue = "<:user_coin_unverified:472908993832943631> <:user_coin_unverified:472908993832943631> <:user_coin_unverified:472908993832943631>"
+
+												try:
+													if int(verifiedcoins) == 1:
+														if int(coins) == 0:
+															coinsvalue = f"{none}"
+														elif int(coins) == 1:
+															coinsvalue = "<:user_coin:472908993711308800>"
+														elif int(coins) == 2:
+															coinsvalue = "<:user_coin:472908993711308800> <:user_coin:472908993711308800>"
+														elif int(coins) == 3:
+															coinsvalue = "<:user_coin:472908993711308800> <:user_coin:472908993711308800> <:user_coin:472908993711308800>"
+												except ValueError:
+													pass
+
+												embed13.add_field(name=f'{coinstitle}: {coinsvalue}', value=f"<:downloads:472907713727430658> `{downloads}`\n{likesemote} `{likes}`\n<:length:472908680459976704> `{lengthvalue}`\n", inline=False)
+
+												#reqsearch2(level)
+												try:
+													songname,songauthor,songid,sizesong,songlink,officialsong = reqsearch2(level)
+												except ValueError:
+													songname,songauthor,songid,sizesong,songlink = reqsearch2(level)
+
+												songlink2 = unquote(f"{songlink}")
+												try:
+													officialsong2 = int(officialsong)
+												except UnboundLocalError:
+													embed13.add_field(name=f':musical_note:  __{songname}__ {by} {songauthor}', value=f"SongID: {songid} - {sizetitle}: {sizesong}MB\n<:play:472908887859789835> [{newgroundsplay}](https://newgrounds.com/audio/load/{songid}) <:download_song:472907696685711370> [{downloadsong}]({songlink2})", inline=False)
+												else:
+													embed13.add_field(name=f':musical_note: :white_check_mark:   __**{songname}**__ {by} {songauthor}', value=f"SongID: {songid} - {sizetitle}: {sizesong}MB\n<:play:472908887859789835> [{newgroundsplay}](https://newgrounds.com/audio/load/{songid}) <:download_song:472907696685711370> [{youtubelink}]({songlink2})", inline=False)
+												
+												await channelmod.send(f"<@{user1}>",embed=embed13)
+												if message.attachments:
+													fileimage = message.attachments[0]
+													imageurl = fileimage.url
+													for ext in pic_ext:
+														if imageurl.endswith(ext):
+															embed14 = discord.Embed(title=f'Screenshot', color=0x00ff00)
+															embed14.set_image(url=f"{imageurl}")
+															await channelmod.send(embed=embed14)
 
 											cursor.execute(f'SELECT levelsentbygdmod FROM users WHERE userid = {user1}')
 											yesvalue = cursor.fetchone()[0]
@@ -12967,15 +7819,31 @@ async def on_message(message):
 												embed5 = levelsentbygdmod(user1)
 												username = client.get_user(int(user1))
 												channel = await username.create_dm()
-												await channel.send(embed=embed5)
+												try:
+													await channel.send(embed=embed5)
+												except discord.errors.Forbidden:
+													pass
+											
+											cursor.execute(f"SELECT messageid FROM levels WHERE server = {serverid} AND levelid = {level}")
+											messages = cursor.fetchall()
+											for row in messages:
+												try:
+													msg101 = await message.channel.fetch_message(int(row[0]))
+												except:
+													msg101 = None
+												else:
+													try:
+														await msg101.delete()
+													except TypeError:
+														pass
 											return
-										elif demon == "2":
+										elif star == "2":
 											await msg.delete()
 											papa = cursor.execute(f"SELECT moderatorname FROM GDmoderators WHERE userid = {author} LIMIT 1")
 											gdmodname = cursor.fetchone()[0]
 											embed3 = discord.Embed(title=f'{successtitlerequester}', color=0x00ff00)
-											embed3.set_thumbnail(url="https://cdn.discordapp.com/emojis/472908111053586433.png?v=1")
-											embed3.add_field(name=f'{thelevelyourequested} `{level}` (**{levelname}** {byrequester} **{creator}**) {sendtorobtop} {gdmodname} {fortext} **MEDIUM DEMON 10<:starrate:718204629858517003> RATE**', value='\u200b')
+											embed3.set_thumbnail(url="https://cdn.discordapp.com/emojis/472908189059383296.png?v=1")
+											embed3.add_field(name=f'{thelevelyourequested} `{level}` (**{levelname}** {byrequester} **{creator}**) {sendtorobtop} {gdmodname} {fortext} **EASY 2<:starrate:718204629858517003> RATE**', value='\u200b')
 											if message.attachments:
 												fileimage = message.attachments[0]
 												imageurl = fileimage.url
@@ -12987,14 +7855,88 @@ async def on_message(message):
 												await channel.send(embed=embed3)
 											except discord.errors.Forbidden:
 												pass
-											nani = cursor.execute(f"SELECT requester FROM levels WHERE levelid = {level} LIMIT 1")
+											nani = cursor.execute(f"SELECT requester FROM levels WHERE levelid = %s AND server = %s LIMIT 1", (level, serverid))
 											user1 = cursor.fetchone()[0]
 											username = client.get_user(int(user1))
 											embed4 = discord.Embed(title=f'{successtitle}', color=0x00ff00)
-											embed4.add_field(name=f'{thelevel} `{level}` (**{levelname}** {by} **{creator}**) {successsend} **MEDIUM DEMON 10<:starrate:718204629858517003> RATE** !', value='\u200b')
+											embed4.add_field(name=f'{thelevel} `{level}` (**{levelname}** {by} **{creator}**) {successsend} **EASY 2<:starrate:718204629858517003> RATE** !', value='\u200b')
 											await message.channel.send(embed=embed4)
-											delete = cursor.execute(f"DELETE FROM levels WHERE levelid = {level}")
+											delete = cursor.execute(f"DELETE FROM levels WHERE levelid = %s and server = %s", (level, serverid))
 											conn.commit()
+											
+											cursor.execute(f"SELECT GDModCheckedChannel FROM setup WHERE serverid = {serverid} LIMIT 1")
+											try:
+												gdmodcheckedchannel = cursor.fetchone()[0]
+											except TypeError:
+												gdmodcheckedchannel = None
+											if gdmodcheckedchannel is not None:
+												channelmod = client.get_channel(int(gdmodcheckedchannel))
+														
+												#reqsearch(level)
+												stars,objectplus,levelname,creator,ratingemote,stars,downloads,likes,likesemote,description,coins,verifiedcoins,lengthvalue,idlevel,version,gdversion,color = reqsearch(level)
+												
+												embed13 = discord.Embed(title=f'`{level}` (**{levelname}** {by} **{creator}**)', color=0x00ff00)
+												embed13.add_field(name=f"{sendfor} EASY 2<:starrate:718204629858517003> RATE** ! <:success:472908961176092702>", value="\u200b")
+												embed13.set_thumbnail(url=f"https://cdn.discordapp.com/emojis/472908189059383296.png?v=1")
+		
+												description += '=' * (-len(description) % 4)
+												base64_bytes = description.encode('ascii')
+												print(base64_bytes)
+												message_bytes = base64.urlsafe_b64decode(base64_bytes)
+												descbase64 = message_bytes.decode('ascii')
+
+												if int(objectplus) >= 40000:
+													embed13.add_field(name=f'<:play:472908887859789835> __{levelname}__ {by} {creator} <:object_overflow:472908865953071115>', value=f"{desc} {descbase64}", inline=False)
+												elif int(objectplus) <= 39999:
+													embed13.add_field(name=f'<:play:472908887859789835> __{levelname}__ {by} {creator}', value=f"{desc} {descbase64}", inline=False)
+
+												if int(coins) == 0:
+													coinsvalue = f"{none}"
+												elif int(coins) == 1:
+													coinsvalue = "<:user_coin_unverified:472908993832943631>"
+												elif int(coins) == 2:
+													coinsvalue = "<:user_coin_unverified:472908993832943631> <:user_coin_unverified:472908993832943631>"
+												elif int(coins) == 3:
+													coinsvalue = "<:user_coin_unverified:472908993832943631> <:user_coin_unverified:472908993832943631> <:user_coin_unverified:472908993832943631>"
+
+												try:
+													if int(verifiedcoins) == 1:
+														if int(coins) == 0:
+															coinsvalue = f"{none}"
+														elif int(coins) == 1:
+															coinsvalue = "<:user_coin:472908993711308800>"
+														elif int(coins) == 2:
+															coinsvalue = "<:user_coin:472908993711308800> <:user_coin:472908993711308800>"
+														elif int(coins) == 3:
+															coinsvalue = "<:user_coin:472908993711308800> <:user_coin:472908993711308800> <:user_coin:472908993711308800>"
+												except ValueError:
+													pass
+
+												embed13.add_field(name=f'{coinstitle}: {coinsvalue}', value=f"<:downloads:472907713727430658> `{downloads}`\n{likesemote} `{likes}`\n<:length:472908680459976704> `{lengthvalue}`\n", inline=False)
+
+												#reqsearch2(level)
+												try:
+													songname,songauthor,songid,sizesong,songlink,officialsong = reqsearch2(level)
+												except ValueError:
+													songname,songauthor,songid,sizesong,songlink = reqsearch2(level)
+
+												songlink2 = unquote(f"{songlink}")
+												try:
+													officialsong2 = int(officialsong)
+												except UnboundLocalError:
+													embed13.add_field(name=f':musical_note:  __{songname}__ {by} {songauthor}', value=f"SongID: {songid} - {sizetitle}: {sizesong}MB\n<:play:472908887859789835> [{newgroundsplay}](https://newgrounds.com/audio/load/{songid}) <:download_song:472907696685711370> [{downloadsong}]({songlink2})", inline=False)
+												else:
+													embed13.add_field(name=f':musical_note: :white_check_mark:   __**{songname}**__ {by} {songauthor}', value=f"SongID: {songid} - {sizetitle}: {sizesong}MB\n<:play:472908887859789835> [{newgroundsplay}](https://newgrounds.com/audio/load/{songid}) <:download_song:472907696685711370> [{youtubelink}]({songlink2})", inline=False)
+												
+												await channelmod.send(f"<@{user1}>",embed=embed13)
+												if message.attachments:
+													fileimage = message.attachments[0]
+													imageurl = fileimage.url
+													for ext in pic_ext:
+														if imageurl.endswith(ext):
+															embed14 = discord.Embed(title=f'Screenshot', color=0x00ff00)
+															embed14.set_image(url=f"{imageurl}")
+															await channelmod.send(embed=embed14)
 
 											cursor.execute(f'SELECT levelsentbygdmod FROM users WHERE userid = {user1}')
 											yesvalue = cursor.fetchone()[0]
@@ -13007,15 +7949,31 @@ async def on_message(message):
 												embed5 = levelsentbygdmod(user1)
 												username = client.get_user(int(user1))
 												channel = await username.create_dm()
-												await channel.send(embed=embed5)
+												try:
+													await channel.send(embed=embed5)
+												except discord.errors.Forbidden:
+													pass
+													
+											cursor.execute(f"SELECT messageid FROM levels WHERE server = {serverid} AND levelid = {level}")
+											messages = cursor.fetchall()
+											for row in messages:
+												try:
+													msg101 = await message.channel.fetch_message(int(row[0]))
+												except:
+													msg101 = None
+												else:
+													try:
+														await msg101.delete()
+													except TypeError:
+														pass
 											return
-										elif demon == "3":
+										elif star == "3":
 											await msg.delete()
 											papa = cursor.execute(f"SELECT moderatorname FROM GDmoderators WHERE userid = {author} LIMIT 1")
 											gdmodname = cursor.fetchone()[0]
 											embed3 = discord.Embed(title=f'{successtitlerequester}', color=0x00ff00)
-											embed3.set_thumbnail(url="https://cdn.discordapp.com/emojis/472907978094411776.png?v=1")
-											embed3.add_field(name=f'{thelevelyourequested} `{level}` (**{levelname}** {byrequester} **{creator}**) {sendtorobtop} {gdmodname} {fortext} **HARD DEMON 10<:starrate:718204629858517003> RATE**', value='\u200b')
+											embed3.set_thumbnail(url="https://cdn.discordapp.com/emojis/472908581319213056.png?v=1")
+											embed3.add_field(name=f'{thelevelyourequested} `{level}` (**{levelname}** {byrequester} **{creator}**) {sendtorobtop} {gdmodname} {fortext} **NORMAL 3<:starrate:718204629858517003> RATE**', value='\u200b')
 											if message.attachments:
 												fileimage = message.attachments[0]
 												imageurl = fileimage.url
@@ -13027,14 +7985,88 @@ async def on_message(message):
 												await channel.send(embed=embed3)
 											except discord.errors.Forbidden:
 												pass
-											nani = cursor.execute(f"SELECT requester FROM levels WHERE levelid = {level} LIMIT 1")
+											nani = cursor.execute(f"SELECT requester FROM levels WHERE levelid = %s AND server = %s LIMIT 1", (level, serverid))
 											user1 = cursor.fetchone()[0]
 											username = client.get_user(int(user1))
 											embed4 = discord.Embed(title=f'{successtitle}', color=0x00ff00)
-											embed4.add_field(name=f'{thelevel} `{level}` (**{levelname}** {by} **{creator}**) {successsend} **HARD DEMON 10<:starrate:718204629858517003> RATE** !', value='\u200b')
+											embed4.add_field(name=f'{thelevel} `{level}` (**{levelname}** {by} **{creator}**) {successsend} **NORMAL 3<:starrate:718204629858517003> RATE** !', value='\u200b')
 											await message.channel.send(embed=embed4)
-											delete = cursor.execute(f"DELETE FROM levels WHERE levelid = {level}")
+											delete = cursor.execute(f"DELETE FROM levels WHERE levelid = %s and server = %s", (level, serverid))
 											conn.commit()
+											
+											cursor.execute(f"SELECT GDModCheckedChannel FROM setup WHERE serverid = {serverid} LIMIT 1")
+											try:
+												gdmodcheckedchannel = cursor.fetchone()[0]
+											except TypeError:
+												gdmodcheckedchannel = None
+											if gdmodcheckedchannel is not None:
+												channelmod = client.get_channel(int(gdmodcheckedchannel))
+														
+												#reqsearch(level)
+												stars,objectplus,levelname,creator,ratingemote,stars,downloads,likes,likesemote,description,coins,verifiedcoins,lengthvalue,idlevel,version,gdversion,color = reqsearch(level)
+												
+												embed13 = discord.Embed(title=f'`{level}` (**{levelname}** {by} **{creator}**)', color=0x00ff00)
+												embed13.add_field(name=f"{sendfor} NORMAL 3<:starrate:718204629858517003> RATE** ! <:success:472908961176092702>", value="\u200b")
+												embed13.set_thumbnail(url=f"https://cdn.discordapp.com/emojis/472908581319213056.png?v=1")
+		
+												description += '=' * (-len(description) % 4)
+												base64_bytes = description.encode('ascii')
+												print(base64_bytes)
+												message_bytes = base64.urlsafe_b64decode(base64_bytes)
+												descbase64 = message_bytes.decode('ascii')
+
+												if int(objectplus) >= 40000:
+													embed13.add_field(name=f'<:play:472908887859789835> __{levelname}__ {by} {creator} <:object_overflow:472908865953071115>', value=f"{desc} {descbase64}", inline=False)
+												elif int(objectplus) <= 39999:
+													embed13.add_field(name=f'<:play:472908887859789835> __{levelname}__ {by} {creator}', value=f"{desc} {descbase64}", inline=False)
+
+												if int(coins) == 0:
+													coinsvalue = f"{none}"
+												elif int(coins) == 1:
+													coinsvalue = "<:user_coin_unverified:472908993832943631>"
+												elif int(coins) == 2:
+													coinsvalue = "<:user_coin_unverified:472908993832943631> <:user_coin_unverified:472908993832943631>"
+												elif int(coins) == 3:
+													coinsvalue = "<:user_coin_unverified:472908993832943631> <:user_coin_unverified:472908993832943631> <:user_coin_unverified:472908993832943631>"
+
+												try:
+													if int(verifiedcoins) == 1:
+														if int(coins) == 0:
+															coinsvalue = f"{none}"
+														elif int(coins) == 1:
+															coinsvalue = "<:user_coin:472908993711308800>"
+														elif int(coins) == 2:
+															coinsvalue = "<:user_coin:472908993711308800> <:user_coin:472908993711308800>"
+														elif int(coins) == 3:
+															coinsvalue = "<:user_coin:472908993711308800> <:user_coin:472908993711308800> <:user_coin:472908993711308800>"
+												except ValueError:
+													pass
+
+												embed13.add_field(name=f'{coinstitle}: {coinsvalue}', value=f"<:downloads:472907713727430658> `{downloads}`\n{likesemote} `{likes}`\n<:length:472908680459976704> `{lengthvalue}`\n", inline=False)
+
+												#reqsearch2(level)
+												try:
+													songname,songauthor,songid,sizesong,songlink,officialsong = reqsearch2(level)
+												except ValueError:
+													songname,songauthor,songid,sizesong,songlink = reqsearch2(level)
+
+												songlink2 = unquote(f"{songlink}")
+												try:
+													officialsong2 = int(officialsong)
+												except UnboundLocalError:
+													embed13.add_field(name=f':musical_note:  __{songname}__ {by} {songauthor}', value=f"SongID: {songid} - {sizetitle}: {sizesong}MB\n<:play:472908887859789835> [{newgroundsplay}](https://newgrounds.com/audio/load/{songid}) <:download_song:472907696685711370> [{downloadsong}]({songlink2})", inline=False)
+												else:
+													embed13.add_field(name=f':musical_note: :white_check_mark:   __**{songname}**__ {by} {songauthor}', value=f"SongID: {songid} - {sizetitle}: {sizesong}MB\n<:play:472908887859789835> [{newgroundsplay}](https://newgrounds.com/audio/load/{songid}) <:download_song:472907696685711370> [{youtubelink}]({songlink2})", inline=False)
+												
+												await channelmod.send(f"<@{user1}>",embed=embed13)
+												if message.attachments:
+													fileimage = message.attachments[0]
+													imageurl = fileimage.url
+													for ext in pic_ext:
+														if imageurl.endswith(ext):
+															embed14 = discord.Embed(title=f'Screenshot', color=0x00ff00)
+															embed14.set_image(url=f"{imageurl}")
+															await channelmod.send(embed=embed14)
 
 											cursor.execute(f'SELECT levelsentbygdmod FROM users WHERE userid = {user1}')
 											yesvalue = cursor.fetchone()[0]
@@ -13047,15 +8079,31 @@ async def on_message(message):
 												embed5 = levelsentbygdmod(user1)
 												username = client.get_user(int(user1))
 												channel = await username.create_dm()
-												await channel.send(embed=embed5)
+												try:
+													await channel.send(embed=embed5)
+												except discord.errors.Forbidden:
+													pass
+													
+											cursor.execute(f"SELECT messageid FROM levels WHERE server = {serverid} AND levelid = {level}")
+											messages = cursor.fetchall()
+											for row in messages:
+												try:
+													msg101 = await message.channel.fetch_message(int(row[0]))
+												except:
+													msg101 = None
+												else:
+													try:
+														await msg101.delete()
+													except TypeError:
+														pass
 											return
-										elif demon == "4":
+										elif star == "4":
 											await msg.delete()
 											papa = cursor.execute(f"SELECT moderatorname FROM GDmoderators WHERE userid = {author} LIMIT 1")
 											gdmodname = cursor.fetchone()[0]
 											embed3 = discord.Embed(title=f'{successtitlerequester}', color=0x00ff00)
-											embed3.set_thumbnail(url="https://cdn.discordapp.com/emojis/472908041960947712.png?v=1")
-											embed3.add_field(name=f'{thelevelyourequested} `{level}` (**{levelname}** {byrequester} **{creator}**) {sendtorobtop} {gdmodname} {fortext} **INSANE DEMON 10<:starrate:718204629858517003> RATE**', value='\u200b')
+											embed3.set_thumbnail(url="https://cdn.discordapp.com/emojis/472908253408395296.png?v=1")
+											embed3.add_field(name=f'{thelevelyourequested} `{level}` (**{levelname}** {byrequester} **{creator}**) {sendtorobtop} {gdmodname} {fortext} **HARD 4<:starrate:718204629858517003> RATE**', value='\u200b')
 											if message.attachments:
 												fileimage = message.attachments[0]
 												imageurl = fileimage.url
@@ -13067,14 +8115,88 @@ async def on_message(message):
 												await channel.send(embed=embed3)
 											except discord.errors.Forbidden:
 												pass
-											nani = cursor.execute(f"SELECT requester FROM levels WHERE levelid = {level} LIMIT 1")
+											nani = cursor.execute(f"SELECT requester FROM levels WHERE levelid = %s AND server = %s LIMIT 1", (level, serverid))
 											user1 = cursor.fetchone()[0]
 											username = client.get_user(int(user1))
 											embed4 = discord.Embed(title=f'{successtitle}', color=0x00ff00)
-											embed4.add_field(name=f'{thelevel} `{level}` (**{levelname}** {by} **{creator}**) {successsend} **INSANE DEMON 10<:starrate:718204629858517003> RATE** !', value='\u200b')
+											embed4.add_field(name=f'{thelevel} `{level}` (**{levelname}** {by} **{creator}**) {successsend} **HARD 4<:starrate:718204629858517003> RATE** !', value='\u200b')
 											await message.channel.send(embed=embed4)
-											delete = cursor.execute(f"DELETE FROM levels WHERE levelid = {level}")
+											delete = cursor.execute(f"DELETE FROM levels WHERE levelid = %s and server = %s", (level, serverid))
 											conn.commit()
+											
+											cursor.execute(f"SELECT GDModCheckedChannel FROM setup WHERE serverid = {serverid} LIMIT 1")
+											try:
+												gdmodcheckedchannel = cursor.fetchone()[0]
+											except TypeError:
+												gdmodcheckedchannel = None
+											if gdmodcheckedchannel is not None:
+												channelmod = client.get_channel(int(gdmodcheckedchannel))
+														
+												#reqsearch(level)
+												stars,objectplus,levelname,creator,ratingemote,stars,downloads,likes,likesemote,description,coins,verifiedcoins,lengthvalue,idlevel,version,gdversion,color = reqsearch(level)
+												
+												embed13 = discord.Embed(title=f'`{level}` (**{levelname}** {by} **{creator}**)', color=0x00ff00)
+												embed13.add_field(name=f"{sendfor} HARD 4<:starrate:718204629858517003> RATE** ! <:success:472908961176092702>", value="\u200b")
+												embed13.set_thumbnail(url=f"https://cdn.discordapp.com/emojis/472908253408395296.png?v=1")
+		
+												description += '=' * (-len(description) % 4)
+												base64_bytes = description.encode('ascii')
+												print(base64_bytes)
+												message_bytes = base64.urlsafe_b64decode(base64_bytes)
+												descbase64 = message_bytes.decode('ascii')
+
+												if int(objectplus) >= 40000:
+													embed13.add_field(name=f'<:play:472908887859789835> __{levelname}__ {by} {creator} <:object_overflow:472908865953071115>', value=f"{desc} {descbase64}", inline=False)
+												elif int(objectplus) <= 39999:
+													embed13.add_field(name=f'<:play:472908887859789835> __{levelname}__ {by} {creator}', value=f"{desc} {descbase64}", inline=False)
+
+												if int(coins) == 0:
+													coinsvalue = f"{none}"
+												elif int(coins) == 1:
+													coinsvalue = "<:user_coin_unverified:472908993832943631>"
+												elif int(coins) == 2:
+													coinsvalue = "<:user_coin_unverified:472908993832943631> <:user_coin_unverified:472908993832943631>"
+												elif int(coins) == 3:
+													coinsvalue = "<:user_coin_unverified:472908993832943631> <:user_coin_unverified:472908993832943631> <:user_coin_unverified:472908993832943631>"
+
+												try:
+													if int(verifiedcoins) == 1:
+														if int(coins) == 0:
+															coinsvalue = f"{none}"
+														elif int(coins) == 1:
+															coinsvalue = "<:user_coin:472908993711308800>"
+														elif int(coins) == 2:
+															coinsvalue = "<:user_coin:472908993711308800> <:user_coin:472908993711308800>"
+														elif int(coins) == 3:
+															coinsvalue = "<:user_coin:472908993711308800> <:user_coin:472908993711308800> <:user_coin:472908993711308800>"
+												except ValueError:
+													pass
+
+												embed13.add_field(name=f'{coinstitle}: {coinsvalue}', value=f"<:downloads:472907713727430658> `{downloads}`\n{likesemote} `{likes}`\n<:length:472908680459976704> `{lengthvalue}`\n", inline=False)
+
+												#reqsearch2(level)
+												try:
+													songname,songauthor,songid,sizesong,songlink,officialsong = reqsearch2(level)
+												except ValueError:
+													songname,songauthor,songid,sizesong,songlink = reqsearch2(level)
+
+												songlink2 = unquote(f"{songlink}")
+												try:
+													officialsong2 = int(officialsong)
+												except UnboundLocalError:
+													embed13.add_field(name=f':musical_note:  __{songname}__ {by} {songauthor}', value=f"SongID: {songid} - {sizetitle}: {sizesong}MB\n<:play:472908887859789835> [{newgroundsplay}](https://newgrounds.com/audio/load/{songid}) <:download_song:472907696685711370> [{downloadsong}]({songlink2})", inline=False)
+												else:
+													embed13.add_field(name=f':musical_note: :white_check_mark:   __**{songname}**__ {by} {songauthor}', value=f"SongID: {songid} - {sizetitle}: {sizesong}MB\n<:play:472908887859789835> [{newgroundsplay}](https://newgrounds.com/audio/load/{songid}) <:download_song:472907696685711370> [{youtubelink}]({songlink2})", inline=False)
+												
+												await channelmod.send(f"<@{user1}>",embed=embed13)
+												if message.attachments:
+													fileimage = message.attachments[0]
+													imageurl = fileimage.url
+													for ext in pic_ext:
+														if imageurl.endswith(ext):
+															embed14 = discord.Embed(title=f'Screenshot', color=0x00ff00)
+															embed14.set_image(url=f"{imageurl}")
+															await channelmod.send(embed=embed14)
 
 											cursor.execute(f'SELECT levelsentbygdmod FROM users WHERE userid = {user1}')
 											yesvalue = cursor.fetchone()[0]
@@ -13087,15 +8209,31 @@ async def on_message(message):
 												embed5 = levelsentbygdmod(user1)
 												username = client.get_user(int(user1))
 												channel = await username.create_dm()
-												await channel.send(embed=embed5)
+												try:
+													await channel.send(embed=embed5)
+												except discord.errors.Forbidden:
+													pass
+													
+											cursor.execute(f"SELECT messageid FROM levels WHERE server = {serverid} AND levelid = {level}")
+											messages = cursor.fetchall()
+											for row in messages:
+												try:
+													msg101 = await message.channel.fetch_message(int(row[0]))
+												except:
+													msg101 = None
+												else:
+													try:
+														await msg101.delete()
+													except TypeError:
+														pass
 											return
-										elif demon == "5":
+										elif star == "5":
 											await msg.delete()
 											papa = cursor.execute(f"SELECT moderatorname FROM GDmoderators WHERE userid = {author} LIMIT 1")
 											gdmodname = cursor.fetchone()[0]
 											embed3 = discord.Embed(title=f'{successtitlerequester}', color=0x00ff00)
-											embed3.set_thumbnail(url="https://cdn.discordapp.com/emojis/472907914110304267.png?v=1")
-											embed3.add_field(name=f'{thelevelyourequested} `{level}` (**{levelname}** {byrequester} **{creator}**) {sendtorobtop} {gdmodname} {fortext} **EXTREME DEMON 10<:starrate:718204629858517003> RATE**', value='\u200b')
+											embed3.set_thumbnail(url="https://cdn.discordapp.com/emojis/472908253408395296.png?v=1")
+											embed3.add_field(name=f'{thelevelyourequested} `{level}` (**{levelname}** {byrequester} **{creator}**) {sendtorobtop} {gdmodname} {fortext} **HARD 5<:starrate:718204629858517003> RATE**', value='\u200b')
 											if message.attachments:
 												fileimage = message.attachments[0]
 												imageurl = fileimage.url
@@ -13107,14 +8245,88 @@ async def on_message(message):
 												await channel.send(embed=embed3)
 											except discord.errors.Forbidden:
 												pass
-											nani = cursor.execute(f"SELECT requester FROM levels WHERE levelid = {level} LIMIT 1")
+											nani = cursor.execute(f"SELECT requester FROM levels WHERE levelid = %s AND server = %s LIMIT 1", (level, serverid))
 											user1 = cursor.fetchone()[0]
 											username = client.get_user(int(user1))
 											embed4 = discord.Embed(title=f'{successtitle}', color=0x00ff00)
-											embed4.add_field(name=f'{thelevel} `{level}` (**{levelname}** {by} **{creator}**) {successsend} **EXTREME DEMON 10<:starrate:718204629858517003> RATE** !', value='\u200b')
+											embed4.add_field(name=f'{thelevel} `{level}` (**{levelname}** {by} **{creator}**) {successsend} **HARD 5<:starrate:718204629858517003> RATE** !', value='\u200b')
 											await message.channel.send(embed=embed4)
-											delete = cursor.execute(f"DELETE FROM levels WHERE levelid = {level}")
+											delete = cursor.execute(f"DELETE FROM levels WHERE levelid = %s and server = %s", (level, serverid))
 											conn.commit()
+											
+											cursor.execute(f"SELECT GDModCheckedChannel FROM setup WHERE serverid = {serverid} LIMIT 1")
+											try:
+												gdmodcheckedchannel = cursor.fetchone()[0]
+											except TypeError:
+												gdmodcheckedchannel = None
+											if gdmodcheckedchannel is not None:
+												channelmod = client.get_channel(int(gdmodcheckedchannel))
+														
+												#reqsearch(level)
+												stars,objectplus,levelname,creator,ratingemote,stars,downloads,likes,likesemote,description,coins,verifiedcoins,lengthvalue,idlevel,version,gdversion,color = reqsearch(level)
+												
+												embed13 = discord.Embed(title=f'`{level}` (**{levelname}** {by} **{creator}**)', color=0x00ff00)
+												embed13.add_field(name=f"{sendfor} HARD 5<:starrate:718204629858517003> RATE** ! <:success:472908961176092702>", value="\u200b")
+												embed13.set_thumbnail(url=f"https://cdn.discordapp.com/emojis/472908253408395296.png?v=1")
+		
+												description += '=' * (-len(description) % 4)
+												base64_bytes = description.encode('ascii')
+												print(base64_bytes)
+												message_bytes = base64.urlsafe_b64decode(base64_bytes)
+												descbase64 = message_bytes.decode('ascii')
+
+												if int(objectplus) >= 40000:
+													embed13.add_field(name=f'<:play:472908887859789835> __{levelname}__ {by} {creator} <:object_overflow:472908865953071115>', value=f"{desc} {descbase64}", inline=False)
+												elif int(objectplus) <= 39999:
+													embed13.add_field(name=f'<:play:472908887859789835> __{levelname}__ {by} {creator}', value=f"{desc} {descbase64}", inline=False)
+
+												if int(coins) == 0:
+													coinsvalue = f"{none}"
+												elif int(coins) == 1:
+													coinsvalue = "<:user_coin_unverified:472908993832943631>"
+												elif int(coins) == 2:
+													coinsvalue = "<:user_coin_unverified:472908993832943631> <:user_coin_unverified:472908993832943631>"
+												elif int(coins) == 3:
+													coinsvalue = "<:user_coin_unverified:472908993832943631> <:user_coin_unverified:472908993832943631> <:user_coin_unverified:472908993832943631>"
+
+												try:
+													if int(verifiedcoins) == 1:
+														if int(coins) == 0:
+															coinsvalue = f"{none}"
+														elif int(coins) == 1:
+															coinsvalue = "<:user_coin:472908993711308800>"
+														elif int(coins) == 2:
+															coinsvalue = "<:user_coin:472908993711308800> <:user_coin:472908993711308800>"
+														elif int(coins) == 3:
+															coinsvalue = "<:user_coin:472908993711308800> <:user_coin:472908993711308800> <:user_coin:472908993711308800>"
+												except ValueError:
+													pass
+
+												embed13.add_field(name=f'{coinstitle}: {coinsvalue}', value=f"<:downloads:472907713727430658> `{downloads}`\n{likesemote} `{likes}`\n<:length:472908680459976704> `{lengthvalue}`\n", inline=False)
+
+												#reqsearch2(level)
+												try:
+													songname,songauthor,songid,sizesong,songlink,officialsong = reqsearch2(level)
+												except ValueError:
+													songname,songauthor,songid,sizesong,songlink = reqsearch2(level)
+
+												songlink2 = unquote(f"{songlink}")
+												try:
+													officialsong2 = int(officialsong)
+												except UnboundLocalError:
+													embed13.add_field(name=f':musical_note:  __{songname}__ {by} {songauthor}', value=f"SongID: {songid} - {sizetitle}: {sizesong}MB\n<:play:472908887859789835> [{newgroundsplay}](https://newgrounds.com/audio/load/{songid}) <:download_song:472907696685711370> [{downloadsong}]({songlink2})", inline=False)
+												else:
+													embed13.add_field(name=f':musical_note: :white_check_mark:   __**{songname}**__ {by} {songauthor}', value=f"SongID: {songid} - {sizetitle}: {sizesong}MB\n<:play:472908887859789835> [{newgroundsplay}](https://newgrounds.com/audio/load/{songid}) <:download_song:472907696685711370> [{youtubelink}]({songlink2})", inline=False)
+												
+												await channelmod.send(f"<@{user1}>",embed=embed13)
+												if message.attachments:
+													fileimage = message.attachments[0]
+													imageurl = fileimage.url
+													for ext in pic_ext:
+														if imageurl.endswith(ext):
+															embed14 = discord.Embed(title=f'Screenshot', color=0x00ff00)
+															embed14.set_image(url=f"{imageurl}")
+															await channelmod.send(embed=embed14)
 
 											cursor.execute(f'SELECT levelsentbygdmod FROM users WHERE userid = {user1}')
 											yesvalue = cursor.fetchone()[0]
@@ -13127,15 +8339,1359 @@ async def on_message(message):
 												embed5 = levelsentbygdmod(user1)
 												username = client.get_user(int(user1))
 												channel = await username.create_dm()
-												await channel.send(embed=embed5)
+												try:
+													await channel.send(embed=embed5)
+												except discord.errors.Forbidden:
+													pass
+													
+											cursor.execute(f"SELECT messageid FROM levels WHERE server = {serverid} AND levelid = {level}")
+											messages = cursor.fetchall()
+											for row in messages:
+												try:
+													msg101 = await message.channel.fetch_message(int(row[0]))
+												except:
+													msg101 = None
+												else:
+													try:
+														await msg101.delete()
+													except TypeError:
+														pass
 											return
+										elif star == "6":
+											await msg.delete()
+											papa = cursor.execute(f"SELECT moderatorname FROM GDmoderators WHERE userid = {author} LIMIT 1")
+											gdmodname = cursor.fetchone()[0]
+											embed3 = discord.Embed(title=f'{successtitlerequester}', color=0x00ff00)
+											embed3.set_thumbnail(url="https://cdn.discordapp.com/emojis/472908316301852683.png?v=1")
+											embed3.add_field(name=f'{thelevelyourequested} `{level}` (**{levelname}** {byrequester} **{creator}**) {sendtorobtop} {gdmodname} {fortext} **HARDER 6<:starrate:718204629858517003> RATE**', value='\u200b')
+											if message.attachments:
+												fileimage = message.attachments[0]
+												imageurl = fileimage.url
+												for ext in pic_ext:
+													if imageurl.endswith(ext):
+														embed3.set_image(url=f"{imageurl}")
+											channel = await username.create_dm()
+											try:
+												await channel.send(embed=embed3)
+											except discord.errors.Forbidden:
+												pass
+											nani = cursor.execute(f"SELECT requester FROM levels WHERE levelid = %s AND server = %s LIMIT 1", (level, serverid))
+											user1 = cursor.fetchone()[0]
+											username = client.get_user(int(user1))
+											embed4 = discord.Embed(title=f'{successtitle}', color=0x00ff00)
+											embed4.add_field(name=f'{thelevel} `{level}` (**{levelname}** {by} **{creator}**) {successsend} **HARDER 6<:starrate:718204629858517003> RATE** !', value='\u200b')
+											await message.channel.send(embed=embed4)
+											delete = cursor.execute(f"DELETE FROM levels WHERE levelid = %s and server = %s", (level, serverid))
+											conn.commit()
+											
+											cursor.execute(f"SELECT GDModCheckedChannel FROM setup WHERE serverid = {serverid} LIMIT 1")
+											try:
+												gdmodcheckedchannel = cursor.fetchone()[0]
+											except TypeError:
+												gdmodcheckedchannel = None
+											if gdmodcheckedchannel is not None:
+												channelmod = client.get_channel(int(gdmodcheckedchannel))
+														
+												#reqsearch(level)
+												stars,objectplus,levelname,creator,ratingemote,stars,downloads,likes,likesemote,description,coins,verifiedcoins,lengthvalue,idlevel,version,gdversion,color = reqsearch(level)
+												
+												embed13 = discord.Embed(title=f'`{level}` (**{levelname}** {by} **{creator}**)', color=0x00ff00)
+												embed13.add_field(name=f"{sendfor} HARDER 6<:starrate:718204629858517003> RATE** ! <:success:472908961176092702>", value="\u200b")
+												embed13.set_thumbnail(url=f"https://cdn.discordapp.com/emojis/472908316301852683.png?v=1")
+		
+												description += '=' * (-len(description) % 4)
+												base64_bytes = description.encode('ascii')
+												print(base64_bytes)
+												message_bytes = base64.urlsafe_b64decode(base64_bytes)
+												descbase64 = message_bytes.decode('ascii')
+
+												if int(objectplus) >= 40000:
+													embed13.add_field(name=f'<:play:472908887859789835> __{levelname}__ {by} {creator} <:object_overflow:472908865953071115>', value=f"{desc} {descbase64}", inline=False)
+												elif int(objectplus) <= 39999:
+													embed13.add_field(name=f'<:play:472908887859789835> __{levelname}__ {by} {creator}', value=f"{desc} {descbase64}", inline=False)
+
+												if int(coins) == 0:
+													coinsvalue = f"{none}"
+												elif int(coins) == 1:
+													coinsvalue = "<:user_coin_unverified:472908993832943631>"
+												elif int(coins) == 2:
+													coinsvalue = "<:user_coin_unverified:472908993832943631> <:user_coin_unverified:472908993832943631>"
+												elif int(coins) == 3:
+													coinsvalue = "<:user_coin_unverified:472908993832943631> <:user_coin_unverified:472908993832943631> <:user_coin_unverified:472908993832943631>"
+
+												try:
+													if int(verifiedcoins) == 1:
+														if int(coins) == 0:
+															coinsvalue = f"{none}"
+														elif int(coins) == 1:
+															coinsvalue = "<:user_coin:472908993711308800>"
+														elif int(coins) == 2:
+															coinsvalue = "<:user_coin:472908993711308800> <:user_coin:472908993711308800>"
+														elif int(coins) == 3:
+															coinsvalue = "<:user_coin:472908993711308800> <:user_coin:472908993711308800> <:user_coin:472908993711308800>"
+												except ValueError:
+													pass
+
+												embed13.add_field(name=f'{coinstitle}: {coinsvalue}', value=f"<:downloads:472907713727430658> `{downloads}`\n{likesemote} `{likes}`\n<:length:472908680459976704> `{lengthvalue}`\n", inline=False)
+
+												#reqsearch2(level)
+												try:
+													songname,songauthor,songid,sizesong,songlink,officialsong = reqsearch2(level)
+												except ValueError:
+													songname,songauthor,songid,sizesong,songlink = reqsearch2(level)
+
+												songlink2 = unquote(f"{songlink}")
+												try:
+													officialsong2 = int(officialsong)
+												except UnboundLocalError:
+													embed13.add_field(name=f':musical_note:  __{songname}__ {by} {songauthor}', value=f"SongID: {songid} - {sizetitle}: {sizesong}MB\n<:play:472908887859789835> [{newgroundsplay}](https://newgrounds.com/audio/load/{songid}) <:download_song:472907696685711370> [{downloadsong}]({songlink2})", inline=False)
+												else:
+													embed13.add_field(name=f':musical_note: :white_check_mark:   __**{songname}**__ {by} {songauthor}', value=f"SongID: {songid} - {sizetitle}: {sizesong}MB\n<:play:472908887859789835> [{newgroundsplay}](https://newgrounds.com/audio/load/{songid}) <:download_song:472907696685711370> [{youtubelink}]({songlink2})", inline=False)
+												
+												await channelmod.send(f"<@{user1}>",embed=embed13)
+												if message.attachments:
+													fileimage = message.attachments[0]
+													imageurl = fileimage.url
+													for ext in pic_ext:
+														if imageurl.endswith(ext):
+															embed14 = discord.Embed(title=f'Screenshot', color=0x00ff00)
+															embed14.set_image(url=f"{imageurl}")
+															await channelmod.send(embed=embed14)
+
+											cursor.execute(f'SELECT levelsentbygdmod FROM users WHERE userid = {user1}')
+											yesvalue = cursor.fetchone()[0]
+											if yesvalue == "yes":
+												pass
+											elif yesvalue == "no":
+												cursor.execute(f'UPDATE users SET levelsentbygdmod = "yes" WHERE userid = {user1}')
+												conn.commit()
+												levelsentbygdmod(user1)
+												embed5 = levelsentbygdmod(user1)
+												username = client.get_user(int(user1))
+												channel = await username.create_dm()
+												try:
+													await channel.send(embed=embed5)
+												except discord.errors.Forbidden:
+													pass
+													
+											cursor.execute(f"SELECT messageid FROM levels WHERE server = {serverid} AND levelid = {level}")
+											messages = cursor.fetchall()
+											for row in messages:
+												try:
+													msg101 = await message.channel.fetch_message(int(row[0]))
+												except:
+													msg101 = None
+												else:
+													try:
+														await msg101.delete()
+													except TypeError:
+														pass
+											return
+										elif star == "7":
+											await msg.delete()
+											papa = cursor.execute(f"SELECT moderatorname FROM GDmoderators WHERE userid = {author} LIMIT 1")
+											gdmodname = cursor.fetchone()[0]
+											embed3 = discord.Embed(title=f'{successtitlerequester}', color=0x00ff00)
+											embed3.set_thumbnail(url="https://cdn.discordapp.com/emojis/472908316301852683.png?v=1")
+											embed3.add_field(name=f'{thelevelyourequested} `{level}` (**{levelname}** {byrequester} **{creator}**) {sendtorobtop} {gdmodname} {fortext} **HARDER 7<:starrate:718204629858517003> RATE**', value='\u200b')
+											if message.attachments:
+												fileimage = message.attachments[0]
+												imageurl = fileimage.url
+												for ext in pic_ext:
+													if imageurl.endswith(ext):
+														embed3.set_image(url=f"{imageurl}")
+											channel = await username.create_dm()
+											try:
+												await channel.send(embed=embed3)
+											except discord.errors.Forbidden:
+												pass
+											nani = cursor.execute(f"SELECT requester FROM levels WHERE levelid = %s AND server = %s LIMIT 1", (level, serverid))
+											user1 = cursor.fetchone()[0]
+											username = client.get_user(int(user1))
+											embed4 = discord.Embed(title=f'{successtitle}', color=0x00ff00)
+											embed4.add_field(name=f'{thelevel} `{level}` (**{levelname}** {by} **{creator}**) {successsend} **HARDER 7<:starrate:718204629858517003> RATE** !', value='\u200b')
+											await message.channel.send(embed=embed4)
+											delete = cursor.execute(f"DELETE FROM levels WHERE levelid = %s and server = %s", (level, serverid))
+											conn.commit()
+											
+											cursor.execute(f"SELECT GDModCheckedChannel FROM setup WHERE serverid = {serverid} LIMIT 1")
+											try:
+												gdmodcheckedchannel = cursor.fetchone()[0]
+											except TypeError:
+												gdmodcheckedchannel = None
+											if gdmodcheckedchannel is not None:
+												channelmod = client.get_channel(int(gdmodcheckedchannel))
+														
+												#reqsearch(level)
+												stars,objectplus,levelname,creator,ratingemote,stars,downloads,likes,likesemote,description,coins,verifiedcoins,lengthvalue,idlevel,version,gdversion,color = reqsearch(level)
+												
+												embed13 = discord.Embed(title=f'`{level}` (**{levelname}** {by} **{creator}**)', color=0x00ff00)
+												embed13.add_field(name=f"{sendfor} HARDER 7<:starrate:718204629858517003> RATE** ! <:success:472908961176092702>", value="\u200b")
+												embed13.set_thumbnail(url=f"https://cdn.discordapp.com/emojis/472908316301852683.png?v=1")
+		
+												description += '=' * (-len(description) % 4)
+												base64_bytes = description.encode('ascii')
+												print(base64_bytes)
+												message_bytes = base64.urlsafe_b64decode(base64_bytes)
+												descbase64 = message_bytes.decode('ascii')
+
+												if int(objectplus) >= 40000:
+													embed13.add_field(name=f'<:play:472908887859789835> __{levelname}__ {by} {creator} <:object_overflow:472908865953071115>', value=f"{desc} {descbase64}", inline=False)
+												elif int(objectplus) <= 39999:
+													embed13.add_field(name=f'<:play:472908887859789835> __{levelname}__ {by} {creator}', value=f"{desc} {descbase64}", inline=False)
+
+												if int(coins) == 0:
+													coinsvalue = f"{none}"
+												elif int(coins) == 1:
+													coinsvalue = "<:user_coin_unverified:472908993832943631>"
+												elif int(coins) == 2:
+													coinsvalue = "<:user_coin_unverified:472908993832943631> <:user_coin_unverified:472908993832943631>"
+												elif int(coins) == 3:
+													coinsvalue = "<:user_coin_unverified:472908993832943631> <:user_coin_unverified:472908993832943631> <:user_coin_unverified:472908993832943631>"
+
+												try:
+													if int(verifiedcoins) == 1:
+														if int(coins) == 0:
+															coinsvalue = f"{none}"
+														elif int(coins) == 1:
+															coinsvalue = "<:user_coin:472908993711308800>"
+														elif int(coins) == 2:
+															coinsvalue = "<:user_coin:472908993711308800> <:user_coin:472908993711308800>"
+														elif int(coins) == 3:
+															coinsvalue = "<:user_coin:472908993711308800> <:user_coin:472908993711308800> <:user_coin:472908993711308800>"
+												except ValueError:
+													pass
+
+												embed13.add_field(name=f'{coinstitle}: {coinsvalue}', value=f"<:downloads:472907713727430658> `{downloads}`\n{likesemote} `{likes}`\n<:length:472908680459976704> `{lengthvalue}`\n", inline=False)
+
+												#reqsearch2(level)
+												try:
+													songname,songauthor,songid,sizesong,songlink,officialsong = reqsearch2(level)
+												except ValueError:
+													songname,songauthor,songid,sizesong,songlink = reqsearch2(level)
+
+												songlink2 = unquote(f"{songlink}")
+												try:
+													officialsong2 = int(officialsong)
+												except UnboundLocalError:
+													embed13.add_field(name=f':musical_note:  __{songname}__ {by} {songauthor}', value=f"SongID: {songid} - {sizetitle}: {sizesong}MB\n<:play:472908887859789835> [{newgroundsplay}](https://newgrounds.com/audio/load/{songid}) <:download_song:472907696685711370> [{downloadsong}]({songlink2})", inline=False)
+												else:
+													embed13.add_field(name=f':musical_note: :white_check_mark:   __**{songname}**__ {by} {songauthor}', value=f"SongID: {songid} - {sizetitle}: {sizesong}MB\n<:play:472908887859789835> [{newgroundsplay}](https://newgrounds.com/audio/load/{songid}) <:download_song:472907696685711370> [{youtubelink}]({songlink2})", inline=False)
+												
+												await channelmod.send(f"<@{user1}>",embed=embed13)
+												if message.attachments:
+													fileimage = message.attachments[0]
+													imageurl = fileimage.url
+													for ext in pic_ext:
+														if imageurl.endswith(ext):
+															embed14 = discord.Embed(title=f'Screenshot', color=0x00ff00)
+															embed14.set_image(url=f"{imageurl}")
+															await channelmod.send(embed=embed14)
+
+											cursor.execute(f'SELECT levelsentbygdmod FROM users WHERE userid = {user1}')
+											yesvalue = cursor.fetchone()[0]
+											if yesvalue == "yes":
+												pass
+											elif yesvalue == "no":
+												cursor.execute(f'UPDATE users SET levelsentbygdmod = "yes" WHERE userid = {user1}')
+												conn.commit()
+												levelsentbygdmod(user1)
+												embed5 = levelsentbygdmod(user1)
+												username = client.get_user(int(user1))
+												channel = await username.create_dm()
+												try:
+													await channel.send(embed=embed5)
+												except discord.errors.Forbidden:
+													pass
+													
+											cursor.execute(f"SELECT messageid FROM levels WHERE server = {serverid} AND levelid = {level}")
+											messages = cursor.fetchall()
+											for row in messages:
+												try:
+													msg101 = await message.channel.fetch_message(int(row[0]))
+												except:
+													msg101 = None
+												else:
+													try:
+														await msg101.delete()
+													except TypeError:
+														pass
+											return
+										elif star == "8":
+											await msg.delete()
+											papa = cursor.execute(f"SELECT moderatorname FROM GDmoderators WHERE userid = {author} LIMIT 1")
+											gdmodname = cursor.fetchone()[0]
+											embed3 = discord.Embed(title=f'{successtitlerequester}', color=0x00ff00)
+											embed3.set_thumbnail(url="https://cdn.discordapp.com/emojis/472908421209784320.png?v=1")
+											embed3.add_field(name=f'{thelevelyourequested} `{level}` (**{levelname}** {byrequester} **{creator}**) {sendtorobtop} {gdmodname} {fortext} **INSANE 8<:starrate:718204629858517003> RATE**', value='\u200b')
+											if message.attachments:
+												fileimage = message.attachments[0]
+												imageurl = fileimage.url
+												for ext in pic_ext:
+													if imageurl.endswith(ext):
+														embed3.set_image(url=f"{imageurl}")
+											channel = await username.create_dm()
+											try:
+												await channel.send(embed=embed3)
+											except discord.errors.Forbidden:
+												pass
+											nani = cursor.execute(f"SELECT requester FROM levels WHERE levelid = %s AND server = %s LIMIT 1", (level, serverid))
+											user1 = cursor.fetchone()[0]
+											username = client.get_user(int(user1))
+											embed4 = discord.Embed(title=f'{successtitle}', color=0x00ff00)
+											embed4.add_field(name=f'{thelevel} `{level}` (**{levelname}** {by} **{creator}**) {successsend} **INSANE 8<:starrate:718204629858517003> RATE** !', value='\u200b')
+											await message.channel.send(embed=embed4)
+											delete = cursor.execute(f"DELETE FROM levels WHERE levelid = %s and server = %s", (level, serverid))
+											conn.commit()
+											
+											cursor.execute(f"SELECT GDModCheckedChannel FROM setup WHERE serverid = {serverid} LIMIT 1")
+											try:
+												gdmodcheckedchannel = cursor.fetchone()[0]
+											except TypeError:
+												gdmodcheckedchannel = None
+											if gdmodcheckedchannel is not None:
+												channelmod = client.get_channel(int(gdmodcheckedchannel))
+														
+												#reqsearch(level)
+												stars,objectplus,levelname,creator,ratingemote,stars,downloads,likes,likesemote,description,coins,verifiedcoins,lengthvalue,idlevel,version,gdversion,color = reqsearch(level)
+												
+												embed13 = discord.Embed(title=f'`{level}` (**{levelname}** {by} **{creator}**)', color=0x00ff00)
+												embed13.add_field(name=f"{sendfor} INSANE 8<:starrate:718204629858517003> RATE** ! <:success:472908961176092702>", value="\u200b")
+												embed13.set_thumbnail(url=f"https://cdn.discordapp.com/emojis/472908421209784320.png?v=1")
+		
+												description += '=' * (-len(description) % 4)
+												base64_bytes = description.encode('ascii')
+												print(base64_bytes)
+												message_bytes = base64.urlsafe_b64decode(base64_bytes)
+												descbase64 = message_bytes.decode('ascii')
+
+												if int(objectplus) >= 40000:
+													embed13.add_field(name=f'<:play:472908887859789835> __{levelname}__ {by} {creator} <:object_overflow:472908865953071115>', value=f"{desc} {descbase64}", inline=False)
+												elif int(objectplus) <= 39999:
+													embed13.add_field(name=f'<:play:472908887859789835> __{levelname}__ {by} {creator}', value=f"{desc} {descbase64}", inline=False)
+
+												if int(coins) == 0:
+													coinsvalue = f"{none}"
+												elif int(coins) == 1:
+													coinsvalue = "<:user_coin_unverified:472908993832943631>"
+												elif int(coins) == 2:
+													coinsvalue = "<:user_coin_unverified:472908993832943631> <:user_coin_unverified:472908993832943631>"
+												elif int(coins) == 3:
+													coinsvalue = "<:user_coin_unverified:472908993832943631> <:user_coin_unverified:472908993832943631> <:user_coin_unverified:472908993832943631>"
+
+												try:
+													if int(verifiedcoins) == 1:
+														if int(coins) == 0:
+															coinsvalue = f"{none}"
+														elif int(coins) == 1:
+															coinsvalue = "<:user_coin:472908993711308800>"
+														elif int(coins) == 2:
+															coinsvalue = "<:user_coin:472908993711308800> <:user_coin:472908993711308800>"
+														elif int(coins) == 3:
+															coinsvalue = "<:user_coin:472908993711308800> <:user_coin:472908993711308800> <:user_coin:472908993711308800>"
+												except ValueError:
+													pass
+
+												embed13.add_field(name=f'{coinstitle}: {coinsvalue}', value=f"<:downloads:472907713727430658> `{downloads}`\n{likesemote} `{likes}`\n<:length:472908680459976704> `{lengthvalue}`\n", inline=False)
+
+												#reqsearch2(level)
+												try:
+													songname,songauthor,songid,sizesong,songlink,officialsong = reqsearch2(level)
+												except ValueError:
+													songname,songauthor,songid,sizesong,songlink = reqsearch2(level)
+
+												songlink2 = unquote(f"{songlink}")
+												try:
+													officialsong2 = int(officialsong)
+												except UnboundLocalError:
+													embed13.add_field(name=f':musical_note:  __{songname}__ {by} {songauthor}', value=f"SongID: {songid} - {sizetitle}: {sizesong}MB\n<:play:472908887859789835> [{newgroundsplay}](https://newgrounds.com/audio/load/{songid}) <:download_song:472907696685711370> [{downloadsong}]({songlink2})", inline=False)
+												else:
+													embed13.add_field(name=f':musical_note: :white_check_mark:   __**{songname}**__ {by} {songauthor}', value=f"SongID: {songid} - {sizetitle}: {sizesong}MB\n<:play:472908887859789835> [{newgroundsplay}](https://newgrounds.com/audio/load/{songid}) <:download_song:472907696685711370> [{youtubelink}]({songlink2})", inline=False)
+												
+												await channelmod.send(f"<@{user1}>",embed=embed13)
+												if message.attachments:
+													fileimage = message.attachments[0]
+													imageurl = fileimage.url
+													for ext in pic_ext:
+														if imageurl.endswith(ext):
+															embed14 = discord.Embed(title=f'Screenshot', color=0x00ff00)
+															embed14.set_image(url=f"{imageurl}")
+															await channelmod.send(embed=embed14)
+
+											cursor.execute(f'SELECT levelsentbygdmod FROM users WHERE userid = {user1}')
+											yesvalue = cursor.fetchone()[0]
+											if yesvalue == "yes":
+												pass
+											elif yesvalue == "no":
+												cursor.execute(f'UPDATE users SET levelsentbygdmod = "yes" WHERE userid = {user1}')
+												conn.commit()
+												levelsentbygdmod(user1)
+												embed5 = levelsentbygdmod(user1)
+												username = client.get_user(int(user1))
+												channel = await username.create_dm()
+												try:
+													await channel.send(embed=embed5)
+												except discord.errors.Forbidden:
+													pass
+											
+											cursor.execute(f"SELECT messageid FROM levels WHERE server = {serverid} AND levelid = {level}")
+											messages = cursor.fetchall()
+											for row in messages:
+												try:
+													msg101 = await message.channel.fetch_message(int(row[0]))
+												except:
+													msg101 = None
+												else:
+													try:
+														await msg101.delete()
+													except TypeError:
+														pass
+											return
+										elif star == "9":
+											await msg.delete()
+											papa = cursor.execute(f"SELECT moderatorname FROM GDmoderators WHERE userid = {author} LIMIT 1")
+											gdmodname = cursor.fetchone()[0]
+											embed3 = discord.Embed(title=f'{successtitlerequester}', color=0x00ff00)
+											embed3.set_thumbnail(url="https://cdn.discordapp.com/emojis/472908421209784320.png?v=1")
+											embed3.add_field(name=f'{thelevelyourequested} `{level}` (**{levelname}** {byrequester} **{creator}**) {sendtorobtop} {gdmodname} {fortext} **INSANE 9<:starrate:718204629858517003> RATE**', value='\u200b')
+											if message.attachments:
+												fileimage = message.attachments[0]
+												imageurl = fileimage.url
+												for ext in pic_ext:
+													if imageurl.endswith(ext):
+														embed3.set_image(url=f"{imageurl}")
+											channel = await username.create_dm()
+											try:
+												await channel.send(embed=embed3)
+											except discord.errors.Forbidden:
+												pass
+											nani = cursor.execute(f"SELECT requester FROM levels WHERE levelid = %s AND server = %s LIMIT 1", (level, serverid))
+											user1 = cursor.fetchone()[0]
+											username = client.get_user(int(user1))
+											embed4 = discord.Embed(title=f'{successtitle}', color=0x00ff00)
+											embed4.add_field(name=f'{thelevel} `{level}` (**{levelname}** {by} **{creator}**) {successsend} **INSANE 9<:starrate:718204629858517003> RATE** !', value='\u200b')
+											await message.channel.send(embed=embed4)
+											delete = cursor.execute(f"DELETE FROM levels WHERE levelid = %s and server = %s", (level, serverid))
+											conn.commit()
+											
+											cursor.execute(f"SELECT GDModCheckedChannel FROM setup WHERE serverid = {serverid} LIMIT 1")
+											try:
+												gdmodcheckedchannel = cursor.fetchone()[0]
+											except TypeError:
+												gdmodcheckedchannel = None
+											if gdmodcheckedchannel is not None:
+												channelmod = client.get_channel(int(gdmodcheckedchannel))
+														
+												#reqsearch(level)
+												stars,objectplus,levelname,creator,ratingemote,stars,downloads,likes,likesemote,description,coins,verifiedcoins,lengthvalue,idlevel,version,gdversion,color = reqsearch(level)
+												
+												embed13 = discord.Embed(title=f'`{level}` (**{levelname}** {by} **{creator}**)', color=0x00ff00)
+												embed13.add_field(name=f"{sendfor} INSANE 9<:starrate:718204629858517003> RATE** ! <:success:472908961176092702>", value="\u200b")
+												embed13.set_thumbnail(url=f"https://cdn.discordapp.com/emojis/472908421209784320.png?v=1")
+		
+												description += '=' * (-len(description) % 4)
+												base64_bytes = description.encode('ascii')
+												print(base64_bytes)
+												message_bytes = base64.urlsafe_b64decode(base64_bytes)
+												descbase64 = message_bytes.decode('ascii')
+
+												if int(objectplus) >= 40000:
+													embed13.add_field(name=f'<:play:472908887859789835> __{levelname}__ {by} {creator} <:object_overflow:472908865953071115>', value=f"{desc} {descbase64}", inline=False)
+												elif int(objectplus) <= 39999:
+													embed13.add_field(name=f'<:play:472908887859789835> __{levelname}__ {by} {creator}', value=f"{desc} {descbase64}", inline=False)
+
+												if int(coins) == 0:
+													coinsvalue = f"{none}"
+												elif int(coins) == 1:
+													coinsvalue = "<:user_coin_unverified:472908993832943631>"
+												elif int(coins) == 2:
+													coinsvalue = "<:user_coin_unverified:472908993832943631> <:user_coin_unverified:472908993832943631>"
+												elif int(coins) == 3:
+													coinsvalue = "<:user_coin_unverified:472908993832943631> <:user_coin_unverified:472908993832943631> <:user_coin_unverified:472908993832943631>"
+
+												try:
+													if int(verifiedcoins) == 1:
+														if int(coins) == 0:
+															coinsvalue = f"{none}"
+														elif int(coins) == 1:
+															coinsvalue = "<:user_coin:472908993711308800>"
+														elif int(coins) == 2:
+															coinsvalue = "<:user_coin:472908993711308800> <:user_coin:472908993711308800>"
+														elif int(coins) == 3:
+															coinsvalue = "<:user_coin:472908993711308800> <:user_coin:472908993711308800> <:user_coin:472908993711308800>"
+												except ValueError:
+													pass
+
+												embed13.add_field(name=f'{coinstitle}: {coinsvalue}', value=f"<:downloads:472907713727430658> `{downloads}`\n{likesemote} `{likes}`\n<:length:472908680459976704> `{lengthvalue}`\n", inline=False)
+
+												#reqsearch2(level)
+												try:
+													songname,songauthor,songid,sizesong,songlink,officialsong = reqsearch2(level)
+												except ValueError:
+													songname,songauthor,songid,sizesong,songlink = reqsearch2(level)
+
+												songlink2 = unquote(f"{songlink}")
+												try:
+													officialsong2 = int(officialsong)
+												except UnboundLocalError:
+													embed13.add_field(name=f':musical_note:  __{songname}__ {by} {songauthor}', value=f"SongID: {songid} - {sizetitle}: {sizesong}MB\n<:play:472908887859789835> [{newgroundsplay}](https://newgrounds.com/audio/load/{songid}) <:download_song:472907696685711370> [{downloadsong}]({songlink2})", inline=False)
+												else:
+													embed13.add_field(name=f':musical_note: :white_check_mark:   __**{songname}**__ {by} {songauthor}', value=f"SongID: {songid} - {sizetitle}: {sizesong}MB\n<:play:472908887859789835> [{newgroundsplay}](https://newgrounds.com/audio/load/{songid}) <:download_song:472907696685711370> [{youtubelink}]({songlink2})", inline=False)
+												
+												await channelmod.send(f"<@{user1}>",embed=embed13)
+												if message.attachments:
+													fileimage = message.attachments[0]
+													imageurl = fileimage.url
+													for ext in pic_ext:
+														if imageurl.endswith(ext):
+															embed14 = discord.Embed(title=f'Screenshot', color=0x00ff00)
+															embed14.set_image(url=f"{imageurl}")
+															await channelmod.send(embed=embed14)
+
+											cursor.execute(f'SELECT levelsentbygdmod FROM users WHERE userid = {user1}')
+											yesvalue = cursor.fetchone()[0]
+											if yesvalue == "yes":
+												pass
+											elif yesvalue == "no":
+												cursor.execute(f'UPDATE users SET levelsentbygdmod = "yes" WHERE userid = {user1}')
+												conn.commit()
+												levelsentbygdmod(user1)
+												embed5 = levelsentbygdmod(user1)
+												username = client.get_user(int(user1))
+												channel = await username.create_dm()
+												try:
+													await channel.send(embed=embed5)
+												except discord.errors.Forbidden:
+													pass
+													
+											cursor.execute(f"SELECT messageid FROM levels WHERE server = {serverid} AND levelid = {level}")
+											messages = cursor.fetchall()
+											for row in messages:
+												try:
+													msg101 = await message.channel.fetch_message(int(row[0]))
+												except:
+													msg101 = None
+												else:
+													try:
+														await msg101.delete()
+													except TypeError:
+														pass
+											return
+										elif star == "10":
+											if demon == "1":
+												await msg.delete()
+												papa = cursor.execute(f"SELECT moderatorname FROM GDmoderators WHERE userid = {author} LIMIT 1")
+												gdmodname = cursor.fetchone()[0]
+												embed3 = discord.Embed(title=f'{successtitlerequester}', color=0x00ff00)
+												embed3.set_thumbnail(url="https://cdn.discordapp.com/emojis/472907861102559262.png?v=1")
+												embed3.add_field(name=f'{thelevelyourequested} `{level}` (**{levelname}** {byrequester} **{creator}**) {sendtorobtop} {gdmodname} {fortext} **EASY DEMON 10<:starrate:718204629858517003> RATE**', value='\u200b')
+												if message.attachments:
+													fileimage = message.attachments[0]
+													imageurl = fileimage.url
+													for ext in pic_ext:
+														if imageurl.endswith(ext):
+															embed3.set_image(url=f"{imageurl}")
+												channel = await username.create_dm()
+												try:
+													await channel.send(embed=embed3)
+												except discord.errors.Forbidden:
+													pass
+												nani = cursor.execute(f"SELECT requester FROM levels WHERE levelid = %s AND server = %s LIMIT 1", (level, serverid))
+												user1 = cursor.fetchone()[0]
+												username = client.get_user(int(user1))
+												embed4 = discord.Embed(title=f'{successtitle}', color=0x00ff00)
+												embed4.add_field(name=f'{thelevel} `{level}` (**{levelname}** {by} **{creator}**) {successsend} **EASY DEMON 10<:starrate:718204629858517003> RATE** !', value='\u200b')
+												await message.channel.send(embed=embed4)
+												delete = cursor.execute(f"DELETE FROM levels WHERE levelid = %s and server = %s", (level, serverid))
+												conn.commit()
+												
+												cursor.execute(f"SELECT GDModCheckedChannel FROM setup WHERE serverid = {serverid} LIMIT 1")
+												try:
+													gdmodcheckedchannel = cursor.fetchone()[0]
+												except TypeError:
+													gdmodcheckedchannel = None
+												if gdmodcheckedchannel is not None:
+													channelmod = client.get_channel(int(gdmodcheckedchannel))
+															
+													#reqsearch(level)
+													stars,objectplus,levelname,creator,ratingemote,stars,downloads,likes,likesemote,description,coins,verifiedcoins,lengthvalue,idlevel,version,gdversion,color = reqsearch(level)
+													
+													embed13 = discord.Embed(title=f'`{level}` (**{levelname}** {by} **{creator}**)', color=0x00ff00)
+													embed13.add_field(name=f"{sendfor} EASY DEMON 10<:starrate:718204629858517003> RATE** ! <:success:472908961176092702>", value="\u200b")
+													embed13.set_thumbnail(url=f"https://cdn.discordapp.com/emojis/472907861102559262.png?v=1")
+			
+													description += '=' * (-len(description) % 4)
+													base64_bytes = description.encode('ascii')
+													print(base64_bytes)
+													message_bytes = base64.urlsafe_b64decode(base64_bytes)
+													descbase64 = message_bytes.decode('ascii')
+
+													if int(objectplus) >= 40000:
+														embed13.add_field(name=f'<:play:472908887859789835> __{levelname}__ {by} {creator} <:object_overflow:472908865953071115>', value=f"{desc} {descbase64}", inline=False)
+													elif int(objectplus) <= 39999:
+														embed13.add_field(name=f'<:play:472908887859789835> __{levelname}__ {by} {creator}', value=f"{desc} {descbase64}", inline=False)
+
+													if int(coins) == 0:
+														coinsvalue = f"{none}"
+													elif int(coins) == 1:
+														coinsvalue = "<:user_coin_unverified:472908993832943631>"
+													elif int(coins) == 2:
+														coinsvalue = "<:user_coin_unverified:472908993832943631> <:user_coin_unverified:472908993832943631>"
+													elif int(coins) == 3:
+														coinsvalue = "<:user_coin_unverified:472908993832943631> <:user_coin_unverified:472908993832943631> <:user_coin_unverified:472908993832943631>"
+
+													try:
+														if int(verifiedcoins) == 1:
+															if int(coins) == 0:
+																coinsvalue = f"{none}"
+															elif int(coins) == 1:
+																coinsvalue = "<:user_coin:472908993711308800>"
+															elif int(coins) == 2:
+																coinsvalue = "<:user_coin:472908993711308800> <:user_coin:472908993711308800>"
+															elif int(coins) == 3:
+																coinsvalue = "<:user_coin:472908993711308800> <:user_coin:472908993711308800> <:user_coin:472908993711308800>"
+													except ValueError:
+														pass
+
+													embed13.add_field(name=f'{coinstitle}: {coinsvalue}', value=f"<:downloads:472907713727430658> `{downloads}`\n{likesemote} `{likes}`\n<:length:472908680459976704> `{lengthvalue}`\n", inline=False)
+
+													#reqsearch2(level)
+													try:
+														songname,songauthor,songid,sizesong,songlink,officialsong = reqsearch2(level)
+													except ValueError:
+														songname,songauthor,songid,sizesong,songlink = reqsearch2(level)
+
+													songlink2 = unquote(f"{songlink}")
+													try:
+														officialsong2 = int(officialsong)
+													except UnboundLocalError:
+														embed13.add_field(name=f':musical_note:  __{songname}__ {by} {songauthor}', value=f"SongID: {songid} - {sizetitle}: {sizesong}MB\n<:play:472908887859789835> [{newgroundsplay}](https://newgrounds.com/audio/load/{songid}) <:download_song:472907696685711370> [{downloadsong}]({songlink2})", inline=False)
+													else:
+														embed13.add_field(name=f':musical_note: :white_check_mark:   __**{songname}**__ {by} {songauthor}', value=f"SongID: {songid} - {sizetitle}: {sizesong}MB\n<:play:472908887859789835> [{newgroundsplay}](https://newgrounds.com/audio/load/{songid}) <:download_song:472907696685711370> [{youtubelink}]({songlink2})", inline=False)
+													
+													await channelmod.send(f"<@{user1}>",embed=embed13)
+													if message.attachments:
+														fileimage = message.attachments[0]
+														imageurl = fileimage.url
+														for ext in pic_ext:
+															if imageurl.endswith(ext):
+																embed14 = discord.Embed(title=f'Screenshot', color=0x00ff00)
+																embed14.set_image(url=f"{imageurl}")
+																await channelmod.send(embed=embed14)
+
+												cursor.execute(f'SELECT levelsentbygdmod FROM users WHERE userid = {user1}')
+												yesvalue = cursor.fetchone()[0]
+												if yesvalue == "yes":
+													pass
+												elif yesvalue == "no":
+													cursor.execute(f'UPDATE users SET levelsentbygdmod = "yes" WHERE userid = {user1}')
+													conn.commit()
+													levelsentbygdmod(user1)
+													embed5 = levelsentbygdmod(user1)
+													username = client.get_user(int(user1))
+													channel = await username.create_dm()
+													try:
+														await channel.send(embed=embed5)
+													except discord.errors.Forbidden:
+														pass
+												
+												cursor.execute(f"SELECT messageid FROM levels WHERE server = {serverid} AND levelid = {level}")
+												messages = cursor.fetchall()
+												for row in messages:
+													try:
+														msg101 = await message.channel.fetch_message(int(row[0]))
+													except:
+														msg101 = None
+													else:
+														try:
+															await msg101.delete()
+														except TypeError:
+															pass
+												return
+											elif demon == "2":
+												await msg.delete()
+												papa = cursor.execute(f"SELECT moderatorname FROM GDmoderators WHERE userid = {author} LIMIT 1")
+												gdmodname = cursor.fetchone()[0]
+												embed3 = discord.Embed(title=f'{successtitlerequester}', color=0x00ff00)
+												embed3.set_thumbnail(url="https://cdn.discordapp.com/emojis/472908111053586433.png?v=1")
+												embed3.add_field(name=f'{thelevelyourequested} `{level}` (**{levelname}** {byrequester} **{creator}**) {sendtorobtop} {gdmodname} {fortext} **MEDIUM DEMON 10<:starrate:718204629858517003> RATE**', value='\u200b')
+												if message.attachments:
+													fileimage = message.attachments[0]
+													imageurl = fileimage.url
+													for ext in pic_ext:
+														if imageurl.endswith(ext):
+															embed3.set_image(url=f"{imageurl}")
+												channel = await username.create_dm()
+												try:
+													await channel.send(embed=embed3)
+												except discord.errors.Forbidden:
+													pass
+												nani = cursor.execute(f"SELECT requester FROM levels WHERE levelid = %s AND server = %s LIMIT 1", (level, serverid))
+												user1 = cursor.fetchone()[0]
+												username = client.get_user(int(user1))
+												embed4 = discord.Embed(title=f'{successtitle}', color=0x00ff00)
+												embed4.add_field(name=f'{thelevel} `{level}` (**{levelname}** {by} **{creator}**) {successsend} **MEDIUM DEMON 10<:starrate:718204629858517003> RATE** !', value='\u200b')
+												await message.channel.send(embed=embed4)
+												delete = cursor.execute(f"DELETE FROM levels WHERE levelid = %s and server = %s", (level, serverid))
+												conn.commit()
+												
+												cursor.execute(f"SELECT GDModCheckedChannel FROM setup WHERE serverid = {serverid} LIMIT 1")
+												try:
+													gdmodcheckedchannel = cursor.fetchone()[0]
+												except TypeError:
+													gdmodcheckedchannel = None
+												if gdmodcheckedchannel is not None:
+													channelmod = client.get_channel(int(gdmodcheckedchannel))
+															
+													#reqsearch(level)
+													stars,objectplus,levelname,creator,ratingemote,stars,downloads,likes,likesemote,description,coins,verifiedcoins,lengthvalue,idlevel,version,gdversion,color = reqsearch(level)
+													
+													embed13 = discord.Embed(title=f'`{level}` (**{levelname}** {by} **{creator}**)', color=0x00ff00)
+													embed13.add_field(name=f"{sendfor} MEDIUM DEMON 10<:starrate:718204629858517003> RATE** ! <:success:472908961176092702>", value="\u200b")
+													embed13.set_thumbnail(url=f"https://cdn.discordapp.com/emojis/472908111053586433.png?v=1")
+			
+													description += '=' * (-len(description) % 4)
+													base64_bytes = description.encode('ascii')
+													print(base64_bytes)
+													message_bytes = base64.urlsafe_b64decode(base64_bytes)
+													descbase64 = message_bytes.decode('ascii')
+
+													if int(objectplus) >= 40000:
+														embed13.add_field(name=f'<:play:472908887859789835> __{levelname}__ {by} {creator} <:object_overflow:472908865953071115>', value=f"{desc} {descbase64}", inline=False)
+													elif int(objectplus) <= 39999:
+														embed13.add_field(name=f'<:play:472908887859789835> __{levelname}__ {by} {creator}', value=f"{desc} {descbase64}", inline=False)
+
+													if int(coins) == 0:
+														coinsvalue = f"{none}"
+													elif int(coins) == 1:
+														coinsvalue = "<:user_coin_unverified:472908993832943631>"
+													elif int(coins) == 2:
+														coinsvalue = "<:user_coin_unverified:472908993832943631> <:user_coin_unverified:472908993832943631>"
+													elif int(coins) == 3:
+														coinsvalue = "<:user_coin_unverified:472908993832943631> <:user_coin_unverified:472908993832943631> <:user_coin_unverified:472908993832943631>"
+
+													try:
+														if int(verifiedcoins) == 1:
+															if int(coins) == 0:
+																coinsvalue = f"{none}"
+															elif int(coins) == 1:
+																coinsvalue = "<:user_coin:472908993711308800>"
+															elif int(coins) == 2:
+																coinsvalue = "<:user_coin:472908993711308800> <:user_coin:472908993711308800>"
+															elif int(coins) == 3:
+																coinsvalue = "<:user_coin:472908993711308800> <:user_coin:472908993711308800> <:user_coin:472908993711308800>"
+													except ValueError:
+														pass
+
+													embed13.add_field(name=f'{coinstitle}: {coinsvalue}', value=f"<:downloads:472907713727430658> `{downloads}`\n{likesemote} `{likes}`\n<:length:472908680459976704> `{lengthvalue}`\n", inline=False)
+
+													#reqsearch2(level)
+													try:
+														songname,songauthor,songid,sizesong,songlink,officialsong = reqsearch2(level)
+													except ValueError:
+														songname,songauthor,songid,sizesong,songlink = reqsearch2(level)
+
+													songlink2 = unquote(f"{songlink}")
+													try:
+														officialsong2 = int(officialsong)
+													except UnboundLocalError:
+														embed13.add_field(name=f':musical_note:  __{songname}__ {by} {songauthor}', value=f"SongID: {songid} - {sizetitle}: {sizesong}MB\n<:play:472908887859789835> [{newgroundsplay}](https://newgrounds.com/audio/load/{songid}) <:download_song:472907696685711370> [{downloadsong}]({songlink2})", inline=False)
+													else:
+														embed13.add_field(name=f':musical_note: :white_check_mark:   __**{songname}**__ {by} {songauthor}', value=f"SongID: {songid} - {sizetitle}: {sizesong}MB\n<:play:472908887859789835> [{newgroundsplay}](https://newgrounds.com/audio/load/{songid}) <:download_song:472907696685711370> [{youtubelink}]({songlink2})", inline=False)
+													
+													await channelmod.send(f"<@{user1}>",embed=embed13)
+													if message.attachments:
+														fileimage = message.attachments[0]
+														imageurl = fileimage.url
+														for ext in pic_ext:
+															if imageurl.endswith(ext):
+																embed14 = discord.Embed(title=f'Screenshot', color=0x00ff00)
+																embed14.set_image(url=f"{imageurl}")
+																await channelmod.send(embed=embed14)
+
+												cursor.execute(f'SELECT levelsentbygdmod FROM users WHERE userid = {user1}')
+												yesvalue = cursor.fetchone()[0]
+												if yesvalue == "yes":
+													pass
+												elif yesvalue == "no":
+													cursor.execute(f'UPDATE users SET levelsentbygdmod = "yes" WHERE userid = {user1}')
+													conn.commit()
+													levelsentbygdmod(user1)
+													embed5 = levelsentbygdmod(user1)
+													username = client.get_user(int(user1))
+													channel = await username.create_dm()
+													try:
+														await channel.send(embed=embed5)
+													except discord.errors.Forbidden:
+														pass
+														
+												cursor.execute(f"SELECT messageid FROM levels WHERE server = {serverid} AND levelid = {level}")
+												messages = cursor.fetchall()
+												for row in messages:
+													try:
+														msg101 = await message.channel.fetch_message(int(row[0]))
+													except:
+														msg101 = None
+													else:
+														try:
+															await msg101.delete()
+														except TypeError:
+															pass
+												return
+											elif demon == "3":
+												await msg.delete()
+												papa = cursor.execute(f"SELECT moderatorname FROM GDmoderators WHERE userid = {author} LIMIT 1")
+												gdmodname = cursor.fetchone()[0]
+												embed3 = discord.Embed(title=f'{successtitlerequester}', color=0x00ff00)
+												embed3.set_thumbnail(url="https://cdn.discordapp.com/emojis/472907978094411776.png?v=1")
+												embed3.add_field(name=f'{thelevelyourequested} `{level}` (**{levelname}** {byrequester} **{creator}**) {sendtorobtop} {gdmodname} {fortext} **HARD DEMON 10<:starrate:718204629858517003> RATE**', value='\u200b')
+												if message.attachments:
+													fileimage = message.attachments[0]
+													imageurl = fileimage.url
+													for ext in pic_ext:
+														if imageurl.endswith(ext):
+															embed3.set_image(url=f"{imageurl}")
+												channel = await username.create_dm()
+												try:
+													await channel.send(embed=embed3)
+												except discord.errors.Forbidden:
+													pass
+												nani = cursor.execute(f"SELECT requester FROM levels WHERE levelid = %s AND server = %s LIMIT 1", (level, serverid))
+												user1 = cursor.fetchone()[0]
+												username = client.get_user(int(user1))
+												embed4 = discord.Embed(title=f'{successtitle}', color=0x00ff00)
+												embed4.add_field(name=f'{thelevel} `{level}` (**{levelname}** {by} **{creator}**) {successsend} **HARD DEMON 10<:starrate:718204629858517003> RATE** !', value='\u200b')
+												await message.channel.send(embed=embed4)
+												delete = cursor.execute(f"DELETE FROM levels WHERE levelid = %s and server = %s", (level, serverid))
+												conn.commit()
+												
+												cursor.execute(f"SELECT GDModCheckedChannel FROM setup WHERE serverid = {serverid} LIMIT 1")
+												try:
+													gdmodcheckedchannel = cursor.fetchone()[0]
+												except TypeError:
+													gdmodcheckedchannel = None
+												if gdmodcheckedchannel is not None:
+													channelmod = client.get_channel(int(gdmodcheckedchannel))
+															
+													#reqsearch(level)
+													stars,objectplus,levelname,creator,ratingemote,stars,downloads,likes,likesemote,description,coins,verifiedcoins,lengthvalue,idlevel,version,gdversion,color = reqsearch(level)
+													
+													embed13 = discord.Embed(title=f'`{level}` (**{levelname}** {by} **{creator}**)', color=0x00ff00)
+													embed13.add_field(name=f"{sendfor} HARD DEMON 10<:starrate:718204629858517003> RATE** ! <:success:472908961176092702>", value="\u200b")
+													embed13.set_thumbnail(url=f"https://cdn.discordapp.com/emojis/472907978094411776.png?v=1")
+			
+													description += '=' * (-len(description) % 4)
+													base64_bytes = description.encode('ascii')
+													print(base64_bytes)
+													message_bytes = base64.urlsafe_b64decode(base64_bytes)
+													descbase64 = message_bytes.decode('ascii')
+
+													if int(objectplus) >= 40000:
+														embed13.add_field(name=f'<:play:472908887859789835> __{levelname}__ {by} {creator} <:object_overflow:472908865953071115>', value=f"{desc} {descbase64}", inline=False)
+													elif int(objectplus) <= 39999:
+														embed13.add_field(name=f'<:play:472908887859789835> __{levelname}__ {by} {creator}', value=f"{desc} {descbase64}", inline=False)
+
+													if int(coins) == 0:
+														coinsvalue = f"{none}"
+													elif int(coins) == 1:
+														coinsvalue = "<:user_coin_unverified:472908993832943631>"
+													elif int(coins) == 2:
+														coinsvalue = "<:user_coin_unverified:472908993832943631> <:user_coin_unverified:472908993832943631>"
+													elif int(coins) == 3:
+														coinsvalue = "<:user_coin_unverified:472908993832943631> <:user_coin_unverified:472908993832943631> <:user_coin_unverified:472908993832943631>"
+
+													try:
+														if int(verifiedcoins) == 1:
+															if int(coins) == 0:
+																coinsvalue = f"{none}"
+															elif int(coins) == 1:
+																coinsvalue = "<:user_coin:472908993711308800>"
+															elif int(coins) == 2:
+																coinsvalue = "<:user_coin:472908993711308800> <:user_coin:472908993711308800>"
+															elif int(coins) == 3:
+																coinsvalue = "<:user_coin:472908993711308800> <:user_coin:472908993711308800> <:user_coin:472908993711308800>"
+													except ValueError:
+														pass
+
+													embed13.add_field(name=f'{coinstitle}: {coinsvalue}', value=f"<:downloads:472907713727430658> `{downloads}`\n{likesemote} `{likes}`\n<:length:472908680459976704> `{lengthvalue}`\n", inline=False)
+
+													#reqsearch2(level)
+													try:
+														songname,songauthor,songid,sizesong,songlink,officialsong = reqsearch2(level)
+													except ValueError:
+														songname,songauthor,songid,sizesong,songlink = reqsearch2(level)
+
+													songlink2 = unquote(f"{songlink}")
+													try:
+														officialsong2 = int(officialsong)
+													except UnboundLocalError:
+														embed13.add_field(name=f':musical_note:  __{songname}__ {by} {songauthor}', value=f"SongID: {songid} - {sizetitle}: {sizesong}MB\n<:play:472908887859789835> [{newgroundsplay}](https://newgrounds.com/audio/load/{songid}) <:download_song:472907696685711370> [{downloadsong}]({songlink2})", inline=False)
+													else:
+														embed13.add_field(name=f':musical_note: :white_check_mark:   __**{songname}**__ {by} {songauthor}', value=f"SongID: {songid} - {sizetitle}: {sizesong}MB\n<:play:472908887859789835> [{newgroundsplay}](https://newgrounds.com/audio/load/{songid}) <:download_song:472907696685711370> [{youtubelink}]({songlink2})", inline=False)
+													
+													await channelmod.send(f"<@{user1}>",embed=embed13)
+													if message.attachments:
+														fileimage = message.attachments[0]
+														imageurl = fileimage.url
+														for ext in pic_ext:
+															if imageurl.endswith(ext):
+																embed14 = discord.Embed(title=f'Screenshot', color=0x00ff00)
+																embed14.set_image(url=f"{imageurl}")
+																await channelmod.send(embed=embed14)
+
+												cursor.execute(f'SELECT levelsentbygdmod FROM users WHERE userid = {user1}')
+												yesvalue = cursor.fetchone()[0]
+												if yesvalue == "yes":
+													pass
+												elif yesvalue == "no":
+													cursor.execute(f'UPDATE users SET levelsentbygdmod = "yes" WHERE userid = {user1}')
+													conn.commit()
+													levelsentbygdmod(user1)
+													embed5 = levelsentbygdmod(user1)
+													username = client.get_user(int(user1))
+													channel = await username.create_dm()
+													try:
+														await channel.send(embed=embed5)
+													except discord.errors.Forbidden:
+														pass
+														
+												cursor.execute(f"SELECT messageid FROM levels WHERE server = {serverid} AND levelid = {level}")
+												messages = cursor.fetchall()
+												for row in messages:
+													try:
+														msg101 = await message.channel.fetch_message(int(row[0]))
+													except:
+														msg101 = None
+													else:
+														try:
+															await msg101.delete()
+														except TypeError:
+															pass
+												return
+											elif demon == "4":
+												await msg.delete()
+												papa = cursor.execute(f"SELECT moderatorname FROM GDmoderators WHERE userid = {author} LIMIT 1")
+												gdmodname = cursor.fetchone()[0]
+												embed3 = discord.Embed(title=f'{successtitlerequester}', color=0x00ff00)
+												embed3.set_thumbnail(url="https://cdn.discordapp.com/emojis/472908041960947712.png?v=1")
+												embed3.add_field(name=f'{thelevelyourequested} `{level}` (**{levelname}** {byrequester} **{creator}**) {sendtorobtop} {gdmodname} {fortext} **INSANE DEMON 10<:starrate:718204629858517003> RATE**', value='\u200b')
+												if message.attachments:
+													fileimage = message.attachments[0]
+													imageurl = fileimage.url
+													for ext in pic_ext:
+														if imageurl.endswith(ext):
+															embed3.set_image(url=f"{imageurl}")
+												channel = await username.create_dm()
+												try:
+													await channel.send(embed=embed3)
+												except discord.errors.Forbidden:
+													pass
+												nani = cursor.execute(f"SELECT requester FROM levels WHERE levelid = %s AND server = %s LIMIT 1", (level, serverid))
+												user1 = cursor.fetchone()[0]
+												username = client.get_user(int(user1))
+												embed4 = discord.Embed(title=f'{successtitle}', color=0x00ff00)
+												embed4.add_field(name=f'{thelevel} `{level}` (**{levelname}** {by} **{creator}**) {successsend} **INSANE DEMON 10<:starrate:718204629858517003> RATE** !', value='\u200b')
+												await message.channel.send(embed=embed4)
+												delete = cursor.execute(f"DELETE FROM levels WHERE levelid = %s and server = %s", (level, serverid))
+												conn.commit()
+												
+												cursor.execute(f"SELECT GDModCheckedChannel FROM setup WHERE serverid = {serverid} LIMIT 1")
+												try:
+													gdmodcheckedchannel = cursor.fetchone()[0]
+												except TypeError:
+													gdmodcheckedchannel = None
+												if gdmodcheckedchannel is not None:
+													channelmod = client.get_channel(int(gdmodcheckedchannel))
+															
+													#reqsearch(level)
+													stars,objectplus,levelname,creator,ratingemote,stars,downloads,likes,likesemote,description,coins,verifiedcoins,lengthvalue,idlevel,version,gdversion,color = reqsearch(level)
+													
+													embed13 = discord.Embed(title=f'`{level}` (**{levelname}** {by} **{creator}**)', color=0x00ff00)
+													embed13.add_field(name=f"{sendfor} INSANE DEMON 10<:starrate:718204629858517003> RATE** ! <:success:472908961176092702>", value="\u200b")
+													embed13.set_thumbnail(url=f"https://cdn.discordapp.com/emojis/472908041960947712.png?v=1")
+			
+													description += '=' * (-len(description) % 4)
+													base64_bytes = description.encode('ascii')
+													print(base64_bytes)
+													message_bytes = base64.urlsafe_b64decode(base64_bytes)
+													descbase64 = message_bytes.decode('ascii')
+
+													if int(objectplus) >= 40000:
+														embed13.add_field(name=f'<:play:472908887859789835> __{levelname}__ {by} {creator} <:object_overflow:472908865953071115>', value=f"{desc} {descbase64}", inline=False)
+													elif int(objectplus) <= 39999:
+														embed13.add_field(name=f'<:play:472908887859789835> __{levelname}__ {by} {creator}', value=f"{desc} {descbase64}", inline=False)
+
+													if int(coins) == 0:
+														coinsvalue = f"{none}"
+													elif int(coins) == 1:
+														coinsvalue = "<:user_coin_unverified:472908993832943631>"
+													elif int(coins) == 2:
+														coinsvalue = "<:user_coin_unverified:472908993832943631> <:user_coin_unverified:472908993832943631>"
+													elif int(coins) == 3:
+														coinsvalue = "<:user_coin_unverified:472908993832943631> <:user_coin_unverified:472908993832943631> <:user_coin_unverified:472908993832943631>"
+
+													try:
+														if int(verifiedcoins) == 1:
+															if int(coins) == 0:
+																coinsvalue = f"{none}"
+															elif int(coins) == 1:
+																coinsvalue = "<:user_coin:472908993711308800>"
+															elif int(coins) == 2:
+																coinsvalue = "<:user_coin:472908993711308800> <:user_coin:472908993711308800>"
+															elif int(coins) == 3:
+																coinsvalue = "<:user_coin:472908993711308800> <:user_coin:472908993711308800> <:user_coin:472908993711308800>"
+													except ValueError:
+														pass
+
+													embed13.add_field(name=f'{coinstitle}: {coinsvalue}', value=f"<:downloads:472907713727430658> `{downloads}`\n{likesemote} `{likes}`\n<:length:472908680459976704> `{lengthvalue}`\n", inline=False)
+
+													#reqsearch2(level)
+													try:
+														songname,songauthor,songid,sizesong,songlink,officialsong = reqsearch2(level)
+													except ValueError:
+														songname,songauthor,songid,sizesong,songlink = reqsearch2(level)
+
+													songlink2 = unquote(f"{songlink}")
+													try:
+														officialsong2 = int(officialsong)
+													except UnboundLocalError:
+														embed13.add_field(name=f':musical_note:  __{songname}__ {by} {songauthor}', value=f"SongID: {songid} - {sizetitle}: {sizesong}MB\n<:play:472908887859789835> [{newgroundsplay}](https://newgrounds.com/audio/load/{songid}) <:download_song:472907696685711370> [{downloadsong}]({songlink2})", inline=False)
+													else:
+														embed13.add_field(name=f':musical_note: :white_check_mark:   __**{songname}**__ {by} {songauthor}', value=f"SongID: {songid} - {sizetitle}: {sizesong}MB\n<:play:472908887859789835> [{newgroundsplay}](https://newgrounds.com/audio/load/{songid}) <:download_song:472907696685711370> [{youtubelink}]({songlink2})", inline=False)
+													
+													await channelmod.send(f"<@{user1}>",embed=embed13)
+													if message.attachments:
+														fileimage = message.attachments[0]
+														imageurl = fileimage.url
+														for ext in pic_ext:
+															if imageurl.endswith(ext):
+																embed14 = discord.Embed(title=f'Screenshot', color=0x00ff00)
+																embed14.set_image(url=f"{imageurl}")
+																await channelmod.send(embed=embed14)
+
+												cursor.execute(f'SELECT levelsentbygdmod FROM users WHERE userid = {user1}')
+												yesvalue = cursor.fetchone()[0]
+												if yesvalue == "yes":
+													pass
+												elif yesvalue == "no":
+													cursor.execute(f'UPDATE users SET levelsentbygdmod = "yes" WHERE userid = {user1}')
+													conn.commit()
+													levelsentbygdmod(user1)
+													embed5 = levelsentbygdmod(user1)
+													username = client.get_user(int(user1))
+													channel = await username.create_dm()
+													try:
+														await channel.send(embed=embed5)
+													except discord.errors.Forbidden:
+														pass
+														
+												cursor.execute(f"SELECT messageid FROM levels WHERE server = {serverid} AND levelid = {level}")
+												messages = cursor.fetchall()
+												for row in messages:
+													try:
+														msg101 = await message.channel.fetch_message(int(row[0]))
+													except:
+														msg101 = None
+													else:
+														try:
+															await msg101.delete()
+														except TypeError:
+															pass
+												return
+											elif demon == "5":
+												await msg.delete()
+												papa = cursor.execute(f"SELECT moderatorname FROM GDmoderators WHERE userid = {author} LIMIT 1")
+												gdmodname = cursor.fetchone()[0]
+												embed3 = discord.Embed(title=f'{successtitlerequester}', color=0x00ff00)
+												embed3.set_thumbnail(url="https://cdn.discordapp.com/emojis/472907914110304267.png?v=1")
+												embed3.add_field(name=f'{thelevelyourequested} `{level}` (**{levelname}** {byrequester} **{creator}**) {sendtorobtop} {gdmodname} {fortext} **EXTREME DEMON 10<:starrate:718204629858517003> RATE**', value='\u200b')
+												if message.attachments:
+													fileimage = message.attachments[0]
+													imageurl = fileimage.url
+													for ext in pic_ext:
+														if imageurl.endswith(ext):
+															embed3.set_image(url=f"{imageurl}")
+												channel = await username.create_dm()
+												try:
+													await channel.send(embed=embed3)
+												except discord.errors.Forbidden:
+													pass
+												nani = cursor.execute(f"SELECT requester FROM levels WHERE levelid = %s AND server = %s LIMIT 1", (level, serverid))
+												user1 = cursor.fetchone()[0]
+												username = client.get_user(int(user1))
+												embed4 = discord.Embed(title=f'{successtitle}', color=0x00ff00)
+												embed4.add_field(name=f'{thelevel} `{level}` (**{levelname}** {by} **{creator}**) {successsend} **EXTREME DEMON 10<:starrate:718204629858517003> RATE** !', value='\u200b')
+												await message.channel.send(embed=embed4)
+												delete = cursor.execute(f"DELETE FROM levels WHERE levelid = %s and server = %s", (level, serverid))
+												conn.commit()
+												
+												cursor.execute(f"SELECT GDModCheckedChannel FROM setup WHERE serverid = {serverid} LIMIT 1")
+												try:
+													gdmodcheckedchannel = cursor.fetchone()[0]
+												except TypeError:
+													gdmodcheckedchannel = None
+												if gdmodcheckedchannel is not None:
+													channelmod = client.get_channel(int(gdmodcheckedchannel))
+															
+													#reqsearch(level)
+													stars,objectplus,levelname,creator,ratingemote,stars,downloads,likes,likesemote,description,coins,verifiedcoins,lengthvalue,idlevel,version,gdversion,color = reqsearch(level)
+													
+													embed13 = discord.Embed(title=f'`{level}` (**{levelname}** {by} **{creator}**)', color=0x00ff00)
+													embed13.add_field(name=f"{sendfor} EXTREME DEMON 10<:starrate:718204629858517003> RATE** ! <:success:472908961176092702>", value="\u200b")
+													embed13.set_thumbnail(url=f"https://cdn.discordapp.com/emojis/472907914110304267.png?v=1")
+			
+													description += '=' * (-len(description) % 4)
+													base64_bytes = description.encode('ascii')
+													print(base64_bytes)
+													message_bytes = base64.urlsafe_b64decode(base64_bytes)
+													descbase64 = message_bytes.decode('ascii')
+
+													if int(objectplus) >= 40000:
+														embed13.add_field(name=f'<:play:472908887859789835> __{levelname}__ {by} {creator} <:object_overflow:472908865953071115>', value=f"{desc} {descbase64}", inline=False)
+													elif int(objectplus) <= 39999:
+														embed13.add_field(name=f'<:play:472908887859789835> __{levelname}__ {by} {creator}', value=f"{desc} {descbase64}", inline=False)
+
+													if int(coins) == 0:
+														coinsvalue = f"{none}"
+													elif int(coins) == 1:
+														coinsvalue = "<:user_coin_unverified:472908993832943631>"
+													elif int(coins) == 2:
+														coinsvalue = "<:user_coin_unverified:472908993832943631> <:user_coin_unverified:472908993832943631>"
+													elif int(coins) == 3:
+														coinsvalue = "<:user_coin_unverified:472908993832943631> <:user_coin_unverified:472908993832943631> <:user_coin_unverified:472908993832943631>"
+
+													try:
+														if int(verifiedcoins) == 1:
+															if int(coins) == 0:
+																coinsvalue = f"{none}"
+															elif int(coins) == 1:
+																coinsvalue = "<:user_coin:472908993711308800>"
+															elif int(coins) == 2:
+																coinsvalue = "<:user_coin:472908993711308800> <:user_coin:472908993711308800>"
+															elif int(coins) == 3:
+																coinsvalue = "<:user_coin:472908993711308800> <:user_coin:472908993711308800> <:user_coin:472908993711308800>"
+													except ValueError:
+														pass
+
+													embed13.add_field(name=f'{coinstitle}: {coinsvalue}', value=f"<:downloads:472907713727430658> `{downloads}`\n{likesemote} `{likes}`\n<:length:472908680459976704> `{lengthvalue}`\n", inline=False)
+
+													#reqsearch2(level)
+													try:
+														songname,songauthor,songid,sizesong,songlink,officialsong = reqsearch2(level)
+													except ValueError:
+														songname,songauthor,songid,sizesong,songlink = reqsearch2(level)
+
+													songlink2 = unquote(f"{songlink}")
+													try:
+														officialsong2 = int(officialsong)
+													except UnboundLocalError:
+														embed13.add_field(name=f':musical_note:  __{songname}__ {by} {songauthor}', value=f"SongID: {songid} - {sizetitle}: {sizesong}MB\n<:play:472908887859789835> [{newgroundsplay}](https://newgrounds.com/audio/load/{songid}) <:download_song:472907696685711370> [{downloadsong}]({songlink2})", inline=False)
+													else:
+														embed13.add_field(name=f':musical_note: :white_check_mark:   __**{songname}**__ {by} {songauthor}', value=f"SongID: {songid} - {sizetitle}: {sizesong}MB\n<:play:472908887859789835> [{newgroundsplay}](https://newgrounds.com/audio/load/{songid}) <:download_song:472907696685711370> [{youtubelink}]({songlink2})", inline=False)
+													
+													await channelmod.send(f"<@{user1}>",embed=embed13)
+													if message.attachments:
+														fileimage = message.attachments[0]
+														imageurl = fileimage.url
+														for ext in pic_ext:
+															if imageurl.endswith(ext):
+																embed14 = discord.Embed(title=f'Screenshot', color=0x00ff00)
+																embed14.set_image(url=f"{imageurl}")
+																await channelmod.send(embed=embed14)
+
+												cursor.execute(f'SELECT levelsentbygdmod FROM users WHERE userid = {user1}')
+												yesvalue = cursor.fetchone()[0]
+												if yesvalue == "yes":
+													pass
+												elif yesvalue == "no":
+													cursor.execute(f'UPDATE users SET levelsentbygdmod = "yes" WHERE userid = {user1}')
+													conn.commit()
+													levelsentbygdmod(user1)
+													embed5 = levelsentbygdmod(user1)
+													username = client.get_user(int(user1))
+													channel = await username.create_dm()
+													try:
+														await channel.send(embed=embed5)
+													except discord.errors.Forbidden:
+														pass
+														
+												cursor.execute(f"SELECT messageid FROM levels WHERE server = {serverid} AND levelid = {level}")
+												messages = cursor.fetchall()
+												for row in messages:
+													try:
+														msg101 = await message.channel.fetch_message(int(row[0]))
+													except:
+														msg101 = None
+													else:
+														try:
+															await msg101.delete()
+														except TypeError:
+															pass
+												return
+											else:
+												await msg.delete()
+												papa = cursor.execute(f"SELECT moderatorname FROM GDmoderators WHERE userid = {author} LIMIT 1")
+												gdmodname = cursor.fetchone()[0]
+												embed3 = discord.Embed(title=f'{successtitlerequester}', color=0x00ff00)
+												embed3.set_thumbnail(url="https://cdn.discordapp.com/emojis/472907978094411776.png?v=1")
+												embed3.add_field(name=f'{thelevelyourequested} `{level}` (**{levelname}** {byrequester} **{creator}**) {sendtorobtop} {gdmodname} {fortext} **DEMON 10<:starrate:718204629858517003> RATE**', value='\u200b')
+												if message.attachments:
+													fileimage = message.attachments[0]
+													imageurl = fileimage.url
+													for ext in pic_ext:
+														if imageurl.endswith(ext):
+															embed3.set_image(url=f"{imageurl}")
+												channel = await username.create_dm()
+												try:
+													await channel.send(embed=embed3)
+												except discord.errors.Forbidden:
+													pass
+												nani = cursor.execute(f"SELECT requester FROM levels WHERE levelid = %s AND server = %s LIMIT 1", (level, serverid))
+												user1 = cursor.fetchone()[0]
+												username = client.get_user(int(user1))
+												embed4 = discord.Embed(title=f'{successtitle}', color=0x00ff00)
+												embed4.add_field(name=f'{thelevel} `{level}` (**{levelname}** {by} **{creator}**) {successsend} **DEMON 10<:starrate:718204629858517003> RATE** !', value='\u200b')
+												await message.channel.send(embed=embed4)
+												delete = cursor.execute(f"DELETE FROM levels WHERE levelid = %s and server = %s", (level, serverid))
+												conn.commit()
+												
+												cursor.execute(f"SELECT GDModCheckedChannel FROM setup WHERE serverid = {serverid} LIMIT 1")
+												try:
+													gdmodcheckedchannel = cursor.fetchone()[0]
+												except TypeError:
+													gdmodcheckedchannel = None
+												if gdmodcheckedchannel is not None:
+													channelmod = client.get_channel(int(gdmodcheckedchannel))
+															
+													#reqsearch(level)
+													stars,objectplus,levelname,creator,ratingemote,stars,downloads,likes,likesemote,description,coins,verifiedcoins,lengthvalue,idlevel,version,gdversion,color = reqsearch(level)
+													
+													embed13 = discord.Embed(title=f'`{level}` (**{levelname}** {by} **{creator}**)', color=0x00ff00)
+													embed13.add_field(name=f"{sendfor} DEMON 10<:starrate:718204629858517003> RATE** ! <:success:472908961176092702>", value="\u200b")
+													embed13.set_thumbnail(url=f"https://cdn.discordapp.com/emojis/472907978094411776.png?v=1")
+			
+													description += '=' * (-len(description) % 4)
+													base64_bytes = description.encode('ascii')
+													print(base64_bytes)
+													message_bytes = base64.urlsafe_b64decode(base64_bytes)
+													descbase64 = message_bytes.decode('ascii')
+
+													if int(objectplus) >= 40000:
+														embed13.add_field(name=f'<:play:472908887859789835> __{levelname}__ {by} {creator} <:object_overflow:472908865953071115>', value=f"{desc} {descbase64}", inline=False)
+													elif int(objectplus) <= 39999:
+														embed13.add_field(name=f'<:play:472908887859789835> __{levelname}__ {by} {creator}', value=f"{desc} {descbase64}", inline=False)
+
+													if int(coins) == 0:
+														coinsvalue = f"{none}"
+													elif int(coins) == 1:
+														coinsvalue = "<:user_coin_unverified:472908993832943631>"
+													elif int(coins) == 2:
+														coinsvalue = "<:user_coin_unverified:472908993832943631> <:user_coin_unverified:472908993832943631>"
+													elif int(coins) == 3:
+														coinsvalue = "<:user_coin_unverified:472908993832943631> <:user_coin_unverified:472908993832943631> <:user_coin_unverified:472908993832943631>"
+
+													try:
+														if int(verifiedcoins) == 1:
+															if int(coins) == 0:
+																coinsvalue = f"{none}"
+															elif int(coins) == 1:
+																coinsvalue = "<:user_coin:472908993711308800>"
+															elif int(coins) == 2:
+																coinsvalue = "<:user_coin:472908993711308800> <:user_coin:472908993711308800>"
+															elif int(coins) == 3:
+																coinsvalue = "<:user_coin:472908993711308800> <:user_coin:472908993711308800> <:user_coin:472908993711308800>"
+													except ValueError:
+														pass
+
+													embed13.add_field(name=f'{coinstitle}: {coinsvalue}', value=f"<:downloads:472907713727430658> `{downloads}`\n{likesemote} `{likes}`\n<:length:472908680459976704> `{lengthvalue}`\n", inline=False)
+
+													#reqsearch2(level)
+													try:
+														songname,songauthor,songid,sizesong,songlink,officialsong = reqsearch2(level)
+													except ValueError:
+														songname,songauthor,songid,sizesong,songlink = reqsearch2(level)
+
+													songlink2 = unquote(f"{songlink}")
+													try:
+														officialsong2 = int(officialsong)
+													except UnboundLocalError:
+														embed13.add_field(name=f':musical_note:  __{songname}__ {by} {songauthor}', value=f"SongID: {songid} - {sizetitle}: {sizesong}MB\n<:play:472908887859789835> [{newgroundsplay}](https://newgrounds.com/audio/load/{songid}) <:download_song:472907696685711370> [{downloadsong}]({songlink2})", inline=False)
+													else:
+														embed13.add_field(name=f':musical_note: :white_check_mark:   __**{songname}**__ {by} {songauthor}', value=f"SongID: {songid} - {sizetitle}: {sizesong}MB\n<:play:472908887859789835> [{newgroundsplay}](https://newgrounds.com/audio/load/{songid}) <:download_song:472907696685711370> [{youtubelink}]({songlink2})", inline=False)
+													
+													await channelmod.send(f"<@{user1}>",embed=embed13)
+													if message.attachments:
+														fileimage = message.attachments[0]
+														imageurl = fileimage.url
+														for ext in pic_ext:
+															if imageurl.endswith(ext):
+																embed14 = discord.Embed(title=f'Screenshot', color=0x00ff00)
+																embed14.set_image(url=f"{imageurl}")
+																await channelmod.send(embed=embed14)
+
+												cursor.execute(f'SELECT levelsentbygdmod FROM users WHERE userid = {user1}')
+												yesvalue = cursor.fetchone()[0]
+												if yesvalue == "yes":
+													pass
+												elif yesvalue == "no":
+													cursor.execute(f'UPDATE users SET levelsentbygdmod = "yes" WHERE userid = {user1}')
+													conn.commit()
+													levelsentbygdmod(user1)
+													embed5 = levelsentbygdmod(user1)
+													username = client.get_user(int(user1))
+													channel = await username.create_dm()
+													try:
+														await channel.send(embed=embed5)
+													except discord.errors.Forbidden:
+														pass
+														
+												cursor.execute(f"SELECT messageid FROM levels WHERE server = {serverid} AND levelid = {level}")
+												messages = cursor.fetchall()
+												for row in messages:
+													try:
+														msg101 = await message.channel.fetch_message(int(row[0]))
+													except:
+														msg101 = None
+													else:
+														try:
+															await msg101.delete()
+														except TypeError:
+															pass
+												return
 										else:
 											await msg.delete()
+											embed = discord.Embed(title="", color=0xff0000)
+											embed.add_field(name=f'{errormessage}', value=f"{errorsyntax}")
+											msg2 = await message.channel.send(embed=embed)
+											time.sleep(5)
+											await msg2.delete()
+											return
+									elif validation == "featured":
+										nyaya = cursor.execute(f"SELECT requester FROM levels WHERE levelid = %s AND server = %s LIMIT 1", (level, serverid))
+										user1 = cursor.fetchone()[0]
+										username = client.get_user(int(user1))
+
+										cursor.execute(f"SELECT language FROM users WHERE userid = {user1}")
+										try:
+											language_requester = cursor.fetchone()[0]
+										except TypeError:
+											language_requester = language_default
+										language2_requester = language_requester
+										translate_messages_requester = open(f"language/requester/reqsend/{language2}.txt").read().splitlines()
+
+										successtitlerequester = translate_messages_requester[0]
+										thelevelyourequested = translate_messages_requester[1]
+										byrequester = translate_messages_requester[2]
+										sendtorobtop = translate_messages_requester[3]
+										fortext = translate_messages_requester[4]
+
+										if star == "1":
+											await msg.delete()
 											papa = cursor.execute(f"SELECT moderatorname FROM GDmoderators WHERE userid = {author} LIMIT 1")
 											gdmodname = cursor.fetchone()[0]
 											embed3 = discord.Embed(title=f'{successtitlerequester}', color=0x00ff00)
-											embed3.set_thumbnail(url="https://cdn.discordapp.com/emojis/472907978094411776.png?v=1")
-											embed3.add_field(name=f'{thelevelyourequested} `{level}` (**{levelname}** {byrequester} **{creator}**) {sendtorobtop} {gdmodname} {fortext} **DEMON 10<:starrate:718204629858517003> RATE**', value='\u200b')
+											embed3.set_thumbnail(url="https://cdn.discordapp.com/emojis/472907828185792532.png?v=1")
+											embed3.add_field(name=f'{thelevelyourequested} `{level}` (**{levelname}** {byrequester} **{creator}**) {sendtorobtop} {gdmodname} {fortext} **AUTO 1<:starrate:718204629858517003> FEATURED**', value='\u200b')
 											if message.attachments:
 												fileimage = message.attachments[0]
 												imageurl = fileimage.url
@@ -13147,14 +9703,88 @@ async def on_message(message):
 												await channel.send(embed=embed3)
 											except discord.errors.Forbidden:
 												pass
-											nani = cursor.execute(f"SELECT requester FROM levels WHERE levelid = {level} LIMIT 1")
+											nani = cursor.execute(f"SELECT requester FROM levels WHERE levelid = %s AND server = %s LIMIT 1", (level, serverid))
 											user1 = cursor.fetchone()[0]
 											username = client.get_user(int(user1))
 											embed4 = discord.Embed(title=f'{successtitle}', color=0x00ff00)
-											embed4.add_field(name=f'{thelevel} `{level}` (**{levelname}** {by} **{creator}**) {successsend} **DEMON 10<:starrate:718204629858517003> RATE** !', value='\u200b')
+											embed4.add_field(name=f'{thelevel} `{level}` (**{levelname}** {by} **{creator}**) {successsend} **AUTO 1<:starrate:718204629858517003> FEATURED** !', value='\u200b')
 											await message.channel.send(embed=embed4)
-											delete = cursor.execute(f"DELETE FROM levels WHERE levelid = {level}")
+											delete = cursor.execute(f"DELETE FROM levels WHERE levelid = %s and server = %s", (level, serverid))
 											conn.commit()
+											
+											cursor.execute(f"SELECT GDModCheckedChannel FROM setup WHERE serverid = {serverid} LIMIT 1")
+											try:
+												gdmodcheckedchannel = cursor.fetchone()[0]
+											except TypeError:
+												gdmodcheckedchannel = None
+											if gdmodcheckedchannel is not None:
+												channelmod = client.get_channel(int(gdmodcheckedchannel))
+														
+												#reqsearch(level)
+												stars,objectplus,levelname,creator,ratingemote,stars,downloads,likes,likesemote,description,coins,verifiedcoins,lengthvalue,idlevel,version,gdversion,color = reqsearch(level)
+												
+												embed13 = discord.Embed(title=f'`{level}` (**{levelname}** {by} **{creator}**)', color=0x00ff00)
+												embed13.add_field(name=f"{sendfor} AUTO 1<:starrate:718204629858517003> FEATURED** ! <:success:472908961176092702>", value="\u200b")
+												embed13.set_thumbnail(url=f"https://cdn.discordapp.com/emojis/472907828185792532.png?v=1")
+		
+												description += '=' * (-len(description) % 4)
+												base64_bytes = description.encode('ascii')
+												print(base64_bytes)
+												message_bytes = base64.urlsafe_b64decode(base64_bytes)
+												descbase64 = message_bytes.decode('ascii')
+
+												if int(objectplus) >= 40000:
+													embed13.add_field(name=f'<:play:472908887859789835> __{levelname}__ {by} {creator} <:object_overflow:472908865953071115>', value=f"{desc} {descbase64}", inline=False)
+												elif int(objectplus) <= 39999:
+													embed13.add_field(name=f'<:play:472908887859789835> __{levelname}__ {by} {creator}', value=f"{desc} {descbase64}", inline=False)
+
+												if int(coins) == 0:
+													coinsvalue = f"{none}"
+												elif int(coins) == 1:
+													coinsvalue = "<:user_coin_unverified:472908993832943631>"
+												elif int(coins) == 2:
+													coinsvalue = "<:user_coin_unverified:472908993832943631> <:user_coin_unverified:472908993832943631>"
+												elif int(coins) == 3:
+													coinsvalue = "<:user_coin_unverified:472908993832943631> <:user_coin_unverified:472908993832943631> <:user_coin_unverified:472908993832943631>"
+
+												try:
+													if int(verifiedcoins) == 1:
+														if int(coins) == 0:
+															coinsvalue = f"{none}"
+														elif int(coins) == 1:
+															coinsvalue = "<:user_coin:472908993711308800>"
+														elif int(coins) == 2:
+															coinsvalue = "<:user_coin:472908993711308800> <:user_coin:472908993711308800>"
+														elif int(coins) == 3:
+															coinsvalue = "<:user_coin:472908993711308800> <:user_coin:472908993711308800> <:user_coin:472908993711308800>"
+												except ValueError:
+													pass
+
+												embed13.add_field(name=f'{coinstitle}: {coinsvalue}', value=f"<:downloads:472907713727430658> `{downloads}`\n{likesemote} `{likes}`\n<:length:472908680459976704> `{lengthvalue}`\n", inline=False)
+
+												#reqsearch2(level)
+												try:
+													songname,songauthor,songid,sizesong,songlink,officialsong = reqsearch2(level)
+												except ValueError:
+													songname,songauthor,songid,sizesong,songlink = reqsearch2(level)
+
+												songlink2 = unquote(f"{songlink}")
+												try:
+													officialsong2 = int(officialsong)
+												except UnboundLocalError:
+													embed13.add_field(name=f':musical_note:  __{songname}__ {by} {songauthor}', value=f"SongID: {songid} - {sizetitle}: {sizesong}MB\n<:play:472908887859789835> [{newgroundsplay}](https://newgrounds.com/audio/load/{songid}) <:download_song:472907696685711370> [{downloadsong}]({songlink2})", inline=False)
+												else:
+													embed13.add_field(name=f':musical_note: :white_check_mark:   __**{songname}**__ {by} {songauthor}', value=f"SongID: {songid} - {sizetitle}: {sizesong}MB\n<:play:472908887859789835> [{newgroundsplay}](https://newgrounds.com/audio/load/{songid}) <:download_song:472907696685711370> [{youtubelink}]({songlink2})", inline=False)
+												
+												await channelmod.send(f"<@{user1}>",embed=embed13)
+												if message.attachments:
+													fileimage = message.attachments[0]
+													imageurl = fileimage.url
+													for ext in pic_ext:
+														if imageurl.endswith(ext):
+															embed14 = discord.Embed(title=f'Screenshot', color=0x00ff00)
+															embed14.set_image(url=f"{imageurl}")
+															await channelmod.send(embed=embed14)
 
 											cursor.execute(f'SELECT levelsentbygdmod FROM users WHERE userid = {user1}')
 											yesvalue = cursor.fetchone()[0]
@@ -13167,640 +9797,1857 @@ async def on_message(message):
 												embed5 = levelsentbygdmod(user1)
 												username = client.get_user(int(user1))
 												channel = await username.create_dm()
-												await channel.send(embed=embed5)
+												try:
+													await channel.send(embed=embed5)
+												except discord.errors.Forbidden:
+													pass
+													
+											cursor.execute(f"SELECT messageid FROM levels WHERE server = {serverid} AND levelid = {level}")
+											messages = cursor.fetchall()
+											for row in messages:
+												try:
+													msg101 = await message.channel.fetch_message(int(row[0]))
+												except:
+													msg101 = None
+												else:
+													try:
+														await msg101.delete()
+													except TypeError:
+														pass
+											return
+										elif star == "2":
+											await msg.delete()
+											papa = cursor.execute(f"SELECT moderatorname FROM GDmoderators WHERE userid = {author} LIMIT 1")
+											gdmodname = cursor.fetchone()[0]
+											embed3 = discord.Embed(title=f'{successtitlerequester}', color=0x00ff00)
+											embed3.set_thumbnail(url="https://cdn.discordapp.com/emojis/472908214766141471.png?v=1")
+											embed3.add_field(name=f'{thelevelyourequested} `{level}` (**{levelname}** {byrequester} **{creator}**) {sendtorobtop} {gdmodname} {fortext} **EASY 2<:starrate:718204629858517003> FEATURED**', value='\u200b')
+											if message.attachments:
+												fileimage = message.attachments[0]
+												imageurl = fileimage.url
+												for ext in pic_ext:
+													if imageurl.endswith(ext):
+														embed3.set_image(url=f"{imageurl}")
+											channel = await username.create_dm()
+											try:
+												await channel.send(embed=embed3)
+											except discord.errors.Forbidden:
+												pass
+											nani = cursor.execute(f"SELECT requester FROM levels WHERE levelid = %s AND server = %s LIMIT 1", (level, serverid))
+											user1 = cursor.fetchone()[0]
+											username = client.get_user(int(user1))
+											embed4 = discord.Embed(title=f'{successtitle}', color=0x00ff00)
+											embed4.add_field(name=f'{thelevel} `{level}` (**{levelname}** {by} **{creator}**) {successsend} **EASY 2<:starrate:718204629858517003> FEATURED** !', value='\u200b')
+											await message.channel.send(embed=embed4)
+											delete = cursor.execute(f"DELETE FROM levels WHERE levelid = %s and server = %s", (level, serverid))
+											conn.commit()
+											
+											cursor.execute(f"SELECT GDModCheckedChannel FROM setup WHERE serverid = {serverid} LIMIT 1")
+											try:
+												gdmodcheckedchannel = cursor.fetchone()[0]
+											except TypeError:
+												gdmodcheckedchannel = None
+											if gdmodcheckedchannel is not None:
+												channelmod = client.get_channel(int(gdmodcheckedchannel))
+														
+												#reqsearch(level)
+												stars,objectplus,levelname,creator,ratingemote,stars,downloads,likes,likesemote,description,coins,verifiedcoins,lengthvalue,idlevel,version,gdversion,color = reqsearch(level)
+												
+												embed13 = discord.Embed(title=f'`{level}` (**{levelname}** {by} **{creator}**)', color=0x00ff00)
+												embed13.add_field(name=f"{sendfor} EASY 2<:starrate:718204629858517003> FEATURED** ! <:success:472908961176092702>", value="\u200b")
+												embed13.set_thumbnail(url=f"https://cdn.discordapp.com/emojis/472908214766141471.png?v=1")
+		
+												description += '=' * (-len(description) % 4)
+												base64_bytes = description.encode('ascii')
+												print(base64_bytes)
+												message_bytes = base64.urlsafe_b64decode(base64_bytes)
+												descbase64 = message_bytes.decode('ascii')
+
+												if int(objectplus) >= 40000:
+													embed13.add_field(name=f'<:play:472908887859789835> __{levelname}__ {by} {creator} <:object_overflow:472908865953071115>', value=f"{desc} {descbase64}", inline=False)
+												elif int(objectplus) <= 39999:
+													embed13.add_field(name=f'<:play:472908887859789835> __{levelname}__ {by} {creator}', value=f"{desc} {descbase64}", inline=False)
+
+												if int(coins) == 0:
+													coinsvalue = f"{none}"
+												elif int(coins) == 1:
+													coinsvalue = "<:user_coin_unverified:472908993832943631>"
+												elif int(coins) == 2:
+													coinsvalue = "<:user_coin_unverified:472908993832943631> <:user_coin_unverified:472908993832943631>"
+												elif int(coins) == 3:
+													coinsvalue = "<:user_coin_unverified:472908993832943631> <:user_coin_unverified:472908993832943631> <:user_coin_unverified:472908993832943631>"
+
+												try:
+													if int(verifiedcoins) == 1:
+														if int(coins) == 0:
+															coinsvalue = f"{none}"
+														elif int(coins) == 1:
+															coinsvalue = "<:user_coin:472908993711308800>"
+														elif int(coins) == 2:
+															coinsvalue = "<:user_coin:472908993711308800> <:user_coin:472908993711308800>"
+														elif int(coins) == 3:
+															coinsvalue = "<:user_coin:472908993711308800> <:user_coin:472908993711308800> <:user_coin:472908993711308800>"
+												except ValueError:
+													pass
+
+												embed13.add_field(name=f'{coinstitle}: {coinsvalue}', value=f"<:downloads:472907713727430658> `{downloads}`\n{likesemote} `{likes}`\n<:length:472908680459976704> `{lengthvalue}`\n", inline=False)
+
+												#reqsearch2(level)
+												try:
+													songname,songauthor,songid,sizesong,songlink,officialsong = reqsearch2(level)
+												except ValueError:
+													songname,songauthor,songid,sizesong,songlink = reqsearch2(level)
+
+												songlink2 = unquote(f"{songlink}")
+												try:
+													officialsong2 = int(officialsong)
+												except UnboundLocalError:
+													embed13.add_field(name=f':musical_note:  __{songname}__ {by} {songauthor}', value=f"SongID: {songid} - {sizetitle}: {sizesong}MB\n<:play:472908887859789835> [{newgroundsplay}](https://newgrounds.com/audio/load/{songid}) <:download_song:472907696685711370> [{downloadsong}]({songlink2})", inline=False)
+												else:
+													embed13.add_field(name=f':musical_note: :white_check_mark:   __**{songname}**__ {by} {songauthor}', value=f"SongID: {songid} - {sizetitle}: {sizesong}MB\n<:play:472908887859789835> [{newgroundsplay}](https://newgrounds.com/audio/load/{songid}) <:download_song:472907696685711370> [{youtubelink}]({songlink2})", inline=False)
+												
+												await channelmod.send(f"<@{user1}>",embed=embed13)
+												if message.attachments:
+													fileimage = message.attachments[0]
+													imageurl = fileimage.url
+													for ext in pic_ext:
+														if imageurl.endswith(ext):
+															embed14 = discord.Embed(title=f'Screenshot', color=0x00ff00)
+															embed14.set_image(url=f"{imageurl}")
+															await channelmod.send(embed=embed14)
+
+											cursor.execute(f'SELECT levelsentbygdmod FROM users WHERE userid = {user1}')
+											yesvalue = cursor.fetchone()[0]
+											if yesvalue == "yes":
+												pass
+											elif yesvalue == "no":
+												cursor.execute(f'UPDATE users SET levelsentbygdmod = "yes" WHERE userid = {user1}')
+												conn.commit()
+												levelsentbygdmod(user1)
+												embed5 = levelsentbygdmod(user1)
+												username = client.get_user(int(user1))
+												channel = await username.create_dm()
+												try:
+													await channel.send(embed=embed5)
+												except discord.errors.Forbidden:
+													pass
+													
+											cursor.execute(f"SELECT messageid FROM levels WHERE server = {serverid} AND levelid = {level}")
+											messages = cursor.fetchall()
+											for row in messages:
+												try:
+													msg101 = await message.channel.fetch_message(int(row[0]))
+												except:
+													msg101 = None
+												else:
+													try:
+														await msg101.delete()
+													except TypeError:
+														pass
+											return
+										elif star == "3":
+											await msg.delete()
+											papa = cursor.execute(f"SELECT moderatorname FROM GDmoderators WHERE userid = {author} LIMIT 1")
+											gdmodname = cursor.fetchone()[0]
+											embed3 = discord.Embed(title=f'{successtitlerequester}', color=0x00ff00)
+											embed3.set_thumbnail(url="https://cdn.discordapp.com/emojis/472908602613563392.png?v=1")
+											embed3.add_field(name=f'{thelevelyourequested} `{level}` (**{levelname}** {byrequester} **{creator}**) {sendtorobtop} {gdmodname} {fortext} **NORMAL 3<:starrate:718204629858517003> FEATURED**', value='\u200b')
+											if message.attachments:
+												fileimage = message.attachments[0]
+												imageurl = fileimage.url
+												for ext in pic_ext:
+													if imageurl.endswith(ext):
+														embed3.set_image(url=f"{imageurl}")
+											channel = await username.create_dm()
+											try:
+												await channel.send(embed=embed3)
+											except discord.errors.Forbidden:
+												pass
+											nani = cursor.execute(f"SELECT requester FROM levels WHERE levelid = %s AND server = %s LIMIT 1", (level, serverid))
+											user1 = cursor.fetchone()[0]
+											username = client.get_user(int(user1))
+											embed4 = discord.Embed(title=f'{successtitle}', color=0x00ff00)
+											embed4.add_field(name=f'{thelevel} `{level}` (**{levelname}** {by} **{creator}**) {successsend} **NORMAL 3<:starrate:718204629858517003> FEATURED** !', value='\u200b')
+											await message.channel.send(embed=embed4)
+											delete = cursor.execute(f"DELETE FROM levels WHERE levelid = %s and server = %s", (level, serverid))
+											conn.commit()
+											
+											cursor.execute(f"SELECT GDModCheckedChannel FROM setup WHERE serverid = {serverid} LIMIT 1")
+											try:
+												gdmodcheckedchannel = cursor.fetchone()[0]
+											except TypeError:
+												gdmodcheckedchannel = None
+											if gdmodcheckedchannel is not None:
+												channelmod = client.get_channel(int(gdmodcheckedchannel))
+														
+												#reqsearch(level)
+												stars,objectplus,levelname,creator,ratingemote,stars,downloads,likes,likesemote,description,coins,verifiedcoins,lengthvalue,idlevel,version,gdversion,color = reqsearch(level)
+												
+												embed13 = discord.Embed(title=f'`{level}` (**{levelname}** {by} **{creator}**)', color=0x00ff00)
+												embed13.add_field(name=f"{sendfor} NORMAL 3<:starrate:718204629858517003> FEATURED** ! <:success:472908961176092702>", value="\u200b")
+												embed13.set_thumbnail(url=f"https://cdn.discordapp.com/emojis/472908602613563392.png?v=1")
+		
+												description += '=' * (-len(description) % 4)
+												base64_bytes = description.encode('ascii')
+												print(base64_bytes)
+												message_bytes = base64.urlsafe_b64decode(base64_bytes)
+												descbase64 = message_bytes.decode('ascii')
+
+												if int(objectplus) >= 40000:
+													embed13.add_field(name=f'<:play:472908887859789835> __{levelname}__ {by} {creator} <:object_overflow:472908865953071115>', value=f"{desc} {descbase64}", inline=False)
+												elif int(objectplus) <= 39999:
+													embed13.add_field(name=f'<:play:472908887859789835> __{levelname}__ {by} {creator}', value=f"{desc} {descbase64}", inline=False)
+
+												if int(coins) == 0:
+													coinsvalue = f"{none}"
+												elif int(coins) == 1:
+													coinsvalue = "<:user_coin_unverified:472908993832943631>"
+												elif int(coins) == 2:
+													coinsvalue = "<:user_coin_unverified:472908993832943631> <:user_coin_unverified:472908993832943631>"
+												elif int(coins) == 3:
+													coinsvalue = "<:user_coin_unverified:472908993832943631> <:user_coin_unverified:472908993832943631> <:user_coin_unverified:472908993832943631>"
+
+												try:
+													if int(verifiedcoins) == 1:
+														if int(coins) == 0:
+															coinsvalue = f"{none}"
+														elif int(coins) == 1:
+															coinsvalue = "<:user_coin:472908993711308800>"
+														elif int(coins) == 2:
+															coinsvalue = "<:user_coin:472908993711308800> <:user_coin:472908993711308800>"
+														elif int(coins) == 3:
+															coinsvalue = "<:user_coin:472908993711308800> <:user_coin:472908993711308800> <:user_coin:472908993711308800>"
+												except ValueError:
+													pass
+
+												embed13.add_field(name=f'{coinstitle}: {coinsvalue}', value=f"<:downloads:472907713727430658> `{downloads}`\n{likesemote} `{likes}`\n<:length:472908680459976704> `{lengthvalue}`\n", inline=False)
+
+												#reqsearch2(level)
+												try:
+													songname,songauthor,songid,sizesong,songlink,officialsong = reqsearch2(level)
+												except ValueError:
+													songname,songauthor,songid,sizesong,songlink = reqsearch2(level)
+
+												songlink2 = unquote(f"{songlink}")
+												try:
+													officialsong2 = int(officialsong)
+												except UnboundLocalError:
+													embed13.add_field(name=f':musical_note:  __{songname}__ {by} {songauthor}', value=f"SongID: {songid} - {sizetitle}: {sizesong}MB\n<:play:472908887859789835> [{newgroundsplay}](https://newgrounds.com/audio/load/{songid}) <:download_song:472907696685711370> [{downloadsong}]({songlink2})", inline=False)
+												else:
+													embed13.add_field(name=f':musical_note: :white_check_mark:   __**{songname}**__ {by} {songauthor}', value=f"SongID: {songid} - {sizetitle}: {sizesong}MB\n<:play:472908887859789835> [{newgroundsplay}](https://newgrounds.com/audio/load/{songid}) <:download_song:472907696685711370> [{youtubelink}]({songlink2})", inline=False)
+												
+												await channelmod.send(f"<@{user1}>",embed=embed13)
+												if message.attachments:
+													fileimage = message.attachments[0]
+													imageurl = fileimage.url
+													for ext in pic_ext:
+														if imageurl.endswith(ext):
+															embed14 = discord.Embed(title=f'Screenshot', color=0x00ff00)
+															embed14.set_image(url=f"{imageurl}")
+															await channelmod.send(embed=embed14)
+
+											cursor.execute(f'SELECT levelsentbygdmod FROM users WHERE userid = {user1}')
+											yesvalue = cursor.fetchone()[0]
+											if yesvalue == "yes":
+												pass
+											elif yesvalue == "no":
+												cursor.execute(f'UPDATE users SET levelsentbygdmod = "yes" WHERE userid = {user1}')
+												conn.commit()
+												levelsentbygdmod(user1)
+												embed5 = levelsentbygdmod(user1)
+												username = client.get_user(int(user1))
+												channel = await username.create_dm()
+												try:
+													await channel.send(embed=embed5)
+												except discord.errors.Forbidden:
+													pass
+													
+											cursor.execute(f"SELECT messageid FROM levels WHERE server = {serverid} AND levelid = {level}")
+											messages = cursor.fetchall()
+											for row in messages:
+												try:
+													msg101 = await message.channel.fetch_message(int(row[0]))
+												except:
+													msg101 = None
+												else:
+													try:
+														await msg101.delete()
+													except TypeError:
+														pass
+											return
+										elif star == "4":
+											await msg.delete()
+											papa = cursor.execute(f"SELECT moderatorname FROM GDmoderators WHERE userid = {author} LIMIT 1")
+											gdmodname = cursor.fetchone()[0]
+											embed3 = discord.Embed(title=f'{successtitlerequester}', color=0x00ff00)
+											embed3.set_thumbnail(url="https://cdn.discordapp.com/emojis/472908272781754369.png?v=1")
+											embed3.add_field(name=f'{thelevelyourequested} `{level}` (**{levelname}** {byrequester} **{creator}**) {sendtorobtop} {gdmodname} {fortext} **HARD 4<:starrate:718204629858517003> FEATURED**', value='\u200b')
+											if message.attachments:
+												fileimage = message.attachments[0]
+												imageurl = fileimage.url
+												for ext in pic_ext:
+													if imageurl.endswith(ext):
+														embed3.set_image(url=f"{imageurl}")
+											channel = await username.create_dm()
+											try:
+												await channel.send(embed=embed3)
+											except discord.errors.Forbidden:
+												pass
+											nani = cursor.execute(f"SELECT requester FROM levels WHERE levelid = %s AND server = %s LIMIT 1", (level, serverid))
+											user1 = cursor.fetchone()[0]
+											username = client.get_user(int(user1))
+											embed4 = discord.Embed(title=f'{successtitle}', color=0x00ff00)
+											embed4.add_field(name=f'{thelevel} `{level}` (**{levelname}** {by} **{creator}**) {successsend} **HARD 4<:starrate:718204629858517003> FEATURED** !', value='\u200b')
+											await message.channel.send(embed=embed4)
+											delete = cursor.execute(f"DELETE FROM levels WHERE levelid = %s and server = %s", (level, serverid))
+											conn.commit()
+											
+											cursor.execute(f"SELECT GDModCheckedChannel FROM setup WHERE serverid = {serverid} LIMIT 1")
+											try:
+												gdmodcheckedchannel = cursor.fetchone()[0]
+											except TypeError:
+												gdmodcheckedchannel = None
+											if gdmodcheckedchannel is not None:
+												channelmod = client.get_channel(int(gdmodcheckedchannel))
+														
+												#reqsearch(level)
+												stars,objectplus,levelname,creator,ratingemote,stars,downloads,likes,likesemote,description,coins,verifiedcoins,lengthvalue,idlevel,version,gdversion,color = reqsearch(level)
+												
+												embed13 = discord.Embed(title=f'`{level}` (**{levelname}** {by} **{creator}**)', color=0x00ff00)
+												embed13.add_field(name=f"{sendfor} HARD 4<:starrate:718204629858517003> FEATURED** ! <:success:472908961176092702>", value="\u200b")
+												embed13.set_thumbnail(url=f"https://cdn.discordapp.com/emojis/472908272781754369.png?v=1")
+		
+												description += '=' * (-len(description) % 4)
+												base64_bytes = description.encode('ascii')
+												print(base64_bytes)
+												message_bytes = base64.urlsafe_b64decode(base64_bytes)
+												descbase64 = message_bytes.decode('ascii')
+
+												if int(objectplus) >= 40000:
+													embed13.add_field(name=f'<:play:472908887859789835> __{levelname}__ {by} {creator} <:object_overflow:472908865953071115>', value=f"{desc} {descbase64}", inline=False)
+												elif int(objectplus) <= 39999:
+													embed13.add_field(name=f'<:play:472908887859789835> __{levelname}__ {by} {creator}', value=f"{desc} {descbase64}", inline=False)
+
+												if int(coins) == 0:
+													coinsvalue = f"{none}"
+												elif int(coins) == 1:
+													coinsvalue = "<:user_coin_unverified:472908993832943631>"
+												elif int(coins) == 2:
+													coinsvalue = "<:user_coin_unverified:472908993832943631> <:user_coin_unverified:472908993832943631>"
+												elif int(coins) == 3:
+													coinsvalue = "<:user_coin_unverified:472908993832943631> <:user_coin_unverified:472908993832943631> <:user_coin_unverified:472908993832943631>"
+
+												try:
+													if int(verifiedcoins) == 1:
+														if int(coins) == 0:
+															coinsvalue = f"{none}"
+														elif int(coins) == 1:
+															coinsvalue = "<:user_coin:472908993711308800>"
+														elif int(coins) == 2:
+															coinsvalue = "<:user_coin:472908993711308800> <:user_coin:472908993711308800>"
+														elif int(coins) == 3:
+															coinsvalue = "<:user_coin:472908993711308800> <:user_coin:472908993711308800> <:user_coin:472908993711308800>"
+												except ValueError:
+													pass
+
+												embed13.add_field(name=f'{coinstitle}: {coinsvalue}', value=f"<:downloads:472907713727430658> `{downloads}`\n{likesemote} `{likes}`\n<:length:472908680459976704> `{lengthvalue}`\n", inline=False)
+
+												#reqsearch2(level)
+												try:
+													songname,songauthor,songid,sizesong,songlink,officialsong = reqsearch2(level)
+												except ValueError:
+													songname,songauthor,songid,sizesong,songlink = reqsearch2(level)
+
+												songlink2 = unquote(f"{songlink}")
+												try:
+													officialsong2 = int(officialsong)
+												except UnboundLocalError:
+													embed13.add_field(name=f':musical_note:  __{songname}__ {by} {songauthor}', value=f"SongID: {songid} - {sizetitle}: {sizesong}MB\n<:play:472908887859789835> [{newgroundsplay}](https://newgrounds.com/audio/load/{songid}) <:download_song:472907696685711370> [{downloadsong}]({songlink2})", inline=False)
+												else:
+													embed13.add_field(name=f':musical_note: :white_check_mark:   __**{songname}**__ {by} {songauthor}', value=f"SongID: {songid} - {sizetitle}: {sizesong}MB\n<:play:472908887859789835> [{newgroundsplay}](https://newgrounds.com/audio/load/{songid}) <:download_song:472907696685711370> [{youtubelink}]({songlink2})", inline=False)
+												
+												await channelmod.send(f"<@{user1}>",embed=embed13)
+												if message.attachments:
+													fileimage = message.attachments[0]
+													imageurl = fileimage.url
+													for ext in pic_ext:
+														if imageurl.endswith(ext):
+															embed14 = discord.Embed(title=f'Screenshot', color=0x00ff00)
+															embed14.set_image(url=f"{imageurl}")
+															await channelmod.send(embed=embed14)
+
+											cursor.execute(f'SELECT levelsentbygdmod FROM users WHERE userid = {user1}')
+											yesvalue = cursor.fetchone()[0]
+											if yesvalue == "yes":
+												pass
+											elif yesvalue == "no":
+												cursor.execute(f'UPDATE users SET levelsentbygdmod = "yes" WHERE userid = {user1}')
+												conn.commit()
+												levelsentbygdmod(user1)
+												embed5 = levelsentbygdmod(user1)
+												username = client.get_user(int(user1))
+												channel = await username.create_dm()
+												try:
+													await channel.send(embed=embed5)
+												except discord.errors.Forbidden:
+													pass
+													
+											cursor.execute(f"SELECT messageid FROM levels WHERE server = {serverid} AND levelid = {level}")
+											messages = cursor.fetchall()
+											for row in messages:
+												try:
+													msg101 = await message.channel.fetch_message(int(row[0]))
+												except:
+													msg101 = None
+												else:
+													try:
+														await msg101.delete()
+													except TypeError:
+														pass
+											return
+										elif star == "5":
+											await msg.delete()
+											papa = cursor.execute(f"SELECT moderatorname FROM GDmoderators WHERE userid = {author} LIMIT 1")
+											gdmodname = cursor.fetchone()[0]
+											embed3 = discord.Embed(title=f'{successtitlerequester}', color=0x00ff00)
+											embed3.set_thumbnail(url="https://cdn.discordapp.com/emojis/472908272781754369.png?v=1")
+											embed3.add_field(name=f'{thelevelyourequested} `{level}` (**{levelname}** {byrequester} **{creator}**) {sendtorobtop} {gdmodname} {fortext} **HARD 5<:starrate:718204629858517003> FEATURED**', value='\u200b')
+											if message.attachments:
+												fileimage = message.attachments[0]
+												imageurl = fileimage.url
+												for ext in pic_ext:
+													if imageurl.endswith(ext):
+														embed3.set_image(url=f"{imageurl}")
+											channel = await username.create_dm()
+											try:
+												await channel.send(embed=embed3)
+											except discord.errors.Forbidden:
+												pass
+											nani = cursor.execute(f"SELECT requester FROM levels WHERE levelid = %s AND server = %s LIMIT 1", (level, serverid))
+											user1 = cursor.fetchone()[0]
+											username = client.get_user(int(user1))
+											embed4 = discord.Embed(title=f'{successtitle}', color=0x00ff00)
+											embed4.add_field(name=f'{thelevel} `{level}` (**{levelname}** {by} **{creator}**) {successsend} **HARD 5<:starrate:718204629858517003> FEATURED** !', value='\u200b')
+											await message.channel.send(embed=embed4)
+											delete = cursor.execute(f"DELETE FROM levels WHERE levelid = %s and server = %s", (level, serverid))
+											conn.commit()
+											
+											cursor.execute(f"SELECT GDModCheckedChannel FROM setup WHERE serverid = {serverid} LIMIT 1")
+											try:
+												gdmodcheckedchannel = cursor.fetchone()[0]
+											except TypeError:
+												gdmodcheckedchannel = None
+											if gdmodcheckedchannel is not None:
+												channelmod = client.get_channel(int(gdmodcheckedchannel))
+														
+												#reqsearch(level)
+												stars,objectplus,levelname,creator,ratingemote,stars,downloads,likes,likesemote,description,coins,verifiedcoins,lengthvalue,idlevel,version,gdversion,color = reqsearch(level)
+												
+												embed13 = discord.Embed(title=f'`{level}` (**{levelname}** {by} **{creator}**)', color=0x00ff00)
+												embed13.add_field(name=f"{sendfor} HARD 5<:starrate:718204629858517003> FEATURED** ! <:success:472908961176092702>", value="\u200b")
+												embed13.set_thumbnail(url=f"https://cdn.discordapp.com/emojis/472908272781754369.png?v=1")
+		
+												description += '=' * (-len(description) % 4)
+												base64_bytes = description.encode('ascii')
+												print(base64_bytes)
+												message_bytes = base64.urlsafe_b64decode(base64_bytes)
+												descbase64 = message_bytes.decode('ascii')
+
+												if int(objectplus) >= 40000:
+													embed13.add_field(name=f'<:play:472908887859789835> __{levelname}__ {by} {creator} <:object_overflow:472908865953071115>', value=f"{desc} {descbase64}", inline=False)
+												elif int(objectplus) <= 39999:
+													embed13.add_field(name=f'<:play:472908887859789835> __{levelname}__ {by} {creator}', value=f"{desc} {descbase64}", inline=False)
+
+												if int(coins) == 0:
+													coinsvalue = f"{none}"
+												elif int(coins) == 1:
+													coinsvalue = "<:user_coin_unverified:472908993832943631>"
+												elif int(coins) == 2:
+													coinsvalue = "<:user_coin_unverified:472908993832943631> <:user_coin_unverified:472908993832943631>"
+												elif int(coins) == 3:
+													coinsvalue = "<:user_coin_unverified:472908993832943631> <:user_coin_unverified:472908993832943631> <:user_coin_unverified:472908993832943631>"
+
+												try:
+													if int(verifiedcoins) == 1:
+														if int(coins) == 0:
+															coinsvalue = f"{none}"
+														elif int(coins) == 1:
+															coinsvalue = "<:user_coin:472908993711308800>"
+														elif int(coins) == 2:
+															coinsvalue = "<:user_coin:472908993711308800> <:user_coin:472908993711308800>"
+														elif int(coins) == 3:
+															coinsvalue = "<:user_coin:472908993711308800> <:user_coin:472908993711308800> <:user_coin:472908993711308800>"
+												except ValueError:
+													pass
+
+												embed13.add_field(name=f'{coinstitle}: {coinsvalue}', value=f"<:downloads:472907713727430658> `{downloads}`\n{likesemote} `{likes}`\n<:length:472908680459976704> `{lengthvalue}`\n", inline=False)
+
+												#reqsearch2(level)
+												try:
+													songname,songauthor,songid,sizesong,songlink,officialsong = reqsearch2(level)
+												except ValueError:
+													songname,songauthor,songid,sizesong,songlink = reqsearch2(level)
+
+												songlink2 = unquote(f"{songlink}")
+												try:
+													officialsong2 = int(officialsong)
+												except UnboundLocalError:
+													embed13.add_field(name=f':musical_note:  __{songname}__ {by} {songauthor}', value=f"SongID: {songid} - {sizetitle}: {sizesong}MB\n<:play:472908887859789835> [{newgroundsplay}](https://newgrounds.com/audio/load/{songid}) <:download_song:472907696685711370> [{downloadsong}]({songlink2})", inline=False)
+												else:
+													embed13.add_field(name=f':musical_note: :white_check_mark:   __**{songname}**__ {by} {songauthor}', value=f"SongID: {songid} - {sizetitle}: {sizesong}MB\n<:play:472908887859789835> [{newgroundsplay}](https://newgrounds.com/audio/load/{songid}) <:download_song:472907696685711370> [{youtubelink}]({songlink2})", inline=False)
+												
+												await channelmod.send(f"<@{user1}>",embed=embed13)
+												if message.attachments:
+													fileimage = message.attachments[0]
+													imageurl = fileimage.url
+													for ext in pic_ext:
+														if imageurl.endswith(ext):
+															embed14 = discord.Embed(title=f'Screenshot', color=0x00ff00)
+															embed14.set_image(url=f"{imageurl}")
+															await channelmod.send(embed=embed14)
+
+											cursor.execute(f'SELECT levelsentbygdmod FROM users WHERE userid = {user1}')
+											yesvalue = cursor.fetchone()[0]
+											if yesvalue == "yes":
+												pass
+											elif yesvalue == "no":
+												cursor.execute(f'UPDATE users SET levelsentbygdmod = "yes" WHERE userid = {user1}')
+												conn.commit()
+												levelsentbygdmod(user1)
+												embed5 = levelsentbygdmod(user1)
+												username = client.get_user(int(user1))
+												channel = await username.create_dm()
+												try:
+													await channel.send(embed=embed5)
+												except discord.errors.Forbidden:
+													pass
+													
+											cursor.execute(f"SELECT messageid FROM levels WHERE server = {serverid} AND levelid = {level}")
+											messages = cursor.fetchall()
+											for row in messages:
+												try:
+													msg101 = await message.channel.fetch_message(int(row[0]))
+												except:
+													msg101 = None
+												else:
+													try:
+														await msg101.delete()
+													except TypeError:
+														pass
+											return
+										elif star == "6":
+											await msg.delete()
+											papa = cursor.execute(f"SELECT moderatorname FROM GDmoderators WHERE userid = {author} LIMIT 1")
+											gdmodname = cursor.fetchone()[0]
+											embed3 = discord.Embed(title=f'{successtitlerequester}', color=0x00ff00)
+											embed3.set_thumbnail(url="https://cdn.discordapp.com/emojis/472908356928143370.png?v=1")
+											embed3.add_field(name=f'{thelevelyourequested} `{level}` (**{levelname}** {byrequester} **{creator}**) {sendtorobtop} {gdmodname} {fortext} **HARDER 6<:starrate:718204629858517003> FEATURED**', value='\u200b')
+											if message.attachments:
+												fileimage = message.attachments[0]
+												imageurl = fileimage.url
+												for ext in pic_ext:
+													if imageurl.endswith(ext):
+														embed3.set_image(url=f"{imageurl}")
+											channel = await username.create_dm()
+											try:
+												await channel.send(embed=embed3)
+											except discord.errors.Forbidden:
+												pass
+											nani = cursor.execute(f"SELECT requester FROM levels WHERE levelid = %s AND server = %s LIMIT 1", (level, serverid))
+											user1 = cursor.fetchone()[0]
+											username = client.get_user(int(user1))
+											embed4 = discord.Embed(title=f'{successtitle}', color=0x00ff00)
+											embed4.add_field(name=f'{thelevel} `{level}` (**{levelname}** {by} **{creator}**) {successsend} **HARDER 6<:starrate:718204629858517003> FEATURED** !', value='\u200b')
+											await message.channel.send(embed=embed4)
+											delete = cursor.execute(f"DELETE FROM levels WHERE levelid = %s and server = %s", (level, serverid))
+											conn.commit()
+											
+											cursor.execute(f"SELECT GDModCheckedChannel FROM setup WHERE serverid = {serverid} LIMIT 1")
+											try:
+												gdmodcheckedchannel = cursor.fetchone()[0]
+											except TypeError:
+												gdmodcheckedchannel = None
+											if gdmodcheckedchannel is not None:
+												channelmod = client.get_channel(int(gdmodcheckedchannel))
+														
+												#reqsearch(level)
+												stars,objectplus,levelname,creator,ratingemote,stars,downloads,likes,likesemote,description,coins,verifiedcoins,lengthvalue,idlevel,version,gdversion,color = reqsearch(level)
+												
+												embed13 = discord.Embed(title=f'`{level}` (**{levelname}** {by} **{creator}**)', color=0x00ff00)
+												embed13.add_field(name=f"{sendfor} HARDER 6<:starrate:718204629858517003> FEATURED** ! <:success:472908961176092702>", value="\u200b")
+												embed13.set_thumbnail(url=f"https://cdn.discordapp.com/emojis/472908356928143370.png?v=1")
+		
+												description += '=' * (-len(description) % 4)
+												base64_bytes = description.encode('ascii')
+												print(base64_bytes)
+												message_bytes = base64.urlsafe_b64decode(base64_bytes)
+												descbase64 = message_bytes.decode('ascii')
+
+												if int(objectplus) >= 40000:
+													embed13.add_field(name=f'<:play:472908887859789835> __{levelname}__ {by} {creator} <:object_overflow:472908865953071115>', value=f"{desc} {descbase64}", inline=False)
+												elif int(objectplus) <= 39999:
+													embed13.add_field(name=f'<:play:472908887859789835> __{levelname}__ {by} {creator}', value=f"{desc} {descbase64}", inline=False)
+
+												if int(coins) == 0:
+													coinsvalue = f"{none}"
+												elif int(coins) == 1:
+													coinsvalue = "<:user_coin_unverified:472908993832943631>"
+												elif int(coins) == 2:
+													coinsvalue = "<:user_coin_unverified:472908993832943631> <:user_coin_unverified:472908993832943631>"
+												elif int(coins) == 3:
+													coinsvalue = "<:user_coin_unverified:472908993832943631> <:user_coin_unverified:472908993832943631> <:user_coin_unverified:472908993832943631>"
+
+												try:
+													if int(verifiedcoins) == 1:
+														if int(coins) == 0:
+															coinsvalue = f"{none}"
+														elif int(coins) == 1:
+															coinsvalue = "<:user_coin:472908993711308800>"
+														elif int(coins) == 2:
+															coinsvalue = "<:user_coin:472908993711308800> <:user_coin:472908993711308800>"
+														elif int(coins) == 3:
+															coinsvalue = "<:user_coin:472908993711308800> <:user_coin:472908993711308800> <:user_coin:472908993711308800>"
+												except ValueError:
+													pass
+
+												embed13.add_field(name=f'{coinstitle}: {coinsvalue}', value=f"<:downloads:472907713727430658> `{downloads}`\n{likesemote} `{likes}`\n<:length:472908680459976704> `{lengthvalue}`\n", inline=False)
+
+												#reqsearch2(level)
+												try:
+													songname,songauthor,songid,sizesong,songlink,officialsong = reqsearch2(level)
+												except ValueError:
+													songname,songauthor,songid,sizesong,songlink = reqsearch2(level)
+
+												songlink2 = unquote(f"{songlink}")
+												try:
+													officialsong2 = int(officialsong)
+												except UnboundLocalError:
+													embed13.add_field(name=f':musical_note:  __{songname}__ {by} {songauthor}', value=f"SongID: {songid} - {sizetitle}: {sizesong}MB\n<:play:472908887859789835> [{newgroundsplay}](https://newgrounds.com/audio/load/{songid}) <:download_song:472907696685711370> [{downloadsong}]({songlink2})", inline=False)
+												else:
+													embed13.add_field(name=f':musical_note: :white_check_mark:   __**{songname}**__ {by} {songauthor}', value=f"SongID: {songid} - {sizetitle}: {sizesong}MB\n<:play:472908887859789835> [{newgroundsplay}](https://newgrounds.com/audio/load/{songid}) <:download_song:472907696685711370> [{youtubelink}]({songlink2})", inline=False)
+												
+												await channelmod.send(f"<@{user1}>",embed=embed13)
+												if message.attachments:
+													fileimage = message.attachments[0]
+													imageurl = fileimage.url
+													for ext in pic_ext:
+														if imageurl.endswith(ext):
+															embed14 = discord.Embed(title=f'Screenshot', color=0x00ff00)
+															embed14.set_image(url=f"{imageurl}")
+															await channelmod.send(embed=embed14)
+
+											cursor.execute(f'SELECT levelsentbygdmod FROM users WHERE userid = {user1}')
+											yesvalue = cursor.fetchone()[0]
+											if yesvalue == "yes":
+												pass
+											elif yesvalue == "no":
+												cursor.execute(f'UPDATE users SET levelsentbygdmod = "yes" WHERE userid = {user1}')
+												conn.commit()
+												levelsentbygdmod(user1)
+												embed5 = levelsentbygdmod(user1)
+												username = client.get_user(int(user1))
+												channel = await username.create_dm()
+												try:
+													await channel.send(embed=embed5)
+												except discord.errors.Forbidden:
+													pass
+													
+											cursor.execute(f"SELECT messageid FROM levels WHERE server = {serverid} AND levelid = {level}")
+											messages = cursor.fetchall()
+											for row in messages:
+												try:
+													msg101 = await message.channel.fetch_message(int(row[0]))
+												except:
+													msg101 = None
+												else:
+													try:
+														await msg101.delete()
+													except TypeError:
+														pass
+											return
+										elif star == "7":
+											await msg.delete()
+											papa = cursor.execute(f"SELECT moderatorname FROM GDmoderators WHERE userid = {author} LIMIT 1")
+											gdmodname = cursor.fetchone()[0]
+											embed3 = discord.Embed(title=f'{successtitlerequester}', color=0x00ff00)
+											embed3.set_thumbnail(url="https://cdn.discordapp.com/emojis/472908356928143370.png?v=1")
+											embed3.add_field(name=f'{thelevelyourequested} `{level}` (**{levelname}** {byrequester} **{creator}**) {sendtorobtop} {gdmodname} {fortext} **HARDER 7<:starrate:718204629858517003> FEATURED**', value='\u200b')
+											if message.attachments:
+												fileimage = message.attachments[0]
+												imageurl = fileimage.url
+												for ext in pic_ext:
+													if imageurl.endswith(ext):
+														embed3.set_image(url=f"{imageurl}")
+											channel = await username.create_dm()
+											try:
+												await channel.send(embed=embed3)
+											except discord.errors.Forbidden:
+												pass
+											nani = cursor.execute(f"SELECT requester FROM levels WHERE levelid = %s AND server = %s LIMIT 1", (level, serverid))
+											user1 = cursor.fetchone()[0]
+											username = client.get_user(int(user1))
+											embed4 = discord.Embed(title=f'{successtitle}', color=0x00ff00)
+											embed4.add_field(name=f'{thelevel} `{level}` (**{levelname}** {by} **{creator}**) {successsend} **HARDER 7<:starrate:718204629858517003> FEATURED** !', value='\u200b')
+											await message.channel.send(embed=embed4)
+											delete = cursor.execute(f"DELETE FROM levels WHERE levelid = %s and server = %s", (level, serverid))
+											conn.commit()
+											
+											cursor.execute(f"SELECT GDModCheckedChannel FROM setup WHERE serverid = {serverid} LIMIT 1")
+											try:
+												gdmodcheckedchannel = cursor.fetchone()[0]
+											except TypeError:
+												gdmodcheckedchannel = None
+											if gdmodcheckedchannel is not None:
+												channelmod = client.get_channel(int(gdmodcheckedchannel))
+														
+												#reqsearch(level)
+												stars,objectplus,levelname,creator,ratingemote,stars,downloads,likes,likesemote,description,coins,verifiedcoins,lengthvalue,idlevel,version,gdversion,color = reqsearch(level)
+												
+												embed13 = discord.Embed(title=f'`{level}` (**{levelname}** {by} **{creator}**)', color=0x00ff00)
+												embed13.add_field(name=f"{sendfor} HARDER 7<:starrate:718204629858517003> FEATURED** ! <:success:472908961176092702>", value="\u200b")
+												embed13.set_thumbnail(url=f"https://cdn.discordapp.com/emojis/472908356928143370.png?v=1")
+		
+												description += '=' * (-len(description) % 4)
+												base64_bytes = description.encode('ascii')
+												print(base64_bytes)
+												message_bytes = base64.urlsafe_b64decode(base64_bytes)
+												descbase64 = message_bytes.decode('ascii')
+
+												if int(objectplus) >= 40000:
+													embed13.add_field(name=f'<:play:472908887859789835> __{levelname}__ {by} {creator} <:object_overflow:472908865953071115>', value=f"{desc} {descbase64}", inline=False)
+												elif int(objectplus) <= 39999:
+													embed13.add_field(name=f'<:play:472908887859789835> __{levelname}__ {by} {creator}', value=f"{desc} {descbase64}", inline=False)
+
+												if int(coins) == 0:
+													coinsvalue = f"{none}"
+												elif int(coins) == 1:
+													coinsvalue = "<:user_coin_unverified:472908993832943631>"
+												elif int(coins) == 2:
+													coinsvalue = "<:user_coin_unverified:472908993832943631> <:user_coin_unverified:472908993832943631>"
+												elif int(coins) == 3:
+													coinsvalue = "<:user_coin_unverified:472908993832943631> <:user_coin_unverified:472908993832943631> <:user_coin_unverified:472908993832943631>"
+
+												try:
+													if int(verifiedcoins) == 1:
+														if int(coins) == 0:
+															coinsvalue = f"{none}"
+														elif int(coins) == 1:
+															coinsvalue = "<:user_coin:472908993711308800>"
+														elif int(coins) == 2:
+															coinsvalue = "<:user_coin:472908993711308800> <:user_coin:472908993711308800>"
+														elif int(coins) == 3:
+															coinsvalue = "<:user_coin:472908993711308800> <:user_coin:472908993711308800> <:user_coin:472908993711308800>"
+												except ValueError:
+													pass
+
+												embed13.add_field(name=f'{coinstitle}: {coinsvalue}', value=f"<:downloads:472907713727430658> `{downloads}`\n{likesemote} `{likes}`\n<:length:472908680459976704> `{lengthvalue}`\n", inline=False)
+
+												#reqsearch2(level)
+												try:
+													songname,songauthor,songid,sizesong,songlink,officialsong = reqsearch2(level)
+												except ValueError:
+													songname,songauthor,songid,sizesong,songlink = reqsearch2(level)
+
+												songlink2 = unquote(f"{songlink}")
+												try:
+													officialsong2 = int(officialsong)
+												except UnboundLocalError:
+													embed13.add_field(name=f':musical_note:  __{songname}__ {by} {songauthor}', value=f"SongID: {songid} - {sizetitle}: {sizesong}MB\n<:play:472908887859789835> [{newgroundsplay}](https://newgrounds.com/audio/load/{songid}) <:download_song:472907696685711370> [{downloadsong}]({songlink2})", inline=False)
+												else:
+													embed13.add_field(name=f':musical_note: :white_check_mark:   __**{songname}**__ {by} {songauthor}', value=f"SongID: {songid} - {sizetitle}: {sizesong}MB\n<:play:472908887859789835> [{newgroundsplay}](https://newgrounds.com/audio/load/{songid}) <:download_song:472907696685711370> [{youtubelink}]({songlink2})", inline=False)
+												
+												await channelmod.send(f"<@{user1}>",embed=embed13)
+												if message.attachments:
+													fileimage = message.attachments[0]
+													imageurl = fileimage.url
+													for ext in pic_ext:
+														if imageurl.endswith(ext):
+															embed14 = discord.Embed(title=f'Screenshot', color=0x00ff00)
+															embed14.set_image(url=f"{imageurl}")
+															await channelmod.send(embed=embed14)
+
+											cursor.execute(f'SELECT levelsentbygdmod FROM users WHERE userid = {user1}')
+											yesvalue = cursor.fetchone()[0]
+											if yesvalue == "yes":
+												pass
+											elif yesvalue == "no":
+												cursor.execute(f'UPDATE users SET levelsentbygdmod = "yes" WHERE userid = {user1}')
+												conn.commit()
+												levelsentbygdmod(user1)
+												embed5 = levelsentbygdmod(user1)
+												username = client.get_user(int(user1))
+												channel = await username.create_dm()
+												try:
+													await channel.send(embed=embed5)
+												except discord.errors.Forbidden:
+													pass
+													
+											cursor.execute(f"SELECT messageid FROM levels WHERE server = {serverid} AND levelid = {level}")
+											messages = cursor.fetchall()
+											for row in messages:
+												try:
+													msg101 = await message.channel.fetch_message(int(row[0]))
+												except:
+													msg101 = None
+												else:
+													try:
+														await msg101.delete()
+													except TypeError:
+														pass
+											return
+										elif star == "8":
+											await msg.delete()
+											papa = cursor.execute(f"SELECT moderatorname FROM GDmoderators WHERE userid = {author} LIMIT 1")
+											gdmodname = cursor.fetchone()[0]
+											embed3 = discord.Embed(title=f'{successtitlerequester}', color=0x00ff00)
+											embed3.set_thumbnail(url="https://cdn.discordapp.com/emojis/472908439958323211.png?v=1")
+											embed3.add_field(name=f'{thelevelyourequested} `{level}` (**{levelname}** {byrequester} **{creator}**) {sendtorobtop} {gdmodname} {fortext} **INSANE 8<:starrate:718204629858517003> FEATURED**', value='\u200b')
+											if message.attachments:
+												fileimage = message.attachments[0]
+												imageurl = fileimage.url
+												for ext in pic_ext:
+													if imageurl.endswith(ext):
+														embed3.set_image(url=f"{imageurl}")
+											channel = await username.create_dm()
+											try:
+												await channel.send(embed=embed3)
+											except discord.errors.Forbidden:
+												pass
+											nani = cursor.execute(f"SELECT requester FROM levels WHERE levelid = %s AND server = %s LIMIT 1", (level, serverid))
+											user1 = cursor.fetchone()[0]
+											username = client.get_user(int(user1))
+											embed4 = discord.Embed(title=f'{successtitle}', color=0x00ff00)
+											embed4.add_field(name=f'{thelevel} `{level}` (**{levelname}** {by} **{creator}**) {successsend} **INSANE 8<:starrate:718204629858517003> FEATURED** !', value='\u200b')
+											await message.channel.send(embed=embed4)
+											delete = cursor.execute(f"DELETE FROM levels WHERE levelid = %s and server = %s", (level, serverid))
+											conn.commit()
+											
+											cursor.execute(f"SELECT GDModCheckedChannel FROM setup WHERE serverid = {serverid} LIMIT 1")
+											try:
+												gdmodcheckedchannel = cursor.fetchone()[0]
+											except TypeError:
+												gdmodcheckedchannel = None
+											if gdmodcheckedchannel is not None:
+												channelmod = client.get_channel(int(gdmodcheckedchannel))
+														
+												#reqsearch(level)
+												stars,objectplus,levelname,creator,ratingemote,stars,downloads,likes,likesemote,description,coins,verifiedcoins,lengthvalue,idlevel,version,gdversion,color = reqsearch(level)
+												
+												embed13 = discord.Embed(title=f'`{level}` (**{levelname}** {by} **{creator}**)', color=0x00ff00)
+												embed13.add_field(name=f"{sendfor} INSANE 8<:starrate:718204629858517003> FEATURED** ! <:success:472908961176092702>", value="\u200b")
+												embed13.set_thumbnail(url=f"https://cdn.discordapp.com/emojis/472908439958323211.png?v=1")
+		
+												description += '=' * (-len(description) % 4)
+												base64_bytes = description.encode('ascii')
+												print(base64_bytes)
+												message_bytes = base64.urlsafe_b64decode(base64_bytes)
+												descbase64 = message_bytes.decode('ascii')
+
+												if int(objectplus) >= 40000:
+													embed13.add_field(name=f'<:play:472908887859789835> __{levelname}__ {by} {creator} <:object_overflow:472908865953071115>', value=f"{desc} {descbase64}", inline=False)
+												elif int(objectplus) <= 39999:
+													embed13.add_field(name=f'<:play:472908887859789835> __{levelname}__ {by} {creator}', value=f"{desc} {descbase64}", inline=False)
+
+												if int(coins) == 0:
+													coinsvalue = f"{none}"
+												elif int(coins) == 1:
+													coinsvalue = "<:user_coin_unverified:472908993832943631>"
+												elif int(coins) == 2:
+													coinsvalue = "<:user_coin_unverified:472908993832943631> <:user_coin_unverified:472908993832943631>"
+												elif int(coins) == 3:
+													coinsvalue = "<:user_coin_unverified:472908993832943631> <:user_coin_unverified:472908993832943631> <:user_coin_unverified:472908993832943631>"
+
+												try:
+													if int(verifiedcoins) == 1:
+														if int(coins) == 0:
+															coinsvalue = f"{none}"
+														elif int(coins) == 1:
+															coinsvalue = "<:user_coin:472908993711308800>"
+														elif int(coins) == 2:
+															coinsvalue = "<:user_coin:472908993711308800> <:user_coin:472908993711308800>"
+														elif int(coins) == 3:
+															coinsvalue = "<:user_coin:472908993711308800> <:user_coin:472908993711308800> <:user_coin:472908993711308800>"
+												except ValueError:
+													pass
+
+												embed13.add_field(name=f'{coinstitle}: {coinsvalue}', value=f"<:downloads:472907713727430658> `{downloads}`\n{likesemote} `{likes}`\n<:length:472908680459976704> `{lengthvalue}`\n", inline=False)
+
+												#reqsearch2(level)
+												try:
+													songname,songauthor,songid,sizesong,songlink,officialsong = reqsearch2(level)
+												except ValueError:
+													songname,songauthor,songid,sizesong,songlink = reqsearch2(level)
+
+												songlink2 = unquote(f"{songlink}")
+												try:
+													officialsong2 = int(officialsong)
+												except UnboundLocalError:
+													embed13.add_field(name=f':musical_note:  __{songname}__ {by} {songauthor}', value=f"SongID: {songid} - {sizetitle}: {sizesong}MB\n<:play:472908887859789835> [{newgroundsplay}](https://newgrounds.com/audio/load/{songid}) <:download_song:472907696685711370> [{downloadsong}]({songlink2})", inline=False)
+												else:
+													embed13.add_field(name=f':musical_note: :white_check_mark:   __**{songname}**__ {by} {songauthor}', value=f"SongID: {songid} - {sizetitle}: {sizesong}MB\n<:play:472908887859789835> [{newgroundsplay}](https://newgrounds.com/audio/load/{songid}) <:download_song:472907696685711370> [{youtubelink}]({songlink2})", inline=False)
+												
+												await channelmod.send(f"<@{user1}>",embed=embed13)
+												if message.attachments:
+													fileimage = message.attachments[0]
+													imageurl = fileimage.url
+													for ext in pic_ext:
+														if imageurl.endswith(ext):
+															embed14 = discord.Embed(title=f'Screenshot', color=0x00ff00)
+															embed14.set_image(url=f"{imageurl}")
+															await channelmod.send(embed=embed14)
+
+											cursor.execute(f'SELECT levelsentbygdmod FROM users WHERE userid = {user1}')
+											yesvalue = cursor.fetchone()[0]
+											if yesvalue == "yes":
+												pass
+											elif yesvalue == "no":
+												cursor.execute(f'UPDATE users SET levelsentbygdmod = "yes" WHERE userid = {user1}')
+												conn.commit()
+												levelsentbygdmod(user1)
+												embed5 = levelsentbygdmod(user1)
+												username = client.get_user(int(user1))
+												channel = await username.create_dm()
+												try:
+													await channel.send(embed=embed5)
+												except discord.errors.Forbidden:
+													pass
+													
+											cursor.execute(f"SELECT messageid FROM levels WHERE server = {serverid} AND levelid = {level}")
+											messages = cursor.fetchall()
+											for row in messages:
+												try:
+													msg101 = await message.channel.fetch_message(int(row[0]))
+												except:
+													msg101 = None
+												else:
+													try:
+														await msg101.delete()
+													except TypeError:
+														pass
+											return
+										elif star == "9":
+											await msg.delete()
+											papa = cursor.execute(f"SELECT moderatorname FROM GDmoderators WHERE userid = {author} LIMIT 1")
+											gdmodname = cursor.fetchone()[0]
+											embed3 = discord.Embed(title=f'{successtitlerequester}', color=0x00ff00)
+											embed3.set_thumbnail(url="https://cdn.discordapp.com/emojis/472908439958323211.png?v=1")
+											embed3.add_field(name=f'{thelevelyourequested} `{level}` (**{levelname}** {byrequester} **{creator}**) {sendtorobtop} {gdmodname} {fortext} **INSANE 9<:starrate:718204629858517003> FEATURED**', value='\u200b')
+											if message.attachments:
+												fileimage = message.attachments[0]
+												imageurl = fileimage.url
+												for ext in pic_ext:
+													if imageurl.endswith(ext):
+														embed3.set_image(url=f"{imageurl}")
+											channel = await username.create_dm()
+											try:
+												await channel.send(embed=embed3)
+											except discord.errors.Forbidden:
+												pass
+											nani = cursor.execute(f"SELECT requester FROM levels WHERE levelid = %s AND server = %s LIMIT 1", (level, serverid))
+											user1 = cursor.fetchone()[0]
+											username = client.get_user(int(user1))
+											embed4 = discord.Embed(title=f'{successtitle}', color=0x00ff00)
+											embed4.add_field(name=f'{thelevel} `{level}` (**{levelname}** {by} **{creator}**) {successsend} **INSANE 9<:starrate:718204629858517003> FEATURED** !', value='\u200b')
+											await message.channel.send(embed=embed4)
+											delete = cursor.execute(f"DELETE FROM levels WHERE levelid = %s and server = %s", (level, serverid))
+											conn.commit()
+											
+											cursor.execute(f"SELECT GDModCheckedChannel FROM setup WHERE serverid = {serverid} LIMIT 1")
+											try:
+												gdmodcheckedchannel = cursor.fetchone()[0]
+											except TypeError:
+												gdmodcheckedchannel = None
+											if gdmodcheckedchannel is not None:
+												channelmod = client.get_channel(int(gdmodcheckedchannel))
+														
+												#reqsearch(level)
+												stars,objectplus,levelname,creator,ratingemote,stars,downloads,likes,likesemote,description,coins,verifiedcoins,lengthvalue,idlevel,version,gdversion,color = reqsearch(level)
+												
+												embed13 = discord.Embed(title=f'`{level}` (**{levelname}** {by} **{creator}**)', color=0x00ff00)
+												embed13.add_field(name=f"{sendfor} INSANE 9<:starrate:718204629858517003> FEATURED** ! <:success:472908961176092702>", value="\u200b")
+												embed13.set_thumbnail(url=f"https://cdn.discordapp.com/emojis/472908439958323211.png?v=1")
+		
+												description += '=' * (-len(description) % 4)
+												base64_bytes = description.encode('ascii')
+												print(base64_bytes)
+												message_bytes = base64.urlsafe_b64decode(base64_bytes)
+												descbase64 = message_bytes.decode('ascii')
+
+												if int(objectplus) >= 40000:
+													embed13.add_field(name=f'<:play:472908887859789835> __{levelname}__ {by} {creator} <:object_overflow:472908865953071115>', value=f"{desc} {descbase64}", inline=False)
+												elif int(objectplus) <= 39999:
+													embed13.add_field(name=f'<:play:472908887859789835> __{levelname}__ {by} {creator}', value=f"{desc} {descbase64}", inline=False)
+
+												if int(coins) == 0:
+													coinsvalue = f"{none}"
+												elif int(coins) == 1:
+													coinsvalue = "<:user_coin_unverified:472908993832943631>"
+												elif int(coins) == 2:
+													coinsvalue = "<:user_coin_unverified:472908993832943631> <:user_coin_unverified:472908993832943631>"
+												elif int(coins) == 3:
+													coinsvalue = "<:user_coin_unverified:472908993832943631> <:user_coin_unverified:472908993832943631> <:user_coin_unverified:472908993832943631>"
+
+												try:
+													if int(verifiedcoins) == 1:
+														if int(coins) == 0:
+															coinsvalue = f"{none}"
+														elif int(coins) == 1:
+															coinsvalue = "<:user_coin:472908993711308800>"
+														elif int(coins) == 2:
+															coinsvalue = "<:user_coin:472908993711308800> <:user_coin:472908993711308800>"
+														elif int(coins) == 3:
+															coinsvalue = "<:user_coin:472908993711308800> <:user_coin:472908993711308800> <:user_coin:472908993711308800>"
+												except ValueError:
+													pass
+
+												embed13.add_field(name=f'{coinstitle}: {coinsvalue}', value=f"<:downloads:472907713727430658> `{downloads}`\n{likesemote} `{likes}`\n<:length:472908680459976704> `{lengthvalue}`\n", inline=False)
+
+												#reqsearch2(level)
+												try:
+													songname,songauthor,songid,sizesong,songlink,officialsong = reqsearch2(level)
+												except ValueError:
+													songname,songauthor,songid,sizesong,songlink = reqsearch2(level)
+
+												songlink2 = unquote(f"{songlink}")
+												try:
+													officialsong2 = int(officialsong)
+												except UnboundLocalError:
+													embed13.add_field(name=f':musical_note:  __{songname}__ {by} {songauthor}', value=f"SongID: {songid} - {sizetitle}: {sizesong}MB\n<:play:472908887859789835> [{newgroundsplay}](https://newgrounds.com/audio/load/{songid}) <:download_song:472907696685711370> [{downloadsong}]({songlink2})", inline=False)
+												else:
+													embed13.add_field(name=f':musical_note: :white_check_mark:   __**{songname}**__ {by} {songauthor}', value=f"SongID: {songid} - {sizetitle}: {sizesong}MB\n<:play:472908887859789835> [{newgroundsplay}](https://newgrounds.com/audio/load/{songid}) <:download_song:472907696685711370> [{youtubelink}]({songlink2})", inline=False)
+												
+												await channelmod.send(f"<@{user1}>",embed=embed13)
+												if message.attachments:
+													fileimage = message.attachments[0]
+													imageurl = fileimage.url
+													for ext in pic_ext:
+														if imageurl.endswith(ext):
+															embed14 = discord.Embed(title=f'Screenshot', color=0x00ff00)
+															embed14.set_image(url=f"{imageurl}")
+															await channelmod.send(embed=embed14)
+
+											cursor.execute(f'SELECT levelsentbygdmod FROM users WHERE userid = {user1}')
+											yesvalue = cursor.fetchone()[0]
+											if yesvalue == "yes":
+												pass
+											elif yesvalue == "no":
+												cursor.execute(f'UPDATE users SET levelsentbygdmod = "yes" WHERE userid = {user1}')
+												conn.commit()
+												levelsentbygdmod(user1)
+												embed5 = levelsentbygdmod(user1)
+												username = client.get_user(int(user1))
+												channel = await username.create_dm()
+												try:
+													await channel.send(embed=embed5)
+												except discord.errors.Forbidden:
+													pass
+													
+											cursor.execute(f"SELECT messageid FROM levels WHERE server = {serverid} AND levelid = {level}")
+											messages = cursor.fetchall()
+											for row in messages:
+												try:
+													msg101 = await message.channel.fetch_message(int(row[0]))
+												except:
+													msg101 = None
+												else:
+													try:
+														await msg101.delete()
+													except TypeError:
+														pass
+											return
+										elif star == "10":
+											if demon == "1":
+												await msg.delete()
+												papa = cursor.execute(f"SELECT moderatorname FROM GDmoderators WHERE userid = {author} LIMIT 1")
+												gdmodname = cursor.fetchone()[0]
+												embed3 = discord.Embed(title=f'{successtitlerequester}', color=0x00ff00)
+												embed3.set_thumbnail(url="https://cdn.discordapp.com/emojis/472907878790070273.png?v=1")
+												embed3.add_field(name=f'{thelevelyourequested} `{level}` (**{levelname}** {byrequester} **{creator}**) {sendtorobtop} {gdmodname} {fortext} **EASY DEMON 10<:starrate:718204629858517003> FEATURED**', value='\u200b')
+												if message.attachments:
+													fileimage = message.attachments[0]
+													imageurl = fileimage.url
+													for ext in pic_ext:
+														if imageurl.endswith(ext):
+															embed3.set_image(url=f"{imageurl}")
+												channel = await username.create_dm()
+												try:
+													await channel.send(embed=embed3)
+												except discord.errors.Forbidden:
+													pass
+												nani = cursor.execute(f"SELECT requester FROM levels WHERE levelid = %s AND server = %s LIMIT 1", (level, serverid))
+												user1 = cursor.fetchone()[0]
+												username = client.get_user(int(user1))
+												embed4 = discord.Embed(title=f'{successtitle}', color=0x00ff00)
+												embed4.add_field(name=f'{thelevel} `{level}` (**{levelname}** {by} **{creator}**) {successsend} **EASY DEMON 10<:starrate:718204629858517003> FEATURED** !', value='\u200b')
+												await message.channel.send(embed=embed4)
+												delete = cursor.execute(f"DELETE FROM levels WHERE levelid = %s and server = %s", (level, serverid))
+												conn.commit()
+												
+												cursor.execute(f"SELECT GDModCheckedChannel FROM setup WHERE serverid = {serverid} LIMIT 1")
+												try:
+													gdmodcheckedchannel = cursor.fetchone()[0]
+												except TypeError:
+													gdmodcheckedchannel = None
+												if gdmodcheckedchannel is not None:
+													channelmod = client.get_channel(int(gdmodcheckedchannel))
+															
+													#reqsearch(level)
+													stars,objectplus,levelname,creator,ratingemote,stars,downloads,likes,likesemote,description,coins,verifiedcoins,lengthvalue,idlevel,version,gdversion,color = reqsearch(level)
+													
+													embed13 = discord.Embed(title=f'`{level}` (**{levelname}** {by} **{creator}**)', color=0x00ff00)
+													embed13.add_field(name=f"{sendfor} EASY DEMON 10<:starrate:718204629858517003> FEATURED** ! <:success:472908961176092702>", value="\u200b")
+													embed13.set_thumbnail(url=f"https://cdn.discordapp.com/emojis/472907878790070273.png?v=1")
+			
+													description += '=' * (-len(description) % 4)
+													base64_bytes = description.encode('ascii')
+													print(base64_bytes)
+													message_bytes = base64.urlsafe_b64decode(base64_bytes)
+													descbase64 = message_bytes.decode('ascii')
+
+													if int(objectplus) >= 40000:
+														embed13.add_field(name=f'<:play:472908887859789835> __{levelname}__ {by} {creator} <:object_overflow:472908865953071115>', value=f"{desc} {descbase64}", inline=False)
+													elif int(objectplus) <= 39999:
+														embed13.add_field(name=f'<:play:472908887859789835> __{levelname}__ {by} {creator}', value=f"{desc} {descbase64}", inline=False)
+
+													if int(coins) == 0:
+														coinsvalue = f"{none}"
+													elif int(coins) == 1:
+														coinsvalue = "<:user_coin_unverified:472908993832943631>"
+													elif int(coins) == 2:
+														coinsvalue = "<:user_coin_unverified:472908993832943631> <:user_coin_unverified:472908993832943631>"
+													elif int(coins) == 3:
+														coinsvalue = "<:user_coin_unverified:472908993832943631> <:user_coin_unverified:472908993832943631> <:user_coin_unverified:472908993832943631>"
+
+													try:
+														if int(verifiedcoins) == 1:
+															if int(coins) == 0:
+																coinsvalue = f"{none}"
+															elif int(coins) == 1:
+																coinsvalue = "<:user_coin:472908993711308800>"
+															elif int(coins) == 2:
+																coinsvalue = "<:user_coin:472908993711308800> <:user_coin:472908993711308800>"
+															elif int(coins) == 3:
+																coinsvalue = "<:user_coin:472908993711308800> <:user_coin:472908993711308800> <:user_coin:472908993711308800>"
+													except ValueError:
+														pass
+
+													embed13.add_field(name=f'{coinstitle}: {coinsvalue}', value=f"<:downloads:472907713727430658> `{downloads}`\n{likesemote} `{likes}`\n<:length:472908680459976704> `{lengthvalue}`\n", inline=False)
+
+													#reqsearch2(level)
+													try:
+														songname,songauthor,songid,sizesong,songlink,officialsong = reqsearch2(level)
+													except ValueError:
+														songname,songauthor,songid,sizesong,songlink = reqsearch2(level)
+
+													songlink2 = unquote(f"{songlink}")
+													try:
+														officialsong2 = int(officialsong)
+													except UnboundLocalError:
+														embed13.add_field(name=f':musical_note:  __{songname}__ {by} {songauthor}', value=f"SongID: {songid} - {sizetitle}: {sizesong}MB\n<:play:472908887859789835> [{newgroundsplay}](https://newgrounds.com/audio/load/{songid}) <:download_song:472907696685711370> [{downloadsong}]({songlink2})", inline=False)
+													else:
+														embed13.add_field(name=f':musical_note: :white_check_mark:   __**{songname}**__ {by} {songauthor}', value=f"SongID: {songid} - {sizetitle}: {sizesong}MB\n<:play:472908887859789835> [{newgroundsplay}](https://newgrounds.com/audio/load/{songid}) <:download_song:472907696685711370> [{youtubelink}]({songlink2})", inline=False)
+													
+													await channelmod.send(f"<@{user1}>",embed=embed13)
+													if message.attachments:
+														fileimage = message.attachments[0]
+														imageurl = fileimage.url
+														for ext in pic_ext:
+															if imageurl.endswith(ext):
+																embed14 = discord.Embed(title=f'Screenshot', color=0x00ff00)
+																embed14.set_image(url=f"{imageurl}")
+																await channelmod.send(embed=embed14)
+
+												cursor.execute(f'SELECT levelsentbygdmod FROM users WHERE userid = {user1}')
+												yesvalue = cursor.fetchone()[0]
+												if yesvalue == "yes":
+													pass
+												elif yesvalue == "no":
+													cursor.execute(f'UPDATE users SET levelsentbygdmod = "yes" WHERE userid = {user1}')
+													conn.commit()
+													levelsentbygdmod(user1)
+													embed5 = levelsentbygdmod(user1)
+													username = client.get_user(int(user1))
+													channel = await username.create_dm()
+													try:
+														await channel.send(embed=embed5)
+													except discord.errors.Forbidden:
+														pass
+														
+												cursor.execute(f"SELECT messageid FROM levels WHERE server = {serverid} AND levelid = {level}")
+												messages = cursor.fetchall()
+												for row in messages:
+													try:
+														msg101 = await message.channel.fetch_message(int(row[0]))
+													except:
+														msg101 = None
+													else:
+														try:
+															await msg101.delete()
+														except TypeError:
+															pass
+												return
+											elif demon == "2":
+												await msg.delete()
+												papa = cursor.execute(f"SELECT moderatorname FROM GDmoderators WHERE userid = {author} LIMIT 1")
+												gdmodname = cursor.fetchone()[0]
+												embed3 = discord.Embed(title=f'{successtitlerequester}', color=0x00ff00)
+												embed3.set_thumbnail(url="https://cdn.discordapp.com/emojis/472908128472793089.png?v=1")
+												embed3.add_field(name=f'{thelevelyourequested} `{level}` (**{levelname}** {byrequester} **{creator}**) {sendtorobtop} {gdmodname} {fortext} **MEDIUM DEMON 10<:starrate:718204629858517003> FEATURED**', value='\u200b')
+												if message.attachments:
+													fileimage = message.attachments[0]
+													imageurl = fileimage.url
+													for ext in pic_ext:
+														if imageurl.endswith(ext):
+															embed3.set_image(url=f"{imageurl}")
+												channel = await username.create_dm()
+												try:
+													await channel.send(embed=embed3)
+												except discord.errors.Forbidden:
+													pass
+												nani = cursor.execute(f"SELECT requester FROM levels WHERE levelid = %s AND server = %s LIMIT 1", (level, serverid))
+												user1 = cursor.fetchone()[0]
+												username = client.get_user(int(user1))
+												embed4 = discord.Embed(title=f'{successtitle}', color=0x00ff00)
+												embed4.add_field(name=f'{thelevel} `{level}` (**{levelname}** {by} **{creator}**) {successsend} **MEDIUM DEMON 10<:starrate:718204629858517003> FEATURED** !', value='\u200b')
+												await message.channel.send(embed=embed4)
+												delete = cursor.execute(f"DELETE FROM levels WHERE levelid = %s and server = %s", (level, serverid))
+												conn.commit()
+												
+												cursor.execute(f"SELECT GDModCheckedChannel FROM setup WHERE serverid = {serverid} LIMIT 1")
+												try:
+													gdmodcheckedchannel = cursor.fetchone()[0]
+												except TypeError:
+													gdmodcheckedchannel = None
+												if gdmodcheckedchannel is not None:
+													channelmod = client.get_channel(int(gdmodcheckedchannel))
+															
+													#reqsearch(level)
+													stars,objectplus,levelname,creator,ratingemote,stars,downloads,likes,likesemote,description,coins,verifiedcoins,lengthvalue,idlevel,version,gdversion,color = reqsearch(level)
+													
+													embed13 = discord.Embed(title=f'`{level}` (**{levelname}** {by} **{creator}**)', color=0x00ff00)
+													embed13.add_field(name=f"{sendfor} MEDIUM DEMON 10<:starrate:718204629858517003> FEATURED** ! <:success:472908961176092702>", value="\u200b")
+													embed13.set_thumbnail(url=f"https://cdn.discordapp.com/emojis/472908128472793089.png?v=1")
+			
+													description += '=' * (-len(description) % 4)
+													base64_bytes = description.encode('ascii')
+													print(base64_bytes)
+													message_bytes = base64.urlsafe_b64decode(base64_bytes)
+													descbase64 = message_bytes.decode('ascii')
+
+													if int(objectplus) >= 40000:
+														embed13.add_field(name=f'<:play:472908887859789835> __{levelname}__ {by} {creator} <:object_overflow:472908865953071115>', value=f"{desc} {descbase64}", inline=False)
+													elif int(objectplus) <= 39999:
+														embed13.add_field(name=f'<:play:472908887859789835> __{levelname}__ {by} {creator}', value=f"{desc} {descbase64}", inline=False)
+
+													if int(coins) == 0:
+														coinsvalue = f"{none}"
+													elif int(coins) == 1:
+														coinsvalue = "<:user_coin_unverified:472908993832943631>"
+													elif int(coins) == 2:
+														coinsvalue = "<:user_coin_unverified:472908993832943631> <:user_coin_unverified:472908993832943631>"
+													elif int(coins) == 3:
+														coinsvalue = "<:user_coin_unverified:472908993832943631> <:user_coin_unverified:472908993832943631> <:user_coin_unverified:472908993832943631>"
+
+													try:
+														if int(verifiedcoins) == 1:
+															if int(coins) == 0:
+																coinsvalue = f"{none}"
+															elif int(coins) == 1:
+																coinsvalue = "<:user_coin:472908993711308800>"
+															elif int(coins) == 2:
+																coinsvalue = "<:user_coin:472908993711308800> <:user_coin:472908993711308800>"
+															elif int(coins) == 3:
+																coinsvalue = "<:user_coin:472908993711308800> <:user_coin:472908993711308800> <:user_coin:472908993711308800>"
+													except ValueError:
+														pass
+
+													embed13.add_field(name=f'{coinstitle}: {coinsvalue}', value=f"<:downloads:472907713727430658> `{downloads}`\n{likesemote} `{likes}`\n<:length:472908680459976704> `{lengthvalue}`\n", inline=False)
+
+													#reqsearch2(level)
+													try:
+														songname,songauthor,songid,sizesong,songlink,officialsong = reqsearch2(level)
+													except ValueError:
+														songname,songauthor,songid,sizesong,songlink = reqsearch2(level)
+
+													songlink2 = unquote(f"{songlink}")
+													try:
+														officialsong2 = int(officialsong)
+													except UnboundLocalError:
+														embed13.add_field(name=f':musical_note:  __{songname}__ {by} {songauthor}', value=f"SongID: {songid} - {sizetitle}: {sizesong}MB\n<:play:472908887859789835> [{newgroundsplay}](https://newgrounds.com/audio/load/{songid}) <:download_song:472907696685711370> [{downloadsong}]({songlink2})", inline=False)
+													else:
+														embed13.add_field(name=f':musical_note: :white_check_mark:   __**{songname}**__ {by} {songauthor}', value=f"SongID: {songid} - {sizetitle}: {sizesong}MB\n<:play:472908887859789835> [{newgroundsplay}](https://newgrounds.com/audio/load/{songid}) <:download_song:472907696685711370> [{youtubelink}]({songlink2})", inline=False)
+													
+													await channelmod.send(f"<@{user1}>",embed=embed13)
+													if message.attachments:
+														fileimage = message.attachments[0]
+														imageurl = fileimage.url
+														for ext in pic_ext:
+															if imageurl.endswith(ext):
+																embed14 = discord.Embed(title=f'Screenshot', color=0x00ff00)
+																embed14.set_image(url=f"{imageurl}")
+																await channelmod.send(embed=embed14)
+
+												cursor.execute(f'SELECT levelsentbygdmod FROM users WHERE userid = {user1}')
+												yesvalue = cursor.fetchone()[0]
+												if yesvalue == "yes":
+													pass
+												elif yesvalue == "no":
+													cursor.execute(f'UPDATE users SET levelsentbygdmod = "yes" WHERE userid = {user1}')
+													conn.commit()
+													levelsentbygdmod(user1)
+													embed5 = levelsentbygdmod(user1)
+													username = client.get_user(int(user1))
+													channel = await username.create_dm()
+													try:
+														await channel.send(embed=embed5)
+													except discord.errors.Forbidden:
+														pass
+														
+												cursor.execute(f"SELECT messageid FROM levels WHERE server = {serverid} AND levelid = {level}")
+												messages = cursor.fetchall()
+												for row in messages:
+													try:
+														msg101 = await message.channel.fetch_message(int(row[0]))
+													except:
+														msg101 = None
+													else:
+														try:
+															await msg101.delete()
+														except TypeError:
+															pass
+												return
+											elif demon == "3":
+												await msg.delete()
+												papa = cursor.execute(f"SELECT moderatorname FROM GDmoderators WHERE userid = {author} LIMIT 1")
+												gdmodname = cursor.fetchone()[0]
+												embed3 = discord.Embed(title=f'{successtitlerequester}', color=0x00ff00)
+												embed3.set_thumbnail(url="https://cdn.discordapp.com/emojis/472907996901408778.png?v=1")
+												embed3.add_field(name=f'{thelevelyourequested} `{level}` (**{levelname}** {byrequester} **{creator}**) {sendtorobtop} {gdmodname} {fortext} **HARD DEMON 10<:starrate:718204629858517003> FEATURED**', value='\u200b')
+												if message.attachments:
+													fileimage = message.attachments[0]
+													imageurl = fileimage.url
+													for ext in pic_ext:
+														if imageurl.endswith(ext):
+															embed3.set_image(url=f"{imageurl}")
+												channel = await username.create_dm()
+												try:
+													await channel.send(embed=embed3)
+												except discord.errors.Forbidden:
+													pass
+												nani = cursor.execute(f"SELECT requester FROM levels WHERE levelid = %s AND server = %s LIMIT 1", (level, serverid))
+												user1 = cursor.fetchone()[0]
+												username = client.get_user(int(user1))
+												embed4 = discord.Embed(title=f'{successtitle}', color=0x00ff00)
+												embed4.add_field(name=f'{thelevel} `{level}` (**{levelname}** {by} **{creator}**) {successsend} **HARD DEMON 10<:starrate:718204629858517003> FEATURED** !', value='\u200b')
+												await message.channel.send(embed=embed4)
+												delete = cursor.execute(f"DELETE FROM levels WHERE levelid = %s and server = %s", (level, serverid))
+												conn.commit()
+												
+												cursor.execute(f"SELECT GDModCheckedChannel FROM setup WHERE serverid = {serverid} LIMIT 1")
+												try:
+													gdmodcheckedchannel = cursor.fetchone()[0]
+												except TypeError:
+													gdmodcheckedchannel = None
+												if gdmodcheckedchannel is not None:
+													channelmod = client.get_channel(int(gdmodcheckedchannel))
+															
+													#reqsearch(level)
+													stars,objectplus,levelname,creator,ratingemote,stars,downloads,likes,likesemote,description,coins,verifiedcoins,lengthvalue,idlevel,version,gdversion,color = reqsearch(level)
+													
+													embed13 = discord.Embed(title=f'`{level}` (**{levelname}** {by} **{creator}**)', color=0x00ff00)
+													embed13.add_field(name=f"{sendfor} HARD DEMON 10<:starrate:718204629858517003> FEATURED** ! <:success:472908961176092702>", value="\u200b")
+													embed13.set_thumbnail(url=f"https://cdn.discordapp.com/emojis/472907996901408778.png?v=1")
+			
+													description += '=' * (-len(description) % 4)
+													base64_bytes = description.encode('ascii')
+													print(base64_bytes)
+													message_bytes = base64.urlsafe_b64decode(base64_bytes)
+													descbase64 = message_bytes.decode('ascii')
+
+													if int(objectplus) >= 40000:
+														embed13.add_field(name=f'<:play:472908887859789835> __{levelname}__ {by} {creator} <:object_overflow:472908865953071115>', value=f"{desc} {descbase64}", inline=False)
+													elif int(objectplus) <= 39999:
+														embed13.add_field(name=f'<:play:472908887859789835> __{levelname}__ {by} {creator}', value=f"{desc} {descbase64}", inline=False)
+
+													if int(coins) == 0:
+														coinsvalue = f"{none}"
+													elif int(coins) == 1:
+														coinsvalue = "<:user_coin_unverified:472908993832943631>"
+													elif int(coins) == 2:
+														coinsvalue = "<:user_coin_unverified:472908993832943631> <:user_coin_unverified:472908993832943631>"
+													elif int(coins) == 3:
+														coinsvalue = "<:user_coin_unverified:472908993832943631> <:user_coin_unverified:472908993832943631> <:user_coin_unverified:472908993832943631>"
+
+													try:
+														if int(verifiedcoins) == 1:
+															if int(coins) == 0:
+																coinsvalue = f"{none}"
+															elif int(coins) == 1:
+																coinsvalue = "<:user_coin:472908993711308800>"
+															elif int(coins) == 2:
+																coinsvalue = "<:user_coin:472908993711308800> <:user_coin:472908993711308800>"
+															elif int(coins) == 3:
+																coinsvalue = "<:user_coin:472908993711308800> <:user_coin:472908993711308800> <:user_coin:472908993711308800>"
+													except ValueError:
+														pass
+
+													embed13.add_field(name=f'{coinstitle}: {coinsvalue}', value=f"<:downloads:472907713727430658> `{downloads}`\n{likesemote} `{likes}`\n<:length:472908680459976704> `{lengthvalue}`\n", inline=False)
+
+													#reqsearch2(level)
+													try:
+														songname,songauthor,songid,sizesong,songlink,officialsong = reqsearch2(level)
+													except ValueError:
+														songname,songauthor,songid,sizesong,songlink = reqsearch2(level)
+
+													songlink2 = unquote(f"{songlink}")
+													try:
+														officialsong2 = int(officialsong)
+													except UnboundLocalError:
+														embed13.add_field(name=f':musical_note:  __{songname}__ {by} {songauthor}', value=f"SongID: {songid} - {sizetitle}: {sizesong}MB\n<:play:472908887859789835> [{newgroundsplay}](https://newgrounds.com/audio/load/{songid}) <:download_song:472907696685711370> [{downloadsong}]({songlink2})", inline=False)
+													else:
+														embed13.add_field(name=f':musical_note: :white_check_mark:   __**{songname}**__ {by} {songauthor}', value=f"SongID: {songid} - {sizetitle}: {sizesong}MB\n<:play:472908887859789835> [{newgroundsplay}](https://newgrounds.com/audio/load/{songid}) <:download_song:472907696685711370> [{youtubelink}]({songlink2})", inline=False)
+													
+													await channelmod.send(f"<@{user1}>",embed=embed13)
+													if message.attachments:
+														fileimage = message.attachments[0]
+														imageurl = fileimage.url
+														for ext in pic_ext:
+															if imageurl.endswith(ext):
+																embed14 = discord.Embed(title=f'Screenshot', color=0x00ff00)
+																embed14.set_image(url=f"{imageurl}")
+																await channelmod.send(embed=embed14)
+
+												cursor.execute(f'SELECT levelsentbygdmod FROM users WHERE userid = {user1}')
+												yesvalue = cursor.fetchone()[0]
+												if yesvalue == "yes":
+													pass
+												elif yesvalue == "no":
+													cursor.execute(f'UPDATE users SET levelsentbygdmod = "yes" WHERE userid = {user1}')
+													conn.commit()
+													levelsentbygdmod(user1)
+													embed5 = levelsentbygdmod(user1)
+													username = client.get_user(int(user1))
+													channel = await username.create_dm()
+													try:
+														await channel.send(embed=embed5)
+													except discord.errors.Forbidden:
+														pass
+														
+												cursor.execute(f"SELECT messageid FROM levels WHERE server = {serverid} AND levelid = {level}")
+												messages = cursor.fetchall()
+												for row in messages:
+													try:
+														msg101 = await message.channel.fetch_message(int(row[0]))
+													except:
+														msg101 = None
+													else:
+														try:
+															await msg101.delete()
+														except TypeError:
+															pass
+												return
+											elif demon == "4":
+												await msg.delete()
+												papa = cursor.execute(f"SELECT moderatorname FROM GDmoderators WHERE userid = {author} LIMIT 1")
+												gdmodname = cursor.fetchone()[0]
+												embed3 = discord.Embed(title=f'{successtitlerequester}', color=0x00ff00)
+												embed3.set_thumbnail(url="https://cdn.discordapp.com/emojis/472908062269636640.png?v=1")
+												embed3.add_field(name=f'{thelevelyourequested} `{level}` (**{levelname}** {byrequester} **{creator}**) {sendtorobtop} {gdmodname} {fortext} **INSANE DEMON 10<:starrate:718204629858517003> FEATURED**', value='\u200b')
+												if message.attachments:
+													fileimage = message.attachments[0]
+													imageurl = fileimage.url
+													for ext in pic_ext:
+														if imageurl.endswith(ext):
+															embed3.set_image(url=f"{imageurl}")
+												channel = await username.create_dm()
+												try:
+													await channel.send(embed=embed3)
+												except discord.errors.Forbidden:
+													pass
+												nani = cursor.execute(f"SELECT requester FROM levels WHERE levelid = %s AND server = %s LIMIT 1", (level, serverid))
+												user1 = cursor.fetchone()[0]
+												username = client.get_user(int(user1))
+												embed4 = discord.Embed(title=f'{successtitle}', color=0x00ff00)
+												embed4.add_field(name=f'{thelevel} `{level}` (**{levelname}** {by} **{creator}**) {successsend} **INSANE DEMON 10<:starrate:718204629858517003> FEATURED** !', value='\u200b')
+												await message.channel.send(embed=embed4)
+												delete = cursor.execute(f"DELETE FROM levels WHERE levelid = %s and server = %s", (level, serverid))
+												conn.commit()
+												
+												cursor.execute(f"SELECT GDModCheckedChannel FROM setup WHERE serverid = {serverid} LIMIT 1")
+												try:
+													gdmodcheckedchannel = cursor.fetchone()[0]
+												except TypeError:
+													gdmodcheckedchannel = None
+												if gdmodcheckedchannel is not None:
+													channelmod = client.get_channel(int(gdmodcheckedchannel))
+															
+													#reqsearch(level)
+													stars,objectplus,levelname,creator,ratingemote,stars,downloads,likes,likesemote,description,coins,verifiedcoins,lengthvalue,idlevel,version,gdversion,color = reqsearch(level)
+													
+													embed13 = discord.Embed(title=f'`{level}` (**{levelname}** {by} **{creator}**)', color=0x00ff00)
+													embed13.add_field(name=f"{sendfor} INSANE DEMON 10<:starrate:718204629858517003> FEATURED** ! <:success:472908961176092702>", value="\u200b")
+													embed13.set_thumbnail(url=f"https://cdn.discordapp.com/emojis/472908062269636640.png?v=1")
+			
+													description += '=' * (-len(description) % 4)
+													base64_bytes = description.encode('ascii')
+													print(base64_bytes)
+													message_bytes = base64.urlsafe_b64decode(base64_bytes)
+													descbase64 = message_bytes.decode('ascii')
+
+													if int(objectplus) >= 40000:
+														embed13.add_field(name=f'<:play:472908887859789835> __{levelname}__ {by} {creator} <:object_overflow:472908865953071115>', value=f"{desc} {descbase64}", inline=False)
+													elif int(objectplus) <= 39999:
+														embed13.add_field(name=f'<:play:472908887859789835> __{levelname}__ {by} {creator}', value=f"{desc} {descbase64}", inline=False)
+
+													if int(coins) == 0:
+														coinsvalue = f"{none}"
+													elif int(coins) == 1:
+														coinsvalue = "<:user_coin_unverified:472908993832943631>"
+													elif int(coins) == 2:
+														coinsvalue = "<:user_coin_unverified:472908993832943631> <:user_coin_unverified:472908993832943631>"
+													elif int(coins) == 3:
+														coinsvalue = "<:user_coin_unverified:472908993832943631> <:user_coin_unverified:472908993832943631> <:user_coin_unverified:472908993832943631>"
+
+													try:
+														if int(verifiedcoins) == 1:
+															if int(coins) == 0:
+																coinsvalue = f"{none}"
+															elif int(coins) == 1:
+																coinsvalue = "<:user_coin:472908993711308800>"
+															elif int(coins) == 2:
+																coinsvalue = "<:user_coin:472908993711308800> <:user_coin:472908993711308800>"
+															elif int(coins) == 3:
+																coinsvalue = "<:user_coin:472908993711308800> <:user_coin:472908993711308800> <:user_coin:472908993711308800>"
+													except ValueError:
+														pass
+
+													embed13.add_field(name=f'{coinstitle}: {coinsvalue}', value=f"<:downloads:472907713727430658> `{downloads}`\n{likesemote} `{likes}`\n<:length:472908680459976704> `{lengthvalue}`\n", inline=False)
+
+													#reqsearch2(level)
+													try:
+														songname,songauthor,songid,sizesong,songlink,officialsong = reqsearch2(level)
+													except ValueError:
+														songname,songauthor,songid,sizesong,songlink = reqsearch2(level)
+
+													songlink2 = unquote(f"{songlink}")
+													try:
+														officialsong2 = int(officialsong)
+													except UnboundLocalError:
+														embed13.add_field(name=f':musical_note:  __{songname}__ {by} {songauthor}', value=f"SongID: {songid} - {sizetitle}: {sizesong}MB\n<:play:472908887859789835> [{newgroundsplay}](https://newgrounds.com/audio/load/{songid}) <:download_song:472907696685711370> [{downloadsong}]({songlink2})", inline=False)
+													else:
+														embed13.add_field(name=f':musical_note: :white_check_mark:   __**{songname}**__ {by} {songauthor}', value=f"SongID: {songid} - {sizetitle}: {sizesong}MB\n<:play:472908887859789835> [{newgroundsplay}](https://newgrounds.com/audio/load/{songid}) <:download_song:472907696685711370> [{youtubelink}]({songlink2})", inline=False)
+													
+													await channelmod.send(f"<@{user1}>",embed=embed13)
+													if message.attachments:
+														fileimage = message.attachments[0]
+														imageurl = fileimage.url
+														for ext in pic_ext:
+															if imageurl.endswith(ext):
+																embed14 = discord.Embed(title=f'Screenshot', color=0x00ff00)
+																embed14.set_image(url=f"{imageurl}")
+																await channelmod.send(embed=embed14)
+
+												cursor.execute(f'SELECT levelsentbygdmod FROM users WHERE userid = {user1}')
+												yesvalue = cursor.fetchone()[0]
+												if yesvalue == "yes":
+													pass
+												elif yesvalue == "no":
+													cursor.execute(f'UPDATE users SET levelsentbygdmod = "yes" WHERE userid = {user1}')
+													conn.commit()
+													levelsentbygdmod(user1)
+													embed5 = levelsentbygdmod(user1)
+													username = client.get_user(int(user1))
+													channel = await username.create_dm()
+													try:
+														await channel.send(embed=embed5)
+													except discord.errors.Forbidden:
+														pass
+														
+												cursor.execute(f"SELECT messageid FROM levels WHERE server = {serverid} AND levelid = {level}")
+												messages = cursor.fetchall()
+												for row in messages:
+													try:
+														msg101 = await message.channel.fetch_message(int(row[0]))
+													except:
+														msg101 = None
+													else:
+														try:
+															await msg101.delete()
+														except TypeError:
+															pass
+												return
+											elif demon == "5":
+												await msg.delete()
+												papa = cursor.execute(f"SELECT moderatorname FROM GDmoderators WHERE userid = {author} LIMIT 1")
+												gdmodname = cursor.fetchone()[0]
+												embed3 = discord.Embed(title=f'{successtitlerequester}', color=0x00ff00)
+												embed3.set_thumbnail(url="https://cdn.discordapp.com/emojis/472907934633033738.png?v=1")
+												embed3.add_field(name=f'{thelevelyourequested} `{level}` (**{levelname}** {byrequester} **{creator}**) {sendtorobtop} {gdmodname} {fortext} **EXTREME DEMON 10<:starrate:718204629858517003> FEATURED**', value='\u200b')
+												if message.attachments:
+													fileimage = message.attachments[0]
+													imageurl = fileimage.url
+													for ext in pic_ext:
+														if imageurl.endswith(ext):
+															embed3.set_image(url=f"{imageurl}")
+												channel = await username.create_dm()
+												try:
+													await channel.send(embed=embed3)
+												except discord.errors.Forbidden:
+													pass
+												nani = cursor.execute(f"SELECT requester FROM levels WHERE levelid = %s AND server = %s LIMIT 1", (level, serverid))
+												user1 = cursor.fetchone()[0]
+												username = client.get_user(int(user1))
+												embed4 = discord.Embed(title=f'{successtitle}', color=0x00ff00)
+												embed4.add_field(name=f'{thelevel} `{level}` (**{levelname}** {by} **{creator}**) {successsend} **EXTREME DEMON 10<:starrate:718204629858517003> FEATURED** !', value='\u200b')
+												await message.channel.send(embed=embed4)
+												delete = cursor.execute(f"DELETE FROM levels WHERE levelid = %s and server = %s", (level, serverid))
+												conn.commit()
+												
+												cursor.execute(f"SELECT GDModCheckedChannel FROM setup WHERE serverid = {serverid} LIMIT 1")
+												try:
+													gdmodcheckedchannel = cursor.fetchone()[0]
+												except TypeError:
+													gdmodcheckedchannel = None
+												if gdmodcheckedchannel is not None:
+													channelmod = client.get_channel(int(gdmodcheckedchannel))
+															
+													#reqsearch(level)
+													stars,objectplus,levelname,creator,ratingemote,stars,downloads,likes,likesemote,description,coins,verifiedcoins,lengthvalue,idlevel,version,gdversion,color = reqsearch(level)
+													
+													embed13 = discord.Embed(title=f'`{level}` (**{levelname}** {by} **{creator}**)', color=0x00ff00)
+													embed13.add_field(name=f"{sendfor} INSANE DEMON 10<:starrate:718204629858517003> FEATURED** ! <:success:472908961176092702>", value="\u200b")
+													embed13.set_thumbnail(url=f"https://cdn.discordapp.com/emojis/472907934633033738.png?v=1")
+			
+													description += '=' * (-len(description) % 4)
+													base64_bytes = description.encode('ascii')
+													print(base64_bytes)
+													message_bytes = base64.urlsafe_b64decode(base64_bytes)
+													descbase64 = message_bytes.decode('ascii')
+
+													if int(objectplus) >= 40000:
+														embed13.add_field(name=f'<:play:472908887859789835> __{levelname}__ {by} {creator} <:object_overflow:472908865953071115>', value=f"{desc} {descbase64}", inline=False)
+													elif int(objectplus) <= 39999:
+														embed13.add_field(name=f'<:play:472908887859789835> __{levelname}__ {by} {creator}', value=f"{desc} {descbase64}", inline=False)
+
+													if int(coins) == 0:
+														coinsvalue = f"{none}"
+													elif int(coins) == 1:
+														coinsvalue = "<:user_coin_unverified:472908993832943631>"
+													elif int(coins) == 2:
+														coinsvalue = "<:user_coin_unverified:472908993832943631> <:user_coin_unverified:472908993832943631>"
+													elif int(coins) == 3:
+														coinsvalue = "<:user_coin_unverified:472908993832943631> <:user_coin_unverified:472908993832943631> <:user_coin_unverified:472908993832943631>"
+
+													try:
+														if int(verifiedcoins) == 1:
+															if int(coins) == 0:
+																coinsvalue = f"{none}"
+															elif int(coins) == 1:
+																coinsvalue = "<:user_coin:472908993711308800>"
+															elif int(coins) == 2:
+																coinsvalue = "<:user_coin:472908993711308800> <:user_coin:472908993711308800>"
+															elif int(coins) == 3:
+																coinsvalue = "<:user_coin:472908993711308800> <:user_coin:472908993711308800> <:user_coin:472908993711308800>"
+													except ValueError:
+														pass
+
+													embed13.add_field(name=f'{coinstitle}: {coinsvalue}', value=f"<:downloads:472907713727430658> `{downloads}`\n{likesemote} `{likes}`\n<:length:472908680459976704> `{lengthvalue}`\n", inline=False)
+
+													#reqsearch2(level)
+													try:
+														songname,songauthor,songid,sizesong,songlink,officialsong = reqsearch2(level)
+													except ValueError:
+														songname,songauthor,songid,sizesong,songlink = reqsearch2(level)
+
+													songlink2 = unquote(f"{songlink}")
+													try:
+														officialsong2 = int(officialsong)
+													except UnboundLocalError:
+														embed13.add_field(name=f':musical_note:  __{songname}__ {by} {songauthor}', value=f"SongID: {songid} - {sizetitle}: {sizesong}MB\n<:play:472908887859789835> [{newgroundsplay}](https://newgrounds.com/audio/load/{songid}) <:download_song:472907696685711370> [{downloadsong}]({songlink2})", inline=False)
+													else:
+														embed13.add_field(name=f':musical_note: :white_check_mark:   __**{songname}**__ {by} {songauthor}', value=f"SongID: {songid} - {sizetitle}: {sizesong}MB\n<:play:472908887859789835> [{newgroundsplay}](https://newgrounds.com/audio/load/{songid}) <:download_song:472907696685711370> [{youtubelink}]({songlink2})", inline=False)
+													
+													await channelmod.send(f"<@{user1}>",embed=embed13)
+													if message.attachments:
+														fileimage = message.attachments[0]
+														imageurl = fileimage.url
+														for ext in pic_ext:
+															if imageurl.endswith(ext):
+																embed14 = discord.Embed(title=f'Screenshot', color=0x00ff00)
+																embed14.set_image(url=f"{imageurl}")
+																await channelmod.send(embed=embed14)
+
+												cursor.execute(f'SELECT levelsentbygdmod FROM users WHERE userid = {user1}')
+												yesvalue = cursor.fetchone()[0]
+												if yesvalue == "yes":
+													pass
+												elif yesvalue == "no":
+													cursor.execute(f'UPDATE users SET levelsentbygdmod = "yes" WHERE userid = {user1}')
+													conn.commit()
+													levelsentbygdmod(user1)
+													embed5 = levelsentbygdmod(user1)
+													username = client.get_user(int(user1))
+													channel = await username.create_dm()
+													try:
+														await channel.send(embed=embed5)
+													except discord.errors.Forbidden:
+														pass
+														
+												cursor.execute(f"SELECT messageid FROM levels WHERE server = {serverid} AND levelid = {level}")
+												messages = cursor.fetchall()
+												for row in messages:
+													try:
+														msg101 = await message.channel.fetch_message(int(row[0]))
+													except:
+														msg101 = None
+													else:
+														try:
+															await msg101.delete()
+														except TypeError:
+															pass
+												return
+											else:
+												await msg.delete()
+												papa = cursor.execute(f"SELECT moderatorname FROM GDmoderators WHERE userid = {author} LIMIT 1")
+												gdmodname = cursor.fetchone()[0]
+												embed3 = discord.Embed(title=f'{successtitlerequester}', color=0x00ff00)
+												embed3.set_thumbnail(url="https://cdn.discordapp.com/emojis/472907996901408778.png?v=1")
+												embed3.add_field(name=f'{thelevelyourequested} `{level}` (**{levelname}** {byrequester} **{creator}**) {sendtorobtop} {gdmodname} {fortext} **DEMON 10<:starrate:718204629858517003> FEATURED**', value='\u200b')
+												if message.attachments:
+													fileimage = message.attachments[0]
+													imageurl = fileimage.url
+													for ext in pic_ext:
+														if imageurl.endswith(ext):
+															embed3.set_image(url=f"{imageurl}")
+												channel = await username.create_dm()
+												try:
+													await channel.send(embed=embed3)
+												except discord.errors.Forbidden:
+													pass
+												nani = cursor.execute(f"SELECT requester FROM levels WHERE levelid = %s AND server = %s LIMIT 1", (level, serverid))
+												user1 = cursor.fetchone()[0]
+												username = client.get_user(int(user1))
+												embed4 = discord.Embed(title=f'{successtitle}', color=0x00ff00)
+												embed4.add_field(name=f'{thelevel} `{level}` (**{levelname}** {by} **{creator}**) {successsend} **DEMON 10<:starrate:718204629858517003> FEATURED** !', value='\u200b')
+												await message.channel.send(embed=embed4)
+												delete = cursor.execute(f"DELETE FROM levels WHERE levelid = %s and server = %s", (level, serverid))
+												conn.commit()
+												
+												cursor.execute(f"SELECT GDModCheckedChannel FROM setup WHERE serverid = {serverid} LIMIT 1")
+												try:
+													gdmodcheckedchannel = cursor.fetchone()[0]
+												except TypeError:
+													gdmodcheckedchannel = None
+												if gdmodcheckedchannel is not None:
+													channelmod = client.get_channel(int(gdmodcheckedchannel))
+															
+													#reqsearch(level)
+													stars,objectplus,levelname,creator,ratingemote,stars,downloads,likes,likesemote,description,coins,verifiedcoins,lengthvalue,idlevel,version,gdversion,color = reqsearch(level)
+													
+													embed13 = discord.Embed(title=f'`{level}` (**{levelname}** {by} **{creator}**)', color=0x00ff00)
+													embed13.add_field(name=f"{sendfor} DEMON 10<:starrate:718204629858517003> FEATURED** ! <:success:472908961176092702>", value="\u200b")
+													embed13.set_thumbnail(url=f"https://cdn.discordapp.com/emojis/472907996901408778.png?v=1")
+			
+													description += '=' * (-len(description) % 4)
+													base64_bytes = description.encode('ascii')
+													print(base64_bytes)
+													message_bytes = base64.urlsafe_b64decode(base64_bytes)
+													descbase64 = message_bytes.decode('ascii')
+
+													if int(objectplus) >= 40000:
+														embed13.add_field(name=f'<:play:472908887859789835> __{levelname}__ {by} {creator} <:object_overflow:472908865953071115>', value=f"{desc} {descbase64}", inline=False)
+													elif int(objectplus) <= 39999:
+														embed13.add_field(name=f'<:play:472908887859789835> __{levelname}__ {by} {creator}', value=f"{desc} {descbase64}", inline=False)
+
+													if int(coins) == 0:
+														coinsvalue = f"{none}"
+													elif int(coins) == 1:
+														coinsvalue = "<:user_coin_unverified:472908993832943631>"
+													elif int(coins) == 2:
+														coinsvalue = "<:user_coin_unverified:472908993832943631> <:user_coin_unverified:472908993832943631>"
+													elif int(coins) == 3:
+														coinsvalue = "<:user_coin_unverified:472908993832943631> <:user_coin_unverified:472908993832943631> <:user_coin_unverified:472908993832943631>"
+
+													try:
+														if int(verifiedcoins) == 1:
+															if int(coins) == 0:
+																coinsvalue = f"{none}"
+															elif int(coins) == 1:
+																coinsvalue = "<:user_coin:472908993711308800>"
+															elif int(coins) == 2:
+																coinsvalue = "<:user_coin:472908993711308800> <:user_coin:472908993711308800>"
+															elif int(coins) == 3:
+																coinsvalue = "<:user_coin:472908993711308800> <:user_coin:472908993711308800> <:user_coin:472908993711308800>"
+													except ValueError:
+														pass
+
+													embed13.add_field(name=f'{coinstitle}: {coinsvalue}', value=f"<:downloads:472907713727430658> `{downloads}`\n{likesemote} `{likes}`\n<:length:472908680459976704> `{lengthvalue}`\n", inline=False)
+
+													#reqsearch2(level)
+													try:
+														songname,songauthor,songid,sizesong,songlink,officialsong = reqsearch2(level)
+													except ValueError:
+														songname,songauthor,songid,sizesong,songlink = reqsearch2(level)
+
+													songlink2 = unquote(f"{songlink}")
+													try:
+														officialsong2 = int(officialsong)
+													except UnboundLocalError:
+														embed13.add_field(name=f':musical_note:  __{songname}__ {by} {songauthor}', value=f"SongID: {songid} - {sizetitle}: {sizesong}MB\n<:play:472908887859789835> [{newgroundsplay}](https://newgrounds.com/audio/load/{songid}) <:download_song:472907696685711370> [{downloadsong}]({songlink2})", inline=False)
+													else:
+														embed13.add_field(name=f':musical_note: :white_check_mark:   __**{songname}**__ {by} {songauthor}', value=f"SongID: {songid} - {sizetitle}: {sizesong}MB\n<:play:472908887859789835> [{newgroundsplay}](https://newgrounds.com/audio/load/{songid}) <:download_song:472907696685711370> [{youtubelink}]({songlink2})", inline=False)
+													
+													await channelmod.send(f"<@{user1}>",embed=embed13)
+													if message.attachments:
+														fileimage = message.attachments[0]
+														imageurl = fileimage.url
+														for ext in pic_ext:
+															if imageurl.endswith(ext):
+																embed14 = discord.Embed(title=f'Screenshot', color=0x00ff00)
+																embed14.set_image(url=f"{imageurl}")
+																await channelmod.send(embed=embed14)
+
+												cursor.execute(f'SELECT levelsentbygdmod FROM users WHERE userid = {user1}')
+												yesvalue = cursor.fetchone()[0]
+												if yesvalue == "yes":
+													pass
+												elif yesvalue == "no":
+													cursor.execute(f'UPDATE users SET levelsentbygdmod = "yes" WHERE userid = {user1}')
+													conn.commit()
+													levelsentbygdmod(user1)
+													embed5 = levelsentbygdmod(user1)
+													username = client.get_user(int(user1))
+													channel = await username.create_dm()
+													try:
+														await channel.send(embed=embed5)
+													except discord.errors.Forbidden:
+														pass
+														
+												cursor.execute(f"SELECT messageid FROM levels WHERE server = {serverid} AND levelid = {level}")
+												messages = cursor.fetchall()
+												for row in messages:
+													try:
+														msg101 = await message.channel.fetch_message(int(row[0]))
+													except:
+														msg101 = None
+													else:
+														try:
+															await msg101.delete()
+														except TypeError:
+															pass
+												return
+										else:
+											await msg.delete()
+											embed = discord.Embed(title="", color=0xff0000)
+											embed.add_field(name=f'{errormessage}', value=f"{errorsyntax}")
+											msg2 = await message.channel.send(embed=embed)
+											time.sleep(5)
+											await msg2.delete()
 											return
 									else:
 										await msg.delete()
 										embed = discord.Embed(title="", color=0xff0000)
-										embed.add_field(name=f'{errormessage}', value=f"{errorsyntax}")
-										msg2 = await message.channel.send(embed=embed)
-										time.sleep(5)
-										await msg2.delete()
-										return
-								elif validation == "featured":
-									nyaya = cursor.execute(f"SELECT requester FROM levels WHERE levelid = {level} LIMIT 1")
-									user1 = cursor.fetchone()[0]
-									username = client.get_user(int(user1))
-
-									cursor.execute(f"SELECT language FROM users WHERE userid = {user1}")
-									try:
-										language_requester = cursor.fetchone()[0]
-									except TypeError:
-										language_requester = language_default
-									language2_requester = language_requester
-									translate_messages_requester = open(f"language/requester/reqsend/{language2}.txt").read().splitlines()
-
-									successtitlerequester = translate_messages_requester[0]
-									thelevelyourequested = translate_messages_requester[1]
-									byrequester = translate_messages_requester[2]
-									sendtorobtop = translate_messages_requester[3]
-									fortext = translate_messages_requester[4]
-
-									if star == "1":
-										await msg.delete()
-										papa = cursor.execute(f"SELECT moderatorname FROM GDmoderators WHERE userid = {author} LIMIT 1")
-										gdmodname = cursor.fetchone()[0]
-										embed3 = discord.Embed(title=f'{successtitlerequester}', color=0x00ff00)
-										embed3.set_thumbnail(url="https://cdn.discordapp.com/emojis/472907828185792532.png?v=1")
-										embed3.add_field(name=f'{thelevelyourequested} `{level}` (**{levelname}** {byrequester} **{creator}**) {sendtorobtop} {gdmodname} {fortext} **AUTO 1<:starrate:718204629858517003> FEATURED**', value='\u200b')
-										if message.attachments:
-											fileimage = message.attachments[0]
-											imageurl = fileimage.url
-											for ext in pic_ext:
-												if imageurl.endswith(ext):
-													embed3.set_image(url=f"{imageurl}")
-										channel = await username.create_dm()
-										try:
-											await channel.send(embed=embed3)
-										except discord.errors.Forbidden:
-											pass
-										nani = cursor.execute(f"SELECT requester FROM levels WHERE levelid = {level} LIMIT 1")
-										user1 = cursor.fetchone()[0]
-										username = client.get_user(int(user1))
-										embed4 = discord.Embed(title=f'{successtitle}', color=0x00ff00)
-										embed4.add_field(name=f'{thelevel} `{level}` (**{levelname}** {by} **{creator}**) {successsend} **AUTO 1<:starrate:718204629858517003> FEATURED** !', value='\u200b')
-										await message.channel.send(embed=embed4)
-										delete = cursor.execute(f"DELETE FROM levels WHERE levelid = {level}")
-										conn.commit()
-
-										cursor.execute(f'SELECT levelsentbygdmod FROM users WHERE userid = {user1}')
-										yesvalue = cursor.fetchone()[0]
-										if yesvalue == "yes":
-											pass
-										elif yesvalue == "no":
-											cursor.execute(f'UPDATE users SET levelsentbygdmod = "yes" WHERE userid = {user1}')
-											conn.commit()
-											levelsentbygdmod(user1)
-											embed5 = levelsentbygdmod(user1)
-											username = client.get_user(int(user1))
-											channel = await username.create_dm()
-											await channel.send(embed=embed5)
-										return
-									elif star == "2":
-										await msg.delete()
-										papa = cursor.execute(f"SELECT moderatorname FROM GDmoderators WHERE userid = {author} LIMIT 1")
-										gdmodname = cursor.fetchone()[0]
-										embed3 = discord.Embed(title=f'{successtitlerequester}', color=0x00ff00)
-										embed3.set_thumbnail(url="https://cdn.discordapp.com/emojis/472908214766141471.png?v=1")
-										embed3.add_field(name=f'{thelevelyourequested} `{level}` (**{levelname}** {byrequester} **{creator}**) {sendtorobtop} {gdmodname} {fortext} **EASY 2<:starrate:718204629858517003> FEATURED**', value='\u200b')
-										if message.attachments:
-											fileimage = message.attachments[0]
-											imageurl = fileimage.url
-											for ext in pic_ext:
-												if imageurl.endswith(ext):
-													embed3.set_image(url=f"{imageurl}")
-										channel = await username.create_dm()
-										try:
-											await channel.send(embed=embed3)
-										except discord.errors.Forbidden:
-											pass
-										nani = cursor.execute(f"SELECT requester FROM levels WHERE levelid = {level} LIMIT 1")
-										user1 = cursor.fetchone()[0]
-										username = client.get_user(int(user1))
-										embed4 = discord.Embed(title=f'{successtitle}', color=0x00ff00)
-										embed4.add_field(name=f'{thelevel} `{level}` (**{levelname}** {by} **{creator}**) {successsend} **EASY 2<:starrate:718204629858517003> FEATURED** !', value='\u200b')
-										await message.channel.send(embed=embed4)
-										delete = cursor.execute(f"DELETE FROM levels WHERE levelid = {level}")
-										conn.commit()
-
-										cursor.execute(f'SELECT levelsentbygdmod FROM users WHERE userid = {user1}')
-										yesvalue = cursor.fetchone()[0]
-										if yesvalue == "yes":
-											pass
-										elif yesvalue == "no":
-											cursor.execute(f'UPDATE users SET levelsentbygdmod = "yes" WHERE userid = {user1}')
-											conn.commit()
-											levelsentbygdmod(user1)
-											embed5 = levelsentbygdmod(user1)
-											username = client.get_user(int(user1))
-											channel = await username.create_dm()
-											await channel.send(embed=embed5)
-										return
-									elif star == "3":
-										await msg.delete()
-										papa = cursor.execute(f"SELECT moderatorname FROM GDmoderators WHERE userid = {author} LIMIT 1")
-										gdmodname = cursor.fetchone()[0]
-										embed3 = discord.Embed(title=f'{successtitlerequester}', color=0x00ff00)
-										embed3.set_thumbnail(url="https://cdn.discordapp.com/emojis/472908602613563392.png?v=1")
-										embed3.add_field(name=f'{thelevelyourequested} `{level}` (**{levelname}** {byrequester} **{creator}**) {sendtorobtop} {gdmodname} {fortext} **NORMAL 3<:starrate:718204629858517003> FEATURED**', value='\u200b')
-										if message.attachments:
-											fileimage = message.attachments[0]
-											imageurl = fileimage.url
-											for ext in pic_ext:
-												if imageurl.endswith(ext):
-													embed3.set_image(url=f"{imageurl}")
-										channel = await username.create_dm()
-										try:
-											await channel.send(embed=embed3)
-										except discord.errors.Forbidden:
-											pass
-										nani = cursor.execute(f"SELECT requester FROM levels WHERE levelid = {level} LIMIT 1")
-										user1 = cursor.fetchone()[0]
-										username = client.get_user(int(user1))
-										embed4 = discord.Embed(title=f'{successtitle}', color=0x00ff00)
-										embed4.add_field(name=f'{thelevel} `{level}` (**{levelname}** {by} **{creator}**) {successsend} **NORMAL 3<:starrate:718204629858517003> FEATURED** !', value='\u200b')
-										await message.channel.send(embed=embed4)
-										delete = cursor.execute(f"DELETE FROM levels WHERE levelid = {level}")
-										conn.commit()
-
-										cursor.execute(f'SELECT levelsentbygdmod FROM users WHERE userid = {user1}')
-										yesvalue = cursor.fetchone()[0]
-										if yesvalue == "yes":
-											pass
-										elif yesvalue == "no":
-											cursor.execute(f'UPDATE users SET levelsentbygdmod = "yes" WHERE userid = {user1}')
-											conn.commit()
-											levelsentbygdmod(user1)
-											embed5 = levelsentbygdmod(user1)
-											username = client.get_user(int(user1))
-											channel = await username.create_dm()
-											await channel.send(embed=embed5)
-										return
-									elif star == "4":
-										await msg.delete()
-										papa = cursor.execute(f"SELECT moderatorname FROM GDmoderators WHERE userid = {author} LIMIT 1")
-										gdmodname = cursor.fetchone()[0]
-										embed3 = discord.Embed(title=f'{successtitlerequester}', color=0x00ff00)
-										embed3.set_thumbnail(url="https://cdn.discordapp.com/emojis/472908272781754369.png?v=1")
-										embed3.add_field(name=f'{thelevelyourequested} `{level}` (**{levelname}** {byrequester} **{creator}**) {sendtorobtop} {gdmodname} {fortext} **HARD 4<:starrate:718204629858517003> FEATURED**', value='\u200b')
-										if message.attachments:
-											fileimage = message.attachments[0]
-											imageurl = fileimage.url
-											for ext in pic_ext:
-												if imageurl.endswith(ext):
-													embed3.set_image(url=f"{imageurl}")
-										channel = await username.create_dm()
-										try:
-											await channel.send(embed=embed3)
-										except discord.errors.Forbidden:
-											pass
-										nani = cursor.execute(f"SELECT requester FROM levels WHERE levelid = {level} LIMIT 1")
-										user1 = cursor.fetchone()[0]
-										username = client.get_user(int(user1))
-										embed4 = discord.Embed(title=f'{successtitle}', color=0x00ff00)
-										embed4.add_field(name=f'{thelevel} `{level}` (**{levelname}** {by} **{creator}**) {successsend} **HARD 4<:starrate:718204629858517003> FEATURED** !', value='\u200b')
-										await message.channel.send(embed=embed4)
-										delete = cursor.execute(f"DELETE FROM levels WHERE levelid = {level}")
-										conn.commit()
-
-										cursor.execute(f'SELECT levelsentbygdmod FROM users WHERE userid = {user1}')
-										yesvalue = cursor.fetchone()[0]
-										if yesvalue == "yes":
-											pass
-										elif yesvalue == "no":
-											cursor.execute(f'UPDATE users SET levelsentbygdmod = "yes" WHERE userid = {user1}')
-											conn.commit()
-											levelsentbygdmod(user1)
-											embed5 = levelsentbygdmod(user1)
-											username = client.get_user(int(user1))
-											channel = await username.create_dm()
-											await channel.send(embed=embed5)
-										return
-									elif star == "5":
-										await msg.delete()
-										papa = cursor.execute(f"SELECT moderatorname FROM GDmoderators WHERE userid = {author} LIMIT 1")
-										gdmodname = cursor.fetchone()[0]
-										embed3 = discord.Embed(title=f'{successtitlerequester}', color=0x00ff00)
-										embed3.set_thumbnail(url="https://cdn.discordapp.com/emojis/472908272781754369.png?v=1")
-										embed3.add_field(name=f'{thelevelyourequested} `{level}` (**{levelname}** {byrequester} **{creator}**) {sendtorobtop} {gdmodname} {fortext} **HARD 5<:starrate:718204629858517003> FEATURED**', value='\u200b')
-										if message.attachments:
-											fileimage = message.attachments[0]
-											imageurl = fileimage.url
-											for ext in pic_ext:
-												if imageurl.endswith(ext):
-													embed3.set_image(url=f"{imageurl}")
-										channel = await username.create_dm()
-										try:
-											await channel.send(embed=embed3)
-										except discord.errors.Forbidden:
-											pass
-										nani = cursor.execute(f"SELECT requester FROM levels WHERE levelid = {level} LIMIT 1")
-										user1 = cursor.fetchone()[0]
-										username = client.get_user(int(user1))
-										embed4 = discord.Embed(title=f'{successtitle}', color=0x00ff00)
-										embed4.add_field(name=f'{thelevel} `{level}` (**{levelname}** {by} **{creator}**) {successsend} **HARD 5<:starrate:718204629858517003> FEATURED** !', value='\u200b')
-										await message.channel.send(embed=embed4)
-										delete = cursor.execute(f"DELETE FROM levels WHERE levelid = {level}")
-										conn.commit()
-
-										cursor.execute(f'SELECT levelsentbygdmod FROM users WHERE userid = {user1}')
-										yesvalue = cursor.fetchone()[0]
-										if yesvalue == "yes":
-											pass
-										elif yesvalue == "no":
-											cursor.execute(f'UPDATE users SET levelsentbygdmod = "yes" WHERE userid = {user1}')
-											conn.commit()
-											levelsentbygdmod(user1)
-											embed5 = levelsentbygdmod(user1)
-											username = client.get_user(int(user1))
-											channel = await username.create_dm()
-											await channel.send(embed=embed5)
-										return
-									elif star == "6":
-										await msg.delete()
-										papa = cursor.execute(f"SELECT moderatorname FROM GDmoderators WHERE userid = {author} LIMIT 1")
-										gdmodname = cursor.fetchone()[0]
-										embed3 = discord.Embed(title=f'{successtitlerequester}', color=0x00ff00)
-										embed3.set_thumbnail(url="https://cdn.discordapp.com/emojis/472908356928143370.png?v=1")
-										embed3.add_field(name=f'{thelevelyourequested} `{level}` (**{levelname}** {byrequester} **{creator}**) {sendtorobtop} {gdmodname} {fortext} **HARDER 6<:starrate:718204629858517003> FEATURED**', value='\u200b')
-										if message.attachments:
-											fileimage = message.attachments[0]
-											imageurl = fileimage.url
-											for ext in pic_ext:
-												if imageurl.endswith(ext):
-													embed3.set_image(url=f"{imageurl}")
-										channel = await username.create_dm()
-										try:
-											await channel.send(embed=embed3)
-										except discord.errors.Forbidden:
-											pass
-										nani = cursor.execute(f"SELECT requester FROM levels WHERE levelid = {level} LIMIT 1")
-										user1 = cursor.fetchone()[0]
-										username = client.get_user(int(user1))
-										embed4 = discord.Embed(title=f'{successtitle}', color=0x00ff00)
-										embed4.add_field(name=f'{thelevel} `{level}` (**{levelname}** {by} **{creator}**) {successsend} **HARDER 6<:starrate:718204629858517003> FEATURED** !', value='\u200b')
-										await message.channel.send(embed=embed4)
-										delete = cursor.execute(f"DELETE FROM levels WHERE levelid = {level}")
-										conn.commit()
-
-										cursor.execute(f'SELECT levelsentbygdmod FROM users WHERE userid = {user1}')
-										yesvalue = cursor.fetchone()[0]
-										if yesvalue == "yes":
-											pass
-										elif yesvalue == "no":
-											cursor.execute(f'UPDATE users SET levelsentbygdmod = "yes" WHERE userid = {user1}')
-											conn.commit()
-											levelsentbygdmod(user1)
-											embed5 = levelsentbygdmod(user1)
-											username = client.get_user(int(user1))
-											channel = await username.create_dm()
-											await channel.send(embed=embed5)
-										return
-									elif star == "7":
-										await msg.delete()
-										papa = cursor.execute(f"SELECT moderatorname FROM GDmoderators WHERE userid = {author} LIMIT 1")
-										gdmodname = cursor.fetchone()[0]
-										embed3 = discord.Embed(title=f'{successtitlerequester}', color=0x00ff00)
-										embed3.set_thumbnail(url="https://cdn.discordapp.com/emojis/472908356928143370.png?v=1")
-										embed3.add_field(name=f'{thelevelyourequested} `{level}` (**{levelname}** {byrequester} **{creator}**) {sendtorobtop} {gdmodname} {fortext} **HARDER 7<:starrate:718204629858517003> FEATURED**', value='\u200b')
-										if message.attachments:
-											fileimage = message.attachments[0]
-											imageurl = fileimage.url
-											for ext in pic_ext:
-												if imageurl.endswith(ext):
-													embed3.set_image(url=f"{imageurl}")
-										channel = await username.create_dm()
-										try:
-											await channel.send(embed=embed3)
-										except discord.errors.Forbidden:
-											pass
-										nani = cursor.execute(f"SELECT requester FROM levels WHERE levelid = {level} LIMIT 1")
-										user1 = cursor.fetchone()[0]
-										username = client.get_user(int(user1))
-										embed4 = discord.Embed(title=f'{successtitle}', color=0x00ff00)
-										embed4.add_field(name=f'{thelevel} `{level}` (**{levelname}** {by} **{creator}**) {successsend} **HARDER 7<:starrate:718204629858517003> FEATURED** !', value='\u200b')
-										await message.channel.send(embed=embed4)
-										delete = cursor.execute(f"DELETE FROM levels WHERE levelid = {level}")
-										conn.commit()
-
-										cursor.execute(f'SELECT levelsentbygdmod FROM users WHERE userid = {user1}')
-										yesvalue = cursor.fetchone()[0]
-										if yesvalue == "yes":
-											pass
-										elif yesvalue == "no":
-											cursor.execute(f'UPDATE users SET levelsentbygdmod = "yes" WHERE userid = {user1}')
-											conn.commit()
-											levelsentbygdmod(user1)
-											embed5 = levelsentbygdmod(user1)
-											username = client.get_user(int(user1))
-											channel = await username.create_dm()
-											await channel.send(embed=embed5)
-										return
-									elif star == "8":
-										await msg.delete()
-										papa = cursor.execute(f"SELECT moderatorname FROM GDmoderators WHERE userid = {author} LIMIT 1")
-										gdmodname = cursor.fetchone()[0]
-										embed3 = discord.Embed(title=f'{successtitlerequester}', color=0x00ff00)
-										embed3.set_thumbnail(url="https://cdn.discordapp.com/emojis/472908439958323211.png?v=1")
-										embed3.add_field(name=f'{thelevelyourequested} `{level}` (**{levelname}** {byrequester} **{creator}**) {sendtorobtop} {gdmodname} {fortext} **INSANE 8<:starrate:718204629858517003> FEATURED**', value='\u200b')
-										if message.attachments:
-											fileimage = message.attachments[0]
-											imageurl = fileimage.url
-											for ext in pic_ext:
-												if imageurl.endswith(ext):
-													embed3.set_image(url=f"{imageurl}")
-										channel = await username.create_dm()
-										try:
-											await channel.send(embed=embed3)
-										except discord.errors.Forbidden:
-											pass
-										nani = cursor.execute(f"SELECT requester FROM levels WHERE levelid = {level} LIMIT 1")
-										user1 = cursor.fetchone()[0]
-										username = client.get_user(int(user1))
-										embed4 = discord.Embed(title=f'{successtitle}', color=0x00ff00)
-										embed4.add_field(name=f'{thelevel} `{level}` (**{levelname}** {by} **{creator}**) {successsend} **INSANE 8<:starrate:718204629858517003> FEATURED** !', value='\u200b')
-										await message.channel.send(embed=embed4)
-										delete = cursor.execute(f"DELETE FROM levels WHERE levelid = {level}")
-										conn.commit()
-
-										cursor.execute(f'SELECT levelsentbygdmod FROM users WHERE userid = {user1}')
-										yesvalue = cursor.fetchone()[0]
-										if yesvalue == "yes":
-											pass
-										elif yesvalue == "no":
-											cursor.execute(f'UPDATE users SET levelsentbygdmod = "yes" WHERE userid = {user1}')
-											conn.commit()
-											levelsentbygdmod(user1)
-											embed5 = levelsentbygdmod(user1)
-											username = client.get_user(int(user1))
-											channel = await username.create_dm()
-											await channel.send(embed=embed5)
-										return
-									elif star == "9":
-										await msg.delete()
-										papa = cursor.execute(f"SELECT moderatorname FROM GDmoderators WHERE userid = {author} LIMIT 1")
-										gdmodname = cursor.fetchone()[0]
-										embed3 = discord.Embed(title=f'{successtitlerequester}', color=0x00ff00)
-										embed3.set_thumbnail(url="https://cdn.discordapp.com/emojis/472908439958323211.png?v=1")
-										embed3.add_field(name=f'{thelevelyourequested} `{level}` (**{levelname}** {byrequester} **{creator}**) {sendtorobtop} {gdmodname} {fortext} **INSANE 9<:starrate:718204629858517003> FEATURED**', value='\u200b')
-										if message.attachments:
-											fileimage = message.attachments[0]
-											imageurl = fileimage.url
-											for ext in pic_ext:
-												if imageurl.endswith(ext):
-													embed3.set_image(url=f"{imageurl}")
-										channel = await username.create_dm()
-										try:
-											await channel.send(embed=embed3)
-										except discord.errors.Forbidden:
-											pass
-										nani = cursor.execute(f"SELECT requester FROM levels WHERE levelid = {level} LIMIT 1")
-										user1 = cursor.fetchone()[0]
-										username = client.get_user(int(user1))
-										embed4 = discord.Embed(title=f'{successtitle}', color=0x00ff00)
-										embed4.add_field(name=f'{thelevel} `{level}` (**{levelname}** {by} **{creator}**) {successsend} **INSANE 9<:starrate:718204629858517003> FEATURED** !', value='\u200b')
-										await message.channel.send(embed=embed4)
-										delete = cursor.execute(f"DELETE FROM levels WHERE levelid = {level}")
-										conn.commit()
-
-										cursor.execute(f'SELECT levelsentbygdmod FROM users WHERE userid = {user1}')
-										yesvalue = cursor.fetchone()[0]
-										if yesvalue == "yes":
-											pass
-										elif yesvalue == "no":
-											cursor.execute(f'UPDATE users SET levelsentbygdmod = "yes" WHERE userid = {user1}')
-											conn.commit()
-											levelsentbygdmod(user1)
-											embed5 = levelsentbygdmod(user1)
-											username = client.get_user(int(user1))
-											channel = await username.create_dm()
-											await channel.send(embed=embed5)
-										return
-									elif star == "10":
-										if demon == "1":
-											await msg.delete()
-											papa = cursor.execute(f"SELECT moderatorname FROM GDmoderators WHERE userid = {author} LIMIT 1")
-											gdmodname = cursor.fetchone()[0]
-											embed3 = discord.Embed(title=f'{successtitlerequester}', color=0x00ff00)
-											embed3.set_thumbnail(url="https://cdn.discordapp.com/emojis/472907878790070273.png?v=1")
-											embed3.add_field(name=f'{thelevelyourequested} `{level}` (**{levelname}** {byrequester} **{creator}**) {sendtorobtop} {gdmodname} {fortext} **EASY DEMON 10<:starrate:718204629858517003> FEATURED**', value='\u200b')
-											if message.attachments:
-												fileimage = message.attachments[0]
-												imageurl = fileimage.url
-												for ext in pic_ext:
-													if imageurl.endswith(ext):
-														embed3.set_image(url=f"{imageurl}")
-											channel = await username.create_dm()
-											try:
-												await channel.send(embed=embed3)
-											except discord.errors.Forbidden:
-												pass
-											nani = cursor.execute(f"SELECT requester FROM levels WHERE levelid = {level} LIMIT 1")
-											user1 = cursor.fetchone()[0]
-											username = client.get_user(int(user1))
-											embed4 = discord.Embed(title=f'{successtitle}', color=0x00ff00)
-											embed4.add_field(name=f'{thelevel} `{level}` (**{levelname}** {by} **{creator}**) {successsend} **EASY DEMON 10<:starrate:718204629858517003> FEATURED** !', value='\u200b')
-											await message.channel.send(embed=embed4)
-											delete = cursor.execute(f"DELETE FROM levels WHERE levelid = {level}")
-											conn.commit()
-
-											cursor.execute(f'SELECT levelsentbygdmod FROM users WHERE userid = {user1}')
-											yesvalue = cursor.fetchone()[0]
-											if yesvalue == "yes":
-												pass
-											elif yesvalue == "no":
-												cursor.execute(f'UPDATE users SET levelsentbygdmod = "yes" WHERE userid = {user1}')
-												conn.commit()
-												levelsentbygdmod(user1)
-												embed5 = levelsentbygdmod(user1)
-												username = client.get_user(int(user1))
-												channel = await username.create_dm()
-												await channel.send(embed=embed5)
-											return
-										elif demon == "2":
-											await msg.delete()
-											papa = cursor.execute(f"SELECT moderatorname FROM GDmoderators WHERE userid = {author} LIMIT 1")
-											gdmodname = cursor.fetchone()[0]
-											embed3 = discord.Embed(title=f'{successtitlerequester}', color=0x00ff00)
-											embed3.set_thumbnail(url="https://cdn.discordapp.com/emojis/472908128472793089.png?v=1")
-											embed3.add_field(name=f'{thelevelyourequested} `{level}` (**{levelname}** {byrequester} **{creator}**) {sendtorobtop} {gdmodname} {fortext} **MEDIUM DEMON 10<:starrate:718204629858517003> FEATURED**', value='\u200b')
-											if message.attachments:
-												fileimage = message.attachments[0]
-												imageurl = fileimage.url
-												for ext in pic_ext:
-													if imageurl.endswith(ext):
-														embed3.set_image(url=f"{imageurl}")
-											channel = await username.create_dm()
-											try:
-												await channel.send(embed=embed3)
-											except discord.errors.Forbidden:
-												pass
-											nani = cursor.execute(f"SELECT requester FROM levels WHERE levelid = {level} LIMIT 1")
-											user1 = cursor.fetchone()[0]
-											username = client.get_user(int(user1))
-											embed4 = discord.Embed(title=f'{successtitle}', color=0x00ff00)
-											embed4.add_field(name=f'{thelevel} `{level}` (**{levelname}** {by} **{creator}**) {successsend} **MEDIUM DEMON 10<:starrate:718204629858517003> FEATURED** !', value='\u200b')
-											await message.channel.send(embed=embed4)
-											delete = cursor.execute(f"DELETE FROM levels WHERE levelid = {level}")
-											conn.commit()
-
-											cursor.execute(f'SELECT levelsentbygdmod FROM users WHERE userid = {user1}')
-											yesvalue = cursor.fetchone()[0]
-											if yesvalue == "yes":
-												pass
-											elif yesvalue == "no":
-												cursor.execute(f'UPDATE users SET levelsentbygdmod = "yes" WHERE userid = {user1}')
-												conn.commit()
-												levelsentbygdmod(user1)
-												embed5 = levelsentbygdmod(user1)
-												username = client.get_user(int(user1))
-												channel = await username.create_dm()
-												await channel.send(embed=embed5)
-											return
-										elif demon == "3":
-											await msg.delete()
-											papa = cursor.execute(f"SELECT moderatorname FROM GDmoderators WHERE userid = {author} LIMIT 1")
-											gdmodname = cursor.fetchone()[0]
-											embed3 = discord.Embed(title=f'{successtitlerequester}', color=0x00ff00)
-											embed3.set_thumbnail(url="https://cdn.discordapp.com/emojis/472907996901408778.png?v=1")
-											embed3.add_field(name=f'{thelevelyourequested} `{level}` (**{levelname}** {byrequester} **{creator}**) {sendtorobtop} {gdmodname} {fortext} **HARD DEMON 10<:starrate:718204629858517003> FEATURED**', value='\u200b')
-											if message.attachments:
-												fileimage = message.attachments[0]
-												imageurl = fileimage.url
-												for ext in pic_ext:
-													if imageurl.endswith(ext):
-														embed3.set_image(url=f"{imageurl}")
-											channel = await username.create_dm()
-											try:
-												await channel.send(embed=embed3)
-											except discord.errors.Forbidden:
-												pass
-											nani = cursor.execute(f"SELECT requester FROM levels WHERE levelid = {level} LIMIT 1")
-											user1 = cursor.fetchone()[0]
-											username = client.get_user(int(user1))
-											embed4 = discord.Embed(title=f'{successtitle}', color=0x00ff00)
-											embed4.add_field(name=f'{thelevel} `{level}` (**{levelname}** {by} **{creator}**) {successsend} **HARD DEMON 10<:starrate:718204629858517003> FEATURED** !', value='\u200b')
-											await message.channel.send(embed=embed4)
-											delete = cursor.execute(f"DELETE FROM levels WHERE levelid = {level}")
-											conn.commit()
-
-											cursor.execute(f'SELECT levelsentbygdmod FROM users WHERE userid = {user1}')
-											yesvalue = cursor.fetchone()[0]
-											if yesvalue == "yes":
-												pass
-											elif yesvalue == "no":
-												cursor.execute(f'UPDATE users SET levelsentbygdmod = "yes" WHERE userid = {user1}')
-												conn.commit()
-												levelsentbygdmod(user1)
-												embed5 = levelsentbygdmod(user1)
-												username = client.get_user(int(user1))
-												channel = await username.create_dm()
-												await channel.send(embed=embed5)
-											return
-										elif demon == "4":
-											await msg.delete()
-											papa = cursor.execute(f"SELECT moderatorname FROM GDmoderators WHERE userid = {author} LIMIT 1")
-											gdmodname = cursor.fetchone()[0]
-											embed3 = discord.Embed(title=f'{successtitlerequester}', color=0x00ff00)
-											embed3.set_thumbnail(url="https://cdn.discordapp.com/emojis/472908062269636640.png?v=1")
-											embed3.add_field(name=f'{thelevelyourequested} `{level}` (**{levelname}** {byrequester} **{creator}**) {sendtorobtop} {gdmodname} {fortext} **INSANE DEMON 10<:starrate:718204629858517003> FEATURED**', value='\u200b')
-											if message.attachments:
-												fileimage = message.attachments[0]
-												imageurl = fileimage.url
-												for ext in pic_ext:
-													if imageurl.endswith(ext):
-														embed3.set_image(url=f"{imageurl}")
-											channel = await username.create_dm()
-											try:
-												await channel.send(embed=embed3)
-											except discord.errors.Forbidden:
-												pass
-											nani = cursor.execute(f"SELECT requester FROM levels WHERE levelid = {level} LIMIT 1")
-											user1 = cursor.fetchone()[0]
-											username = client.get_user(int(user1))
-											embed4 = discord.Embed(title=f'{successtitle}', color=0x00ff00)
-											embed4.add_field(name=f'{thelevel} `{level}` (**{levelname}** {by} **{creator}**) {successsend} **INSANE DEMON 10<:starrate:718204629858517003> FEATURED** !', value='\u200b')
-											await message.channel.send(embed=embed4)
-											delete = cursor.execute(f"DELETE FROM levels WHERE levelid = {level}")
-											conn.commit()
-
-											cursor.execute(f'SELECT levelsentbygdmod FROM users WHERE userid = {user1}')
-											yesvalue = cursor.fetchone()[0]
-											if yesvalue == "yes":
-												pass
-											elif yesvalue == "no":
-												cursor.execute(f'UPDATE users SET levelsentbygdmod = "yes" WHERE userid = {user1}')
-												conn.commit()
-												levelsentbygdmod(user1)
-												embed5 = levelsentbygdmod(user1)
-												username = client.get_user(int(user1))
-												channel = await username.create_dm()
-												await channel.send(embed=embed5)
-											return
-										elif demon == "5":
-											await msg.delete()
-											papa = cursor.execute(f"SELECT moderatorname FROM GDmoderators WHERE userid = {author} LIMIT 1")
-											gdmodname = cursor.fetchone()[0]
-											embed3 = discord.Embed(title=f'{successtitlerequester}', color=0x00ff00)
-											embed3.set_thumbnail(url="https://cdn.discordapp.com/emojis/472907934633033738.png?v=1")
-											embed3.add_field(name=f'{thelevelyourequested} `{level}` (**{levelname}** {byrequester} **{creator}**) {sendtorobtop} {gdmodname} {fortext} **EXTREME DEMON 10<:starrate:718204629858517003> FEATURED**', value='\u200b')
-											if message.attachments:
-												fileimage = message.attachments[0]
-												imageurl = fileimage.url
-												for ext in pic_ext:
-													if imageurl.endswith(ext):
-														embed3.set_image(url=f"{imageurl}")
-											channel = await username.create_dm()
-											try:
-												await channel.send(embed=embed3)
-											except discord.errors.Forbidden:
-												pass
-											nani = cursor.execute(f"SELECT requester FROM levels WHERE levelid = {level} LIMIT 1")
-											user1 = cursor.fetchone()[0]
-											username = client.get_user(int(user1))
-											embed4 = discord.Embed(title=f'{successtitle}', color=0x00ff00)
-											embed4.add_field(name=f'{thelevel} `{level}` (**{levelname}** {by} **{creator}**) {successsend} **EXTREME DEMON 10<:starrate:718204629858517003> FEATURED** !', value='\u200b')
-											await message.channel.send(embed=embed4)
-											delete = cursor.execute(f"DELETE FROM levels WHERE levelid = {level}")
-											conn.commit()
-
-											cursor.execute(f'SELECT levelsentbygdmod FROM users WHERE userid = {user1}')
-											yesvalue = cursor.fetchone()[0]
-											if yesvalue == "yes":
-												pass
-											elif yesvalue == "no":
-												cursor.execute(f'UPDATE users SET levelsentbygdmod = "yes" WHERE userid = {user1}')
-												conn.commit()
-												levelsentbygdmod(user1)
-												embed5 = levelsentbygdmod(user1)
-												username = client.get_user(int(user1))
-												channel = await username.create_dm()
-												await channel.send(embed=embed5)
-											return
-										else:
-											await msg.delete()
-											papa = cursor.execute(f"SELECT moderatorname FROM GDmoderators WHERE userid = {author} LIMIT 1")
-											gdmodname = cursor.fetchone()[0]
-											embed3 = discord.Embed(title=f'{successtitlerequester}', color=0x00ff00)
-											embed3.set_thumbnail(url="https://cdn.discordapp.com/emojis/472907996901408778.png?v=1")
-											embed3.add_field(name=f'{thelevelyourequested} `{level}` (**{levelname}** {byrequester} **{creator}**) {sendtorobtop} {gdmodname} {fortext} **DEMON 10<:starrate:718204629858517003> FEATURED**', value='\u200b')
-											if message.attachments:
-												fileimage = message.attachments[0]
-												imageurl = fileimage.url
-												for ext in pic_ext:
-													if imageurl.endswith(ext):
-														embed3.set_image(url=f"{imageurl}")
-											channel = await username.create_dm()
-											try:
-												await channel.send(embed=embed3)
-											except discord.errors.Forbidden:
-												pass
-											nani = cursor.execute(f"SELECT requester FROM levels WHERE levelid = {level} LIMIT 1")
-											user1 = cursor.fetchone()[0]
-											username = client.get_user(int(user1))
-											embed4 = discord.Embed(title=f'{successtitle}', color=0x00ff00)
-											embed4.add_field(name=f'{thelevel} `{level}` (**{levelname}** {by} **{creator}**) {successsend} **DEMON 10<:starrate:718204629858517003> FEATURED** !', value='\u200b')
-											await message.channel.send(embed=embed4)
-											delete = cursor.execute(f"DELETE FROM levels WHERE levelid = {level}")
-											conn.commit()
-
-											cursor.execute(f'SELECT levelsentbygdmod FROM users WHERE userid = {user1}')
-											yesvalue = cursor.fetchone()[0]
-											if yesvalue == "yes":
-												pass
-											elif yesvalue == "no":
-												cursor.execute(f'UPDATE users SET levelsentbygdmod = "yes" WHERE userid = {user1}')
-												conn.commit()
-												levelsentbygdmod(user1)
-												embed5 = levelsentbygdmod(user1)
-												username = client.get_user(int(user1))
-												channel = await username.create_dm()
-												await channel.send(embed=embed5)
-											return
-									else:
-										await msg.delete()
-										embed = discord.Embed(title="", color=0xff0000)
-										embed.add_field(name=f'{errormessage}', value=f"{errorsyntax}")
+										embed.add_field(name=f'{errormessage}', value=f"{errorrate}")
 										msg2 = await message.channel.send(embed=embed)
 										time.sleep(5)
 										await msg2.delete()
@@ -13808,7 +11655,8 @@ async def on_message(message):
 								else:
 									await msg.delete()
 									embed = discord.Embed(title="", color=0xff0000)
-									embed.add_field(name=f'{errormessage}', value=f"{errorrate}")
+									#embed.set_thumbnail(url="https://cdn.discordapp.com/emojis/472907618386575370.png")
+									embed.add_field(name=f'{errormessage}', value=f'{errorqueue1} `{level}` {errorqueue2}')
 									msg2 = await message.channel.send(embed=embed)
 									time.sleep(5)
 									await msg2.delete()
@@ -13816,26 +11664,25 @@ async def on_message(message):
 							else:
 								await msg.delete()
 								embed = discord.Embed(title="", color=0xff0000)
-								#embed.set_thumbnail(url="https://cdn.discordapp.com/emojis/472907618386575370.png")
-								embed.add_field(name=f'{errormessage}', value=f'{errorqueue1} `{level}` {errorqueue2}')
+								embed.add_field(name=f'{errormessage}', value=f"{errorban}")
 								msg2 = await message.channel.send(embed=embed)
 								time.sleep(5)
 								await msg2.delete()
 								return
 						else:
+							conn.commit()
 							await msg.delete()
 							embed = discord.Embed(title="", color=0xff0000)
-							embed.add_field(name=f'{errormessage}', value=f"{errorban}")
+							#embed.set_thumbnail(url="https://cdn.discordapp.com/emojis/472907618386575370.png")
+							embed.add_field(name=f'{errormessage}', value=f'{errorblacklist}')
 							msg2 = await message.channel.send(embed=embed)
 							time.sleep(5)
 							await msg2.delete()
 							return
 					else:
-						conn.commit()
 						await msg.delete()
 						embed = discord.Embed(title="", color=0xff0000)
-						#embed.set_thumbnail(url="https://cdn.discordapp.com/emojis/472907618386575370.png")
-						embed.add_field(name=f'{errormessage}', value=f'{errorblacklist}')
+						embed.add_field(name=f'{errormessage}', value=f"{errorpermission}")
 						msg2 = await message.channel.send(embed=embed)
 						time.sleep(5)
 						await msg2.delete()
@@ -13866,6 +11713,17 @@ async def on_message(message):
 					return
 			else:
 				conn.cursor(buffered=True)
+
+				maincommand = "reqreport"
+				checkmaintenance = checkmaintenance(maincommand)
+				if checkmaintenance == "yes":
+					embed = discord.Embed(title="", color=0xff0000)
+					embed.add_field(name=f'Error. <:error:472907618386575370>', value=f"**The command is under maintenance, please try again later.**")
+					msg2 = await message.channel.send(embed=embed)
+					time.sleep(5)
+					await msg2.delete()
+					return
+				
 				try:
 					level = args[1]
 				except IndexError as error:
@@ -13894,7 +11752,27 @@ async def on_message(message):
 				successtitle = translate_messages[9]
 				by = translate_messages[10]
 				successmoderation = translate_messages[11]
-
+				
+				translate_cooldown_messages = open(f"language/client/cooldown-{language2}.txt").read().splitlines()
+				errorcooldown1 = translate_cooldown_messages[0]
+				errorcooldown2 = translate_cooldown_messages[1]
+				
+				#cooldowncheck(author)
+				alwayscooldown,secondcooldown = cooldowncheck(author)
+				
+				if alwayscooldown == 1:
+					embed = discord.Embed(title="", color=0xff0000)
+					embed.add_field(name=f'{errormessage}', value=f"{errorcooldown1} {secondcooldown} {errorcooldown2}")
+					msg2 = await message.channel.send(embed=embed)
+					time.sleep(5)
+					await msg2.delete()
+					return
+				sql = "INSERT INTO cooldowns (userid, cooldown) VALUES (%s, %s)"
+				datetime_object_cooldown = datetime_object + datetime.timedelta(seconds=30)
+				val = (author, datetime_object_cooldown)
+				cursor.execute(sql,val)
+				conn.commit()
+				
 				embed = discord.Embed(title="", color=0x00ff00)
 				data = f"gameVersion=21&binaryVersion=35&gdw=0&type=0&str={level}&diff=-&len=-&page=0&total=0&secret=Wmfd2893gb7".encode()
 				result = urlopen("http://www.boomlings.com/database/getGJLevels21.php",data).read().decode()
@@ -13909,7 +11787,7 @@ async def on_message(message):
 					embed = discord.Embed(title=f"{loadingtitle}", color=0xffce08)
 					embed.add_field(name=f'{loadingdesc}', value="\u200b")
 					msg = await message.channel.send(embed=embed)
-					pog = cursor.execute(f"SELECT levelid FROM reports WHERE levelid = {level} LIMIT 1")
+					pog = cursor.execute(f"SELECT levelid FROM reports WHERE levelid = %s LIMIT 1", (level, ))
 					maybe_number = cursor.fetchone()
 					if maybe_number is not None:
 						number = maybe_number[0]
@@ -13979,6 +11857,17 @@ async def on_message(message):
 					return
 			else:
 				conn.cursor(buffered=True)
+
+				maincommand = "reqmod approve"
+				checkmaintenance = checkmaintenance(maincommand)
+				if checkmaintenance == "yes":
+					embed = discord.Embed(title="", color=0xff0000)
+					embed.add_field(name=f'Error. <:error:472907618386575370>', value=f"**The command is under maintenance, please try again later.**")
+					msg2 = await message.channel.send(embed=embed)
+					time.sleep(5)
+					await msg2.delete()
+					return
+				
 				try:
 					level = args[2]
 				except IndexError as error:
@@ -14017,7 +11906,7 @@ async def on_message(message):
 					await msg2.delete()
 					return
 				else:
-					pog = cursor.execute(f"SELECT levelid FROM reports WHERE levelid = {level} LIMIT 1")
+					pog = cursor.execute(f"SELECT levelid FROM reports WHERE levelid = %s LIMIT 1", (level, ))
 					try:
 						maybe_number = cursor.fetchone()[0]
 					except TypeError as error:
@@ -14026,7 +11915,7 @@ async def on_message(message):
 						number = maybe_number
 						await asyncio.sleep(3)
 						if level == str(number):
-							pogger = cursor.execute(f"UPDATE reports SET isBlacklist = 1 WHERE levelid = {level}")
+							pogger = cursor.execute(f"UPDATE reports SET isBlacklist = 1 WHERE levelid = %s", (level, ))
 							conn.commit()
 							await msg.delete()
 							embed = discord.Embed(title="", color=0x00ff00)
@@ -14061,6 +11950,17 @@ async def on_message(message):
 					return
 			else:
 				conn.cursor(buffered=True)
+
+				maincommand = "reqmod unapprove"
+				checkmaintenance = checkmaintenance(maincommand)
+				if checkmaintenance == "yes":
+					embed = discord.Embed(title="", color=0xff0000)
+					embed.add_field(name=f'Error. <:error:472907618386575370>', value=f"**The command is under maintenance, please try again later.**")
+					msg2 = await message.channel.send(embed=embed)
+					time.sleep(5)
+					await msg2.delete()
+					return
+				
 				try:
 					level = args[2]
 				except IndexError as error:
@@ -14099,7 +11999,7 @@ async def on_message(message):
 					await msg2.delete()
 					return
 				else:
-					pog = cursor.execute(f"SELECT levelid FROM reports WHERE levelid = {level} LIMIT 1")
+					pog = cursor.execute(f"SELECT levelid FROM reports WHERE levelid = %s LIMIT 1", (level, ))
 					try:
 						maybe_number = cursor.fetchone()[0]
 					except TypeError as error:
@@ -14108,7 +12008,7 @@ async def on_message(message):
 						number = maybe_number
 						await asyncio.sleep(3)
 						if level == str(number):
-							pogger = cursor.execute(f"DELETE FROM reports WHERE levelid = {level}")
+							pogger = cursor.execute(f"DELETE FROM reports WHERE levelid = %s", (level, ))
 							conn.commit()
 							await msg.delete()
 							embed = discord.Embed(title="", color=0x00ff00)
@@ -14143,6 +12043,17 @@ async def on_message(message):
 					return
 			else:
 				conn.cursor(buffered=True)
+
+				maincommand = "reqmod ban"
+				checkmaintenance = checkmaintenance(maincommand)
+				if checkmaintenance == "yes":
+					embed = discord.Embed(title="", color=0xff0000)
+					embed.add_field(name=f'Error. <:error:472907618386575370>', value=f"**The command is under maintenance, please try again later.**")
+					msg2 = await message.channel.send(embed=embed)
+					time.sleep(5)
+					await msg2.delete()
+					return
+				
 				try:
 					user1 = args[2]
 				except IndexError as error:
@@ -14207,6 +12118,16 @@ async def on_message(message):
 							time.sleep(5)
 							await msg2.delete()
 							return
+						username = client.get_user(int(user1))
+						if username is None:
+							await msg.delete()
+							embed = discord.Embed(title="", color=0xff0000)
+							#embed.set_thumbnail(url="https://cdn.discordapp.com/emojis/472907618386575370.png")
+							embed.add_field(name=f'{errormessage}', value=f'{errorsyntaxuser}')
+							msg2 = await message.channel.send(embed=embed)
+							time.sleep(5)
+							await msg2.delete()
+							return
 						else:
 							await asyncio.sleep(3)
 							await msg.delete()
@@ -14252,6 +12173,17 @@ async def on_message(message):
 					return
 			else:
 				conn.cursor(buffered=True)
+
+				maincommand = "reqmod unban"
+				checkmaintenance = checkmaintenance(maincommand)
+				if checkmaintenance == "yes":
+					embed = discord.Embed(title="", color=0xff0000)
+					embed.add_field(name=f'Error. <:error:472907618386575370>', value=f"**The command is under maintenance, please try again later.**")
+					msg2 = await message.channel.send(embed=embed)
+					time.sleep(5)
+					await msg2.delete()
+					return
+
 				try:
 					user = args[2]
 				except IndexError as error:
@@ -14292,6 +12224,16 @@ async def on_message(message):
 					return
 				else:
 					if user == 0:
+						await msg.delete()
+						embed = discord.Embed(title="", color=0xff0000)
+						#embed.set_thumbnail(url="https://cdn.discordapp.com/emojis/472907618386575370.png")
+						embed.add_field(name=f'{errormessage}', value=f'{errorsyntaxuser}')
+						msg2 = await message.channel.send(embed=embed)
+						time.sleep(5)
+						await msg2.delete()
+						return
+					username = client.get_user(int(user))
+					if username is None:
 						await msg.delete()
 						embed = discord.Embed(title="", color=0xff0000)
 						#embed.set_thumbnail(url="https://cdn.discordapp.com/emojis/472907618386575370.png")
@@ -14349,6 +12291,16 @@ async def on_message(message):
 			else:
 				conn.cursor(buffered=True)
 
+				maincommand = "reqprofile link"
+				checkmaintenance = checkmaintenance(maincommand)
+				if checkmaintenance == "yes":
+					embed = discord.Embed(title="", color=0xff0000)
+					embed.add_field(name=f'Error. <:error:472907618386575370>', value=f"**The command is under maintenance, please try again later.**")
+					msg2 = await message.channel.send(embed=embed)
+					time.sleep(5)
+					await msg2.delete()
+					return
+
 				author = message.author.id
 				cursor.execute(f"SELECT language FROM users WHERE userid = {author}")
 				try:
@@ -14381,6 +12333,9 @@ async def on_message(message):
 					sql = "INSERT INTO users (userid, levelrequestedcount, levelreviewedcount, levelreviewapprovedcount, levelreviewunapprovedcount, requestachievement1, requestachievement5, requestachievement10, requestachievement50, requestachievement100, reviewachievement1, reviewachievement5, reviewachievement10, reviewachievement50, reviewachievement100, reviewapprovedachievement1, reviewapprovedachievement5, reviewapprovedachievement10, reviewapprovedachievement50, reviewapprovedachievement100, reviewunapprovedachievement1, reviewunapprovedachievement5, reviewunapprovedachievement10, reviewunapprovedachievement50, reviewunapprovedachievement100, levelsentbygdmod, firstsync, suggestidea, approvedidea, approvedreport, language, isCubeUnlocked, cubetype, color1, color2, glowoutline) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
 					var = (author,zero,zero,zero,zero,default,default,default,default,default,default,default,default,default,default,default,default,default,default,default,default,default,default,default,default,default,"yes",default,default,default,"en",one,one,color1,color2,zero)
 					cursor.execute(sql, var)
+					conn.commit()
+					sql = f"INSERT INTO rewards (userid) VALUES ({author})"
+					cursor.execute(sql)
 					conn.commit()
 					await msg.delete()
 					embed = discord.Embed(title=f'{successtitle}', color=0x00ff00)
@@ -14421,6 +12376,16 @@ async def on_message(message):
 			else:
 				conn.cursor(buffered=True)
 
+				maincommand = "reqprofile unlink"
+				checkmaintenance = checkmaintenance(maincommand)
+				if checkmaintenance == "yes":
+					embed = discord.Embed(title="", color=0xff0000)
+					embed.add_field(name=f'Error. <:error:472907618386575370>', value=f"**The command is under maintenance, please try again later.**")
+					msg2 = await message.channel.send(embed=embed)
+					time.sleep(5)
+					await msg2.delete()
+					return
+
 				author = message.author.id
 				cursor.execute(f"SELECT language FROM users WHERE userid = {author}")
 				try:
@@ -14453,9 +12418,12 @@ async def on_message(message):
 					await msg2.delete()
 					return
 				else:
+
 					cursor.execute(f"DELETE FROM users WHERE userid = {author}")
 					conn.commit()
 					cursor.execute(f"DELETE FROM levels WHERE requester = {author}")
+					conn.commit()
+					cursor.execute(f"DELETE FROM rewards WHERE userid = {author}")
 					conn.commit()
 					await msg.delete()
 					embed = discord.Embed(title=f'{successtitle}', color=0x00ff00)
@@ -14501,7 +12469,7 @@ async def on_message(message):
 					text = args[1:]
 				except IndexError as error:
 					text = None
-				if author == 216708683290247168:
+				if author == jouca:
 					if text is None:
 						await msg.delete()
 						embed = discord.Embed(title="", color=0xff0000)
@@ -14520,11 +12488,18 @@ async def on_message(message):
 					while row is not None:
 						channel2 = client.get_channel(int(row[0]))
 						embed3 = discord.Embed(title="A message from the developer of Geometry Request", color=0x00ff0)
+						if message.attachments:
+							fileimage = message.attachments[0]
+							imageurl = fileimage.url
+							for ext in pic_ext:
+								if imageurl.endswith(ext):
+									embed3.set_image(url=f"{imageurl}")
+
 						embed3.set_author(name=f"{nametag}", icon_url="https://pbs.twimg.com/profile_images/1260383799537434625/g4M83_3f.jpg")
 						embed3.add_field(name='Announcement Bot', value=f"{sentence}")
 						try:
 							await channel2.send(embed=embed3)
-						except discord.errors.Forbidden:
+						except discord.errors:
 							pass
 						row = cursor.fetchone()
 					return
@@ -14552,6 +12527,9 @@ async def on_message(message):
 					return
 			else:
 				conn.cursor()
+				
+				args = [x for ar in args for x in ar.split('\n')]
+
 				embed3 = discord.Embed(title="<:info:472908656514433064> Loading...", color=0xffce08)
 				embed3.add_field(name='Loading... Please wait a little moment', value="\u200b")
 				loading	= await message.channel.send(embed=embed3)
@@ -14561,7 +12539,7 @@ async def on_message(message):
 				channel = message.channel.id
 
 				query = " ".join(msg.split(" ")[1:])
-				if author != 216708683290247168:
+				if author != jouca:
 					embed = discord.Embed(title="", color=0xff0000)
 					embed.add_field(name='Error. <:error:472907618386575370>', value="You are not Jouca.")
 					await message.channel.send(embed=embed)
@@ -14600,6 +12578,66 @@ async def on_message(message):
 					await message.channel.send(embed=embed)
 					return
 
+		if msg.startswith("exec"):
+			try:
+				conn = MC.connect(host = dbhost, database = dbdatabase, user = dbuser, password = dbpassword)
+				cursor = conn.cursor()
+			except MC.Error as err:
+				if err.errno == errorcode.ER_ACCESS_DENIED_ERROR:
+					print("Something is not right with your username or your password")
+					return
+				elif err.errno == errorcode.ER_BAD_DB_ERROR:
+					print("Database does not exist")
+					return
+				else:
+					print(err)
+					return
+			else:
+				conn.cursor()
+				args = [x for ar in args for x in ar.split('\n')]
+
+				embed3 = discord.Embed(title="<:info:472908656514433064> Loading...", color=0xffce08)
+				embed3.add_field(name='Loading... Please wait a little moment', value="\u200b")
+				loading	= await message.channel.send(embed=embed3)
+				server = message.guild.name
+				var = message.guild.id
+				author = message.author.id
+				channel = message.channel.id
+				query = " ".join(msg.split(" ")[1:])
+				if author != jouca: #553971625679126549
+					embed = discord.Embed(title="", color=0xff0000)
+					embed.add_field(name='Error. <:error:472907618386575370>', value="You are not Jouca.")
+					await message.channel.send(embed=embed)
+					await loading.delete()
+					return
+				if len(query) == 0:
+					embed = discord.Embed(title="", color=0xff0000)
+					embed.add_field(name='Error. <:error:472907618386575370>', value="You need to input code.")
+					await message.channel.send(embed=embed)
+					await loading.delete()
+					return
+				try:
+					embed = discord.Embed(title='Success! <:success:472908961176092702>', color=0x00ff00)
+					embed.add_field(name='Input :inbox_tray:', value=f"```{query}```")
+					env = {
+						"message": message,
+						"cursor": cursor,
+						"conn": conn
+					}
+					res = exec(query, env);
+					embed.add_field(name='Output :outbox_tray:', value=f"```{res}```", inline=False)
+					await loading.delete()
+					await message.channel.send(embed=embed)
+				except Exception as error:
+					embed = discord.Embed(title="Error. <:error:472907618386575370>", color=0xff0000)
+					embed.add_field(name='Input :inbox_tray:', value=f"```{query}```")
+					embed.add_field(name='Output :outbox_tray:', value=error, inline=False)
+					await loading.delete()
+					await message.channel.send(embed=embed)
+					return
+				return
+			return;
+
 		if msg.startswith("achievements"):
 			try:
 				conn = MC.connect(host = dbhost, database = dbdatabase, user = dbuser, password = dbpassword)
@@ -14616,6 +12654,16 @@ async def on_message(message):
 					return
 			else:
 				conn.cursor(buffered=True)
+
+				maincommand = "reqachievements"
+				checkmaintenance = checkmaintenance(maincommand)
+				if checkmaintenance == "yes":
+					embed = discord.Embed(title="", color=0xff0000)
+					embed.add_field(name=f'Error. <:error:472907618386575370>', value=f"**The command is under maintenance, please try again later.**")
+					msg2 = await message.channel.send(embed=embed)
+					time.sleep(5)
+					await msg2.delete()
+					return
 
 				author = message.author.id
 				cursor.execute(f"SELECT language FROM users WHERE userid = {author}")
@@ -14933,6 +12981,18 @@ async def on_message(message):
 			else:
 				conn.cursor(buffered=True)
 
+				maincommand = "reqachievement give"
+				checkmaintenance = checkmaintenance(maincommand)
+				if checkmaintenance == "yes":
+					embed = discord.Embed(title="", color=0xff0000)
+					embed.add_field(name=f'Error. <:error:472907618386575370>', value=f"**The command is under maintenance, please try again later.**")
+					msg2 = await message.channel.send(embed=embed)
+					time.sleep(5)
+					await msg2.delete()
+					return
+				
+				args = [x for ar in args for x in ar.split('\n')]
+
 				authorid = message.author.id
 				cursor.execute(f"SELECT language FROM users WHERE userid = {authorid}")
 				try:
@@ -14966,7 +13026,7 @@ async def on_message(message):
 					user = 0
 					user1 = 0
 					author = 0
-				if authorid == 216708683290247168:
+				if authorid == jouca:
 					embed = discord.Embed(title=f"{loadingtitle}", color=0xffce08)
 					embed.add_field(name=f'{loadingdesc}', value="\u200b")
 					msg = await message.channel.send(embed=embed)
@@ -14979,7 +13039,7 @@ async def on_message(message):
 						if achievement == "requestachievement1":
 							cursor.execute(f'UPDATE users SET requestachievement1 = "yes" WHERE userid = {user}')
 							conn.commit()
-							requestachievement1(author)
+							#requestachievement1(author)
 							embed5 = requestachievement1(author)
 							username = client.get_user(int(user))
 							channel = await username.create_dm()
@@ -14995,7 +13055,7 @@ async def on_message(message):
 						elif achievement == "requestachievement5":
 							cursor.execute(f'UPDATE users SET requestachievement5 = "yes" WHERE userid = {user}')
 							conn.commit()
-							requestachievement5(author)
+							#requestachievement5(author)
 							embed5 = requestachievement5(author)
 							username = client.get_user(int(user))
 							channel = await username.create_dm()
@@ -15011,7 +13071,7 @@ async def on_message(message):
 						elif achievement == "requestachievement10":
 							cursor.execute(f'UPDATE users SET requestachievement10 = "yes" WHERE userid = {user}')
 							conn.commit()
-							requestachievement10(author)
+							#requestachievement10(author)
 							embed5 = requestachievement10(author)
 							username = client.get_user(int(user))
 							channel = await username.create_dm()
@@ -15027,7 +13087,7 @@ async def on_message(message):
 						elif achievement == "requestachievement50":
 							cursor.execute(f'UPDATE users SET requestachievement50 = "yes" WHERE userid = {user}')
 							conn.commit()
-							requestachievement50(author)
+							#requestachievement50(author)
 							embed5 = requestachievement50(author)
 							username = client.get_user(int(user))
 							channel = await username.create_dm()
@@ -15043,7 +13103,7 @@ async def on_message(message):
 						elif achievement == "requestachievement100":
 							cursor.execute(f'UPDATE users SET requestachievement100 = "yes" WHERE userid = {user}')
 							conn.commit()
-							requestachievement100(author)
+							#requestachievement100(author)
 							embed5 = requestachievement100(author)
 							username = client.get_user(int(user))
 							channel = await username.create_dm()
@@ -15416,6 +13476,18 @@ async def on_message(message):
 			else:
 				conn.cursor(buffered=True)
 
+				maincommand = "reqachievement remove"
+				checkmaintenance = checkmaintenance(maincommand)
+				if checkmaintenance == "yes":
+					embed = discord.Embed(title="", color=0xff0000)
+					embed.add_field(name=f'Error. <:error:472907618386575370>', value=f"**The command is under maintenance, please try again later.**")
+					msg2 = await message.channel.send(embed=embed)
+					time.sleep(5)
+					await msg2.delete()
+					return
+				
+				args = [x for ar in args for x in ar.split('\n')]
+
 				authorid = message.author.id
 				cursor.execute(f"SELECT language FROM users WHERE userid = {authorid}")
 				try:
@@ -15445,7 +13517,7 @@ async def on_message(message):
 					user = args[3]
 				except IndexError as error:
 					user = 0
-				if author == 216708683290247168:
+				if author == jouca:
 					embed = discord.Embed(title=f"{loadingtitle}", color=0xffce08)
 					embed.add_field(name=f'{loadingdesc}', value="\u200b")
 					msg = await message.channel.send(embed=embed)
@@ -15695,6 +13767,19 @@ async def on_message(message):
 					return
 			else:
 				conn.cursor(buffered=True)
+
+				maincommand = "reqprofile"
+				checkmaintenance = checkmaintenance(maincommand)
+				if checkmaintenance == "yes":
+					embed = discord.Embed(title="", color=0xff0000)
+					embed.add_field(name=f'Error. <:error:472907618386575370>', value=f"**The command is under maintenance, please try again later.**")
+					msg2 = await message.channel.send(embed=embed)
+					time.sleep(5)
+					await msg2.delete()
+					return
+				
+				args = [x for ar in args for x in ar.split('\n')]
+
 				try:
 					userprofile = args[1]
 				except IndexError as error:
@@ -15720,22 +13805,25 @@ async def on_message(message):
 				embed.add_field(name=f'{loadingdesc}', value="\u200b")
 				msg = await message.channel.send(embed=embed)
 				if userprofile is None:
-					cursor.execute(f"SELECT userid FROM users WHERE userid = {author}")
+					cursor.execute(f"SELECT userid FROM users WHERE userid = {author} LIMIT 1")
 					profile = cursor.fetchone()
 					if profile is not None:
-						usera = message.guild.get_member(author)
-						iconprofile = usera.avatar_url
-						if author == 216708683290247168:
+						usera = await message.guild.fetch_member(author)
+						try:
+							iconprofile = usera.avatar_url
+						except AttributeError:
+							iconprofile = "https://cdn.discordapp.com/embed/avatars/0.png"
+						if author == jouca:
 							owner = "<:owner:736727797191409694>"
-						elif author != 216708683290247168:
+						elif author != jouca:
 							owner = ""
-						cursor.execute(f"SELECT userid FROM GDmoderators WHERE userid = {author}")
+						cursor.execute(f"SELECT userid FROM GDmoderators WHERE userid = {author} LIMIT 1")
 						try:
 							mod = cursor.fetchone()[0]
 						except TypeError:
 							mod = None
 						if mod is not None:
-							cursor.execute(f"SELECT Modtype FROM GDmoderators WHERE userid = {author}")
+							cursor.execute(f"SELECT Modtype FROM GDmoderators WHERE userid = {author} LIMIT 1")
 							modtype = cursor.fetchone()[0]
 							if modtype == "Mod":
 								modbadge = "<:mod:472908845010780169>"
@@ -15746,13 +13834,13 @@ async def on_message(message):
 						elif mod is None :
 							modbadge = ""
 							eldermodbadge = ""
-						cursor.execute(f"SELECT userid FROM GRmoderators WHERE userid = {author}")
+						cursor.execute(f"SELECT userid FROM GRmoderators WHERE userid = {author} LIMIT 1")
 						try:
 							modbot = cursor.fetchone()[0]
 						except TypeError:
 							modbot = None
 						if modbot is not None:
-							botmod = "<:diamond:472907644638855168>"
+							botmod = "<:GRmod:741965487096987739>"
 						elif modbot is None:
 							botmod = ""
 						embed2 = discord.Embed(title=f"", color=0x696969)
@@ -15763,13 +13851,87 @@ async def on_message(message):
 						levelreviewedcount = datastats[1]
 						levelreviewapprovedcount = datastats[2]
 						levelreviewunapprovedcount = datastats[3]
-						embed2.add_field(name=f'{owner}{botmod}{eldermodbadge}{modbadge} {message.author}', value=f"<:requests:726371180508086283> Levels Requested : `{levelrequestedcount}`\n<:reviewed:726371160589205524> Levels Reviewed : `{levelreviewedcount}`\n<:approved:726371180075810816> Levels Approved : `{levelreviewapprovedcount}`\n<:unapproved:726371181875429406> Levels Unapproved : `{levelreviewunapprovedcount}`", inline=False)
-						if author == 216708683290247168:
+						'''cursor.execute(f"SELECT (SELECT COUNT(*) FROM users WHERE levelrequestedcount >= {levelrequestedcount}) AS position FROM users WHERE userid = {author}")
+						levelrequestedcountposition = cursor.fetchone()[0]'''
+						cursor.execute("SELECT userid FROM users ORDER BY levelrequestedcount DESC")
+						userslist = cursor.fetchall()
+						userslist = [x[0] for x in userslist]
+						levelrequestedcountposition = userslist.index(str(author))+1
+						if levelrequestedcountposition == 1:
+							levelrequestedcountposition = f"(<:top1:759751131114373161> #{levelrequestedcountposition})"
+						elif levelrequestedcountposition >= 2 and levelrequestedcountposition <= 10:
+							levelrequestedcountposition = f"(<:top10:759751146368925757> #{levelrequestedcountposition})"
+						elif levelrequestedcountposition >= 11 and levelrequestedcountposition <= 50:
+							levelrequestedcountposition = f"(<:top50:759751162860929054> #{levelrequestedcountposition})"
+						elif levelrequestedcountposition >= 51 and levelrequestedcountposition <= 100:
+							levelrequestedcountposition = f"(<:top100:759751174580338747> #{levelrequestedcountposition})"
+						elif levelrequestedcountposition >= 101 and levelrequestedcountposition <= 500:
+							levelrequestedcountposition = f"(<:top500:759751189192900649> #{levelrequestedcountposition})"
+						elif levelrequestedcountposition >= 501 and levelrequestedcountposition <= 1000:
+							levelrequestedcountposition = f"(<:top1000:759751201246937119> #{levelrequestedcountposition})"
+						elif levelrequestedcountposition > 1000:
+							levelrequestedcountposition = f"(<:topother:759751236819615765> #{levelrequestedcountposition})"
+						cursor.execute("SELECT userid FROM users ORDER BY levelreviewedcount DESC")
+						userslist = cursor.fetchall()
+						userslist = [x[0] for x in userslist]
+						levelreviewedcountposition = userslist.index(str(author))+1
+						if levelreviewedcountposition == 1:
+							levelreviewedcountposition = f"(<:top1:759751131114373161> #{levelreviewedcountposition})"
+						elif levelreviewedcountposition >= 2 and levelreviewedcountposition <= 10:
+							levelreviewedcountposition = f"(<:top10:759751146368925757> #{levelreviewedcountposition})"
+						elif levelreviewedcountposition >= 11 and levelreviewedcountposition <= 50:
+							levelreviewedcountposition = f"(<:top50:759751162860929054> #{levelreviewedcountposition})"
+						elif levelreviewedcountposition >= 51 and levelreviewedcountposition <= 100:
+							levelreviewedcountposition = f"(<:top100:759751174580338747> #{levelreviewedcountposition})"
+						elif levelreviewedcountposition >= 101 and levelreviewedcountposition <= 500:
+							levelreviewedcountposition = f"(<:top500:759751189192900649> #{levelreviewedcountposition})"
+						elif levelreviewedcountposition >= 501 and levelreviewedcountposition <= 1000:
+							levelreviewedcountposition = f"(<:top1000:759751201246937119> #{levelreviewedcountposition})"
+						elif levelreviewedcountposition > 1000:
+							levelreviewedcountposition = f"(<:topother:759751236819615765> #{levelreviewedcountposition})"
+						cursor.execute("SELECT userid FROM users ORDER BY levelreviewapprovedcount DESC")
+						userslist = cursor.fetchall()
+						userslist = [x[0] for x in userslist]
+						levelreviewapprovedcountposition = userslist.index(str(author))+1
+						if levelreviewapprovedcountposition == 1:
+							levelreviewapprovedcountposition = f"(<:top1:759751131114373161> #{levelreviewapprovedcountposition})"
+						elif levelreviewapprovedcountposition >= 2 and levelreviewapprovedcountposition <= 10:
+							levelreviewapprovedcountposition = f"(<:top10:759751146368925757> #{levelreviewapprovedcountposition})"
+						elif levelreviewapprovedcountposition >= 11 and levelreviewapprovedcountposition <= 50:
+							levelreviewapprovedcountposition = f"(<:top50:759751162860929054> #{levelreviewapprovedcountposition})"
+						elif levelreviewapprovedcountposition >= 51 and levelreviewapprovedcountposition <= 100:
+							levelreviewapprovedcountposition = f"(<:top100:759751174580338747> #{levelreviewapprovedcountposition})"
+						elif levelreviewapprovedcountposition >= 101 and levelreviewapprovedcountposition <= 500:
+							levelreviewapprovedcountposition = f"(<:top500:759751189192900649> #{levelreviewapprovedcountposition})"
+						elif levelreviewapprovedcountposition >= 501 and levelreviewapprovedcountposition <= 1000:
+							levelreviewapprovedcountposition = f"(<:top1000:759751201246937119> #{levelreviewapprovedcountposition})"
+						elif levelreviewapprovedcountposition > 1000:
+							levelreviewapprovedcountposition = f"(<:topother:759751236819615765> #{levelreviewapprovedcountposition})"
+						cursor.execute("SELECT userid FROM users ORDER BY levelreviewunapprovedcount DESC")
+						userslist = cursor.fetchall()
+						userslist = [x[0] for x in userslist]
+						levelreviewunapprovedcountposition = userslist.index(str(author))+1
+						if levelreviewunapprovedcountposition == 1:
+							levelreviewunapprovedcountposition = f"(<:top1:759751131114373161> #{levelreviewunapprovedcountposition})"
+						elif levelreviewunapprovedcountposition >= 2 and levelreviewunapprovedcountposition <= 10:
+							levelreviewunapprovedcountposition = f"(<:top10:759751146368925757> #{levelreviewunapprovedcountposition})"
+						elif levelreviewunapprovedcountposition >= 11 and levelreviewunapprovedcountposition <= 50:
+							levelreviewunapprovedcountposition = f"(<:top50:759751162860929054> #{levelreviewunapprovedcountposition})"
+						elif levelreviewunapprovedcountposition >= 51 and levelreviewunapprovedcountposition <= 100:
+							levelreviewunapprovedcountposition = f"(<:top100:759751174580338747> #{levelreviewunapprovedcountposition})"
+						elif levelreviewunapprovedcountposition >= 101 and levelreviewunapprovedcountposition <= 500:
+							levelreviewunapprovedcountposition = f"(<:top500:759751189192900649> #{levelreviewunapprovedcountposition})"
+						elif levelreviewunapprovedcountposition >= 501 and levelreviewunapprovedcountposition <= 1000:
+							levelreviewunapprovedcountposition = f"(<:top1000:759751201246937119> #{levelreviewunapprovedcountposition})"
+						elif levelreviewunapprovedcountposition > 1000:
+							levelreviewunapprovedcountposition = f"(<:topother:759751236819615765> #{levelreviewunapprovedcountposition})"
+						embed2.add_field(name=f'{owner}{botmod}{eldermodbadge}{modbadge} {message.author}', value=f"<:requests:726371180508086283> Levels Requested : `{levelrequestedcount}` {levelrequestedcountposition}\n<:reviewed:726371160589205524> Levels Reviewed : `{levelreviewedcount}` {levelreviewedcountposition}\n<:approved:726371180075810816> Levels Approved : `{levelreviewapprovedcount}` {levelreviewapprovedcountposition}\n<:unapproved:726371181875429406> Levels Unapproved : `{levelreviewunapprovedcount}` {levelreviewunapprovedcountposition}", inline=False)
+						if author == jouca:
 							ownertext = "<:owner:736727797191409694> OWNER\n"
-						elif author != 216708683290247168:
+						elif author != jouca:
 							ownertext = ""
 						if modbot is not None:
-							modbottext = "<:diamond:472907644638855168> GEOMETRY REQUESTS MODERATOR\n"
+							modbottext = "<:GRmod:741965487096987739> GEOMETRY REQUESTS MODERATOR\n"
 						elif modbot is None:
 							modbottext = ""
 						if mod is not None:
@@ -15823,22 +13985,34 @@ async def on_message(message):
 					time.sleep(5)
 					await msg2.delete()
 					return
+				usera = await message.guild.fetch_member(int(userprofile))
+				if usera is None:
+					await msg.delete()
+					embed5 = discord.Embed(title="", color=0xff0000)
+					embed5.add_field(name=f'{errormessage}', value=f"{errorprofile}")
+					msg2 = await message.channel.send(embed=embed5)
+					time.sleep(5)
+					await msg2.delete()
+					return
 				cursor.execute(f"SELECT userid FROM users WHERE userid = {userprofile}")
 				profile = cursor.fetchone()
 				if profile is not None:
-					usera = message.guild.get_member(int(userprofile))
-					iconprofile = usera.avatar_url
-					if userprofile == 216708683290247168:
+					usera = await message.guild.fetch_member(int(userprofile))
+					try:
+						iconprofile = usera.avatar_url
+					except AttributeError:
+						iconprofile = "https://cdn.discordapp.com/embed/avatars/0.png"
+					if userprofile == jouca:
 						owner = "<:owner:736727797191409694>"
-					elif userprofile != 216708683290247168:
+					elif userprofile != jouca:
 						owner = ""
-					cursor.execute(f"SELECT userid FROM GDmoderators WHERE userid = {userprofile}")
+					cursor.execute(f"SELECT userid FROM GDmoderators WHERE userid = {userprofile} LIMIT 1")
 					try:
 						mod = cursor.fetchone()[0]
 					except TypeError:
 						mod = None
 					if mod is not None:
-						cursor.execute(f"SELECT Modtype FROM GDmoderators WHERE userid = {userprofile}")
+						cursor.execute(f"SELECT Modtype FROM GDmoderators WHERE userid = {userprofile} LIMIT 1")
 						modtype = cursor.fetchone()[0]
 						if modtype == "Mod":
 							modbadge = "<:mod:472908845010780169>"
@@ -15849,13 +14023,13 @@ async def on_message(message):
 					elif mod is None :
 						modbadge = ""
 						eldermodbadge = ""
-					cursor.execute(f"SELECT userid FROM GRmoderators WHERE userid = {userprofile}")
+					cursor.execute(f"SELECT userid FROM GRmoderators WHERE userid = {userprofile} LIMIT 1")
 					try:
 						modbot = cursor.fetchone()[0]
 					except TypeError:
 						modbot = None
 					if modbot is not None:
-						botmod = "<:diamond:472907644638855168>"
+						botmod = "<:GRmod:741965487096987739>"
 					elif modbot is None:
 						botmod = ""
 					username = client.get_user(int(userprofile))
@@ -15867,13 +14041,77 @@ async def on_message(message):
 					levelreviewedcount = datastats[1]
 					levelreviewapprovedcount = datastats[2]
 					levelreviewunapprovedcount = datastats[3]
-					embed2.add_field(name=f'{owner}{botmod}{eldermodbadge}{modbadge} {username}', value=f"<:requests:726371180508086283> Levels Requested : `{levelrequestedcount}`\n<:reviewed:726371160589205524> Levels Reviewed : `{levelreviewedcount}`\n<:approved:726371180075810816> Levels Approved : `{levelreviewapprovedcount}`\n<:unapproved:726371181875429406> Levels Unapproved : `{levelreviewunapprovedcount}`", inline=False)
-					if userprofile == 216708683290247168:
+					cursor.execute(f"SELECT (SELECT COUNT(*) FROM users WHERE levelrequestedcount >= {levelrequestedcount}) AS position FROM users WHERE userid = {author}")
+					levelrequestedcountposition = cursor.fetchone()[0]
+					if levelrequestedcountposition == 1:
+						levelrequestedcountposition = f"(<:top1:759751131114373161> #{levelrequestedcountposition})"
+					elif levelrequestedcountposition >= 2 and levelrequestedcountposition <= 10:
+						levelrequestedcountposition = f"(<:top10:759751146368925757> #{levelrequestedcountposition})"
+					elif levelrequestedcountposition >= 11 and levelrequestedcountposition <= 50:
+						levelrequestedcountposition = f"(<:top50:759751162860929054> #{levelrequestedcountposition})"
+					elif levelrequestedcountposition >= 51 and levelrequestedcountposition <= 100:
+						levelrequestedcountposition = f"(<:top100:759751174580338747> #{levelrequestedcountposition})"
+					elif levelrequestedcountposition >= 101 and levelrequestedcountposition <= 500:
+						levelrequestedcountposition = f"(<:top500:759751189192900649> #{levelrequestedcountposition})"
+					elif levelrequestedcountposition >= 501 and levelrequestedcountposition <= 1000:
+						levelrequestedcountposition = f"(<:top1000:759751201246937119> #{levelrequestedcountposition})"
+					elif levelrequestedcountposition > 1000:
+						levelrequestedcountposition = f"(<:topother:759751236819615765> #{levelrequestedcountposition})"
+					cursor.execute(f"SELECT (SELECT COUNT(*) FROM users WHERE levelreviewedcount >= {levelreviewedcount}) AS position FROM users WHERE userid = {author}")
+					levelreviewedcountposition = cursor.fetchone()[0]
+					if levelreviewedcountposition == 1:
+						levelreviewedcountposition = f"(<:top1:759751131114373161> #{levelreviewedcountposition})"
+					elif levelreviewedcountposition >= 2 and levelreviewedcountposition <= 10:
+						levelreviewedcountposition = f"(<:top10:759751146368925757> #{levelreviewedcountposition})"
+					elif levelreviewedcountposition >= 11 and levelreviewedcountposition <= 50:
+						levelreviewedcountposition = f"(<:top50:759751162860929054> #{levelreviewedcountposition})"
+					elif levelreviewedcountposition >= 51 and levelreviewedcountposition <= 100:
+						levelreviewedcountposition = f"(<:top100:759751174580338747> #{levelreviewedcountposition})"
+					elif levelreviewedcountposition >= 101 and levelreviewedcountposition <= 500:
+						levelreviewedcountposition = f"(<:top500:759751189192900649> #{levelreviewedcountposition})"
+					elif levelreviewedcountposition >= 501 and levelreviewedcountposition <= 1000:
+						levelreviewedcountposition = f"(<:top1000:759751201246937119> #{levelreviewedcountposition})"
+					elif levelreviewedcountposition > 1000:
+						levelreviewedcountposition = f"(<:topother:759751236819615765> #{levelreviewedcountposition})"
+					cursor.execute(f"SELECT (SELECT COUNT(*) FROM users WHERE levelreviewapprovedcount >= {levelreviewapprovedcount}) AS position FROM users WHERE userid = {author}")
+					levelreviewapprovedcountposition = cursor.fetchone()[0]
+					if levelreviewapprovedcountposition == 1:
+						levelreviewapprovedcountposition = f"(<:top1:759751131114373161> #{levelreviewapprovedcountposition})"
+					elif levelreviewapprovedcountposition >= 2 and levelreviewapprovedcountposition <= 10:
+						levelreviewapprovedcountposition = f"(<:top10:759751146368925757> #{levelreviewapprovedcountposition})"
+					elif levelreviewapprovedcountposition >= 11 and levelreviewapprovedcountposition <= 50:
+						levelreviewapprovedcountposition = f"(<:top50:759751162860929054> #{levelreviewapprovedcountposition})"
+					elif levelreviewapprovedcountposition >= 51 and levelreviewapprovedcountposition <= 100:
+						levelreviewapprovedcountposition = f"(<:top100:759751174580338747> #{levelreviewapprovedcountposition})"
+					elif levelreviewapprovedcountposition >= 101 and levelreviewapprovedcountposition <= 500:
+						levelreviewapprovedcountposition = f"(<:top500:759751189192900649> #{levelreviewapprovedcountposition})"
+					elif levelreviewapprovedcountposition >= 501 and levelreviewapprovedcountposition <= 1000:
+						levelreviewapprovedcountposition = f"(<:top1000:759751201246937119> #{levelreviewapprovedcountposition})"
+					elif levelreviewapprovedcountposition > 1000:
+						levelreviewapprovedcountposition = f"_(<:topother:759751236819615765> #{levelreviewapprovedcountposition})"
+					cursor.execute(f"SELECT (SELECT COUNT(*) FROM users WHERE levelreviewunapprovedcount >= {levelreviewunapprovedcount}) AS position FROM users WHERE userid = {author}")
+					levelreviewunapprovedcountposition = cursor.fetchone()[0]
+					if levelreviewunapprovedcountposition == 1:
+						levelreviewunapprovedcountposition = f"(<:top1:759751131114373161> #{levelreviewunapprovedcountposition})"
+					elif levelreviewunapprovedcountposition >= 2 and levelreviewunapprovedcountposition <= 10:
+						levelreviewunapprovedcountposition = f"(<:top10:759751146368925757> #{levelreviewunapprovedcountposition})"
+					elif levelreviewunapprovedcountposition >= 11 and levelreviewunapprovedcountposition <= 50:
+						levelreviewunapprovedcountposition = f"(<:top50:759751162860929054> #{levelreviewunapprovedcountposition})"
+					elif levelreviewunapprovedcountposition >= 51 and levelreviewunapprovedcountposition <= 100:
+						levelreviewunapprovedcountposition = f"(<:top100:759751174580338747> #{levelreviewunapprovedcountposition})"
+					elif levelreviewunapprovedcountposition >= 101 and levelreviewunapprovedcountposition <= 500:
+						levelreviewunapprovedcountposition = f"(<:top500:759751189192900649> #{levelreviewunapprovedcountposition})"
+					elif levelreviewunapprovedcountposition >= 501 and levelreviewunapprovedcountposition <= 1000:
+						levelreviewunapprovedcountposition = f"(<:top1000:759751201246937119> #{levelreviewunapprovedcountposition})"
+					elif levelreviewunapprovedcountposition > 1000:
+						levelreviewunapprovedcountposition = f"(<:topother:759751236819615765> #{levelreviewunapprovedcountposition})"
+					embed2.add_field(name=f'{owner}{botmod}{eldermodbadge}{modbadge} {username}', value=f"<:requests:726371180508086283> Levels Requested : `{levelrequestedcount}` {levelrequestedcountposition}\n<:reviewed:726371160589205524> Levels Reviewed : `{levelreviewedcount}` {levelreviewedcountposition}\n<:approved:726371180075810816> Levels Approved : `{levelreviewapprovedcount}` {levelreviewapprovedcountposition}\n<:unapproved:726371181875429406> Levels Unapproved : `{levelreviewunapprovedcount}` {levelreviewunapprovedcountposition}", inline=False)
+					if userprofile == jouca:
 						ownertext = "<:owner:736727797191409694> OWNER\n"
-					elif userprofile != 216708683290247168:
+					elif userprofile != jouca:
 						ownertext = ""
 					if modbot is not None:
-						modbottext = "<:diamond:472907644638855168> GEOMETRY REQUESTS MODERATOR\n"
+						modbottext = "<:GRmod:741965487096987739> GEOMETRY REQUESTS MODERATOR\n"
 					elif modbot is None:
 						modbottext = ""
 					if mod is not None:
@@ -15944,6 +14182,19 @@ async def on_message(message):
 					return
 			else:
 				conn.cursor()
+
+				maincommand = "reqsettings profile"
+				checkmaintenance = checkmaintenance(maincommand)
+				if checkmaintenance == "yes":
+					embed = discord.Embed(title="", color=0xff0000)
+					embed.add_field(name=f'Error. <:error:472907618386575370>', value=f"**The command is under maintenance, please try again later.**")
+					msg2 = await message.channel.send(embed=embed)
+					time.sleep(5)
+					await msg2.delete()
+					return
+				
+				args = [x for ar in args for x in ar.split('\n')]
+				
 				server = message.guild.name
 				var = message.guild.id
 				author = message.author.id
@@ -15973,7 +14224,7 @@ async def on_message(message):
 				result = cursor.fetchone()
 				if result is not None:
 					embed = discord.Embed(title=f"{profiletitle}", color=0x8E8E8E)
-					usera = message.guild.get_member(author)
+					usera = await message.guild.fetch_member(author)
 					iconprofile = usera.avatar_url
 					embed.set_author(name=f"__{message.author}__", icon_url=(iconprofile))
 					languagesetup = result[31]
@@ -16048,6 +14299,19 @@ async def on_message(message):
 					return
 			else:
 				conn.cursor()
+
+				maincommand = "reqsetsettings profile"
+				checkmaintenance = checkmaintenance(maincommand)
+				if checkmaintenance == "yes":
+					embed = discord.Embed(title="", color=0xff0000)
+					embed.add_field(name=f'Error. <:error:472907618386575370>', value=f"**The command is under maintenance, please try again later.**")
+					msg2 = await message.channel.send(embed=embed)
+					time.sleep(5)
+					await msg2.delete()
+					return
+				
+				args = [x for ar in args for x in ar.split('\n')]
+				
 				try:
 					description = args[2]
 				except IndexError as error:
@@ -16235,10 +14499,781 @@ async def on_message(message):
 					await msg2.delete()
 					return
 
-		''' TEMPORAIRE POUR VIRER DIRECTEMENT LES REQUESTS '''
+		if msg.startswith("leaderboard"):
+			try:
+				conn = MC.connect(host = dbhost, database = dbdatabase, user = dbuser, password = dbpassword)
+				cursor = conn.cursor()
+			except MC.Error as err:
+				if err.errno == errorcode.ER_ACCESS_DENIED_ERROR:
+					print("Something is not right with your username or your password")
+					return
+				elif err.errno == errorcode.ER_BAD_DB_ERROR:
+					print("Database does not exist")
+					return
+				else:
+					print(err)
+					return
+			else:
+				conn.cursor()
+				server = message.guild.name
+				var = message.guild.id
+				author = message.author.id
+
+				maincommand = "reqleaderboard"
+				checkmaintenance = checkmaintenance(maincommand)
+				if checkmaintenance == "yes":
+					embed = discord.Embed(title="", color=0xff0000)
+					embed.add_field(name=f'Error. <:error:472907618386575370>', value=f"**The command is under maintenance, please try again later.**")
+					msg2 = await message.channel.send(embed=embed)
+					time.sleep(5)
+					await msg2.delete()
+					return
+				
+				if author != jouca:
+					return
+				try:
+					typeleaderboard = args[1]
+				except IndexError as error:
+					typeleaderboard = "requests"
+
+				cursor.execute(f"SELECT language FROM users WHERE userid = {author}")
+				try:
+					language = cursor.fetchone()[0]
+				except TypeError:
+					language = language_default
+
+				language2 = language
+				translate_messages = open(f"language/client/reqleaderboard/{language2}.txt").read().splitlines()
+				
+				loadingtitle = translate_messages[0]
+				loadingdesc = translate_messages[1]
+				
+				information = translate_messages[3]
+				page = translate_messages[4]
+				reactions = translate_messages[5]
+				
+				top100requests = translate_messages[7]
+				top100reviews = translate_messages[8]
+				top100approved = translate_messages[9]
+				top100unapproved = translate_messages[10]
+				
+				embed = discord.Embed(title=f"{loadingtitle}", color=0xffce08)
+				embed.add_field(name=f'{loadingdesc}', value="\u200b")
+				msg = await message.channel.send(embed=embed)
+				if typeleaderboard == "requests":
+					cursor.execute("SELECT userid FROM users ORDER BY levelrequestedcount DESC LIMIT 100")
+					userslist = cursor.fetchall()
+					userslist = [x[0] for x in userslist]
+					listplace = []
+					
+					for i in range(0,20):
+						userprofile = userslist[i]
+						username = client.get_user(int(userprofile))
+						place = i+1
+						if i == 0:
+							leaderboardtext = f"<:top1:759751131114373161>**#{place}** - {username}\n"
+							listplace.append(leaderboardtext)
+						elif i >= 1 and i <= 9:
+							leaderboardtext = f"<:top10:759751146368925757>**#{place}** - {username}\n"
+							listplace.append(leaderboardtext)
+						elif i >= 10 and i <= 49:
+							leaderboardtext = f"<:top50:759751162860929054>**#{place}** - {username}\n"
+							listplace.append(leaderboardtext)
+						elif i >= 50 and i <= 99:
+							leaderboardtext = f"<:top100:759751174580338747>**#{place}** - {username}\n"
+							listplace.append(leaderboardtext)
+					listcomplete1 = "".join(listplace)
+					embed1 = discord.Embed(title=f"<:requests:726371180508086283> {top100requests}",description=f"{listcomplete1}",color=0xfeff00)
+					embed1.add_field(name=f"{information}", value=f"{page} 1/5 - {reactions}", inline=False)
+					
+					listplace = []
+					for i in range(20,40):
+						userprofile = userslist[i]
+						username = client.get_user(int(userprofile))
+						place = i+1
+						if i == 0:
+							leaderboardtext = f"<:top1:759751131114373161>**#{place}** - {username}\n"
+							listplace.append(leaderboardtext)
+						elif i >= 1 and i <= 9:
+							leaderboardtext = f"<:top10:759751146368925757>**#{place}** - {username}\n"
+							listplace.append(leaderboardtext)
+						elif i >= 10 and i <= 49:
+							leaderboardtext = f"<:top50:759751162860929054>**#{place}** - {username}\n"
+							listplace.append(leaderboardtext)
+						elif i >= 50 and i <= 99:
+							leaderboardtext = f"<:top100:759751174580338747>**#{place}** - {username}\n"
+							listplace.append(leaderboardtext)
+					listcomplete2 = "".join(listplace)
+					embed2 = discord.Embed(title=f"<:requests:726371180508086283> {top100requests}",description=f"{listcomplete2}",color=0xfeff00)
+					embed2.add_field(name=f"{information}", value=f"{page} 2/5 - {reactions}", inline=False)
+					
+					listplace = []
+					for i in range(40,60):
+						userprofile = userslist[i]
+						username = client.get_user(int(userprofile))
+						place = i+1
+						if i == 0:
+							leaderboardtext = f"<:top1:759751131114373161>**#{place}** - {username}\n"
+							listplace.append(leaderboardtext)
+						elif i >= 1 and i <= 9:
+							leaderboardtext = f"<:top10:759751146368925757>**#{place}** - {username}\n"
+							listplace.append(leaderboardtext)
+						elif i >= 10 and i <= 49:
+							leaderboardtext = f"<:top50:759751162860929054>**#{place}** - {username}\n"
+							listplace.append(leaderboardtext)
+						elif i >= 50 and i <= 99:
+							leaderboardtext = f"<:top100:759751174580338747>**#{place}** - {username}\n"
+							listplace.append(leaderboardtext)
+					listcomplete3 = "".join(listplace)
+					embed3 = discord.Embed(title=f"<:requests:726371180508086283> {top100requests}",description=f"{listcomplete3}",color=0xfeff00)
+					embed3.add_field(name=f"{information}", value=f"{page} 3/5 - {reactions}", inline=False)
+					
+					listplace = []
+					for i in range(60,80):
+						userprofile = userslist[i]
+						username = client.get_user(int(userprofile))
+						place = i+1
+						if i == 0:
+							leaderboardtext = f"<:top1:759751131114373161>**#{place}** - {username}\n"
+							listplace.append(leaderboardtext)
+						elif i >= 1 and i <= 9:
+							leaderboardtext = f"<:top10:759751146368925757>**#{place}** - {username}\n"
+							listplace.append(leaderboardtext)
+						elif i >= 10 and i <= 49:
+							leaderboardtext = f"<:top50:759751162860929054>**#{place}** - {username}\n"
+							listplace.append(leaderboardtext)
+						elif i >= 50 and i <= 99:
+							leaderboardtext = f"<:top100:759751174580338747>**#{place}** - {username}\n"
+							listplace.append(leaderboardtext)
+					listcomplete4 = "".join(listplace)
+					embed4 = discord.Embed(title=f"<:requests:726371180508086283> {top100requests}",description=f"{listcomplete4}",color=0xfeff00)
+					embed4.add_field(name=f"{information}", value=f"{page} 4/5 - {reactions}", inline=False)
+					
+					listplace = []
+					for i in range(80,100):
+						userprofile = userslist[i]
+						username = client.get_user(int(userprofile))
+						place = i+1
+						if i == 0:
+							leaderboardtext = f"<:top1:759751131114373161>**#{place}** - {username}\n"
+							listplace.append(leaderboardtext)
+						elif i >= 1 and i <= 9:
+							leaderboardtext = f"<:top10:759751146368925757>**#{place}** - {username}\n"
+							listplace.append(leaderboardtext)
+						elif i >= 10 and i <= 49:
+							leaderboardtext = f"<:top50:759751162860929054>**#{place}** - {username}\n"
+							listplace.append(leaderboardtext)
+						elif i >= 50 and i <= 99:
+							leaderboardtext = f"<:top100:759751174580338747>**#{place}** - {username}\n"
+							listplace.append(leaderboardtext)
+					listcomplete5 = "".join(listplace)
+					embed5 = discord.Embed(title=f"<:requests:726371180508086283> {top100requests}",description=f"{listcomplete5}",color=0xfeff00)
+					embed5.add_field(name=f"{information}", value=f"{page} 5/5 - {reactions}", inline=False)
+					
+					await msg.delete()
+					messages = (embed1,embed2,embed3,embed4,embed5)
+					index = 0
+					msg = None
+					action = message.channel.send
+					while True:
+						res = await action(embed=messages[index])
+						if res is not None:
+							msg = res
+						l = index != 0
+						r = index != len(messages) - 1
+						if l:
+							await msg.add_reaction(left)
+						if r:
+							await msg.add_reaction(right)
+						try:
+							react, user = await client.wait_for('reaction_add', check=predicate(msg, l, r), timeout=30)
+						except Exception:
+							print("BROKE")
+							break
+						if react.emoji == left:
+							index -= 1
+						elif react.emoji == right:
+							index += 1
+						action = msg.edit					
+					return
+				elif typeleaderboard == "reviews":
+					cursor.execute("SELECT userid FROM users ORDER BY levelreviewedcount DESC LIMIT 100")
+					userslist = cursor.fetchall()
+					userslist = [x[0] for x in userslist]
+					listplace = []
+					
+					for i in range(0,20):
+						userprofile = userslist[i]
+						username = client.get_user(int(userprofile))
+						place = i+1
+						if i == 0:
+							leaderboardtext = f"<:top1:759751131114373161>**#{place}** - {username}\n"
+							listplace.append(leaderboardtext)
+						elif i >= 1 and i <= 9:
+							leaderboardtext = f"<:top10:759751146368925757>**#{place}** - {username}\n"
+							listplace.append(leaderboardtext)
+						elif i >= 10 and i <= 49:
+							leaderboardtext = f"<:top50:759751162860929054>**#{place}** - {username}\n"
+							listplace.append(leaderboardtext)
+						elif i >= 50 and i <= 99:
+							leaderboardtext = f"<:top100:759751174580338747>**#{place}** - {username}\n"
+							listplace.append(leaderboardtext)
+					listcomplete1 = "".join(listplace)
+					embed1 = discord.Embed(title=f"<:reviewed:726371160589205524> {top100reviews}",description=f"{listcomplete1}",color=0xfeff00)
+					embed1.add_field(name=f"{information}", value=f"{page} 1/5 - {reactions}", inline=False)
+					
+					listplace = []
+					for i in range(20,40):
+						userprofile = userslist[i]
+						username = client.get_user(int(userprofile))
+						place = i+1
+						if i == 0:
+							leaderboardtext = f"<:top1:759751131114373161>**#{place}** - {username}\n"
+							listplace.append(leaderboardtext)
+						elif i >= 1 and i <= 9:
+							leaderboardtext = f"<:top10:759751146368925757>**#{place}** - {username}\n"
+							listplace.append(leaderboardtext)
+						elif i >= 10 and i <= 49:
+							leaderboardtext = f"<:top50:759751162860929054>**#{place}** - {username}\n"
+							listplace.append(leaderboardtext)
+						elif i >= 50 and i <= 99:
+							leaderboardtext = f"<:top100:759751174580338747>**#{place}** - {username}\n"
+							listplace.append(leaderboardtext)
+					listcomplete2 = "".join(listplace)
+					embed2 = discord.Embed(title=f"<:reviewed:726371160589205524> {top100reviews}",description=f"{listcomplete2}",color=0xfeff00)
+					embed2.add_field(name=f"{information}", value=f"{page} 2/5 - {reactions}", inline=False)
+					
+					listplace = []
+					for i in range(40,60):
+						userprofile = userslist[i]
+						username = client.get_user(int(userprofile))
+						place = i+1
+						if i == 0:
+							leaderboardtext = f"<:top1:759751131114373161>**#{place}** - {username}\n"
+							listplace.append(leaderboardtext)
+						elif i >= 1 and i <= 9:
+							leaderboardtext = f"<:top10:759751146368925757>**#{place}** - {username}\n"
+							listplace.append(leaderboardtext)
+						elif i >= 10 and i <= 49:
+							leaderboardtext = f"<:top50:759751162860929054>**#{place}** - {username}\n"
+							listplace.append(leaderboardtext)
+						elif i >= 50 and i <= 99:
+							leaderboardtext = f"<:top100:759751174580338747>**#{place}** - {username}\n"
+							listplace.append(leaderboardtext)
+					listcomplete3 = "".join(listplace)
+					embed3 = discord.Embed(title=f"<:reviewed:726371160589205524> {top100reviews}",description=f"{listcomplete3}",color=0xfeff00)
+					embed3.add_field(name=f"{information}", value=f"{page} 3/5 - {reactions}", inline=False)
+					
+					listplace = []
+					for i in range(60,80):
+						userprofile = userslist[i]
+						username = client.get_user(int(userprofile))
+						place = i+1
+						if i == 0:
+							leaderboardtext = f"<:top1:759751131114373161>**#{place}** - {username}\n"
+							listplace.append(leaderboardtext)
+						elif i >= 1 and i <= 9:
+							leaderboardtext = f"<:top10:759751146368925757>**#{place}** - {username}\n"
+							listplace.append(leaderboardtext)
+						elif i >= 10 and i <= 49:
+							leaderboardtext = f"<:top50:759751162860929054>**#{place}** - {username}\n"
+							listplace.append(leaderboardtext)
+						elif i >= 50 and i <= 99:
+							leaderboardtext = f"<:top100:759751174580338747>**#{place}** - {username}\n"
+							listplace.append(leaderboardtext)
+					listcomplete4 = "".join(listplace)
+					embed4 = discord.Embed(title=f"<:reviewed:726371160589205524> {top100reviews}",description=f"{listcomplete4}",color=0xfeff00)
+					embed4.add_field(name=f"{information}", value=f"{page} 4/5 - {reactions}", inline=False)
+					
+					listplace = []
+					for i in range(80,100):
+						userprofile = userslist[i]
+						username = client.get_user(int(userprofile))
+						place = i+1
+						if i == 0:
+							leaderboardtext = f"<:top1:759751131114373161>**#{place}** - {username}\n"
+							listplace.append(leaderboardtext)
+						elif i >= 1 and i <= 9:
+							leaderboardtext = f"<:top10:759751146368925757>**#{place}** - {username}\n"
+							listplace.append(leaderboardtext)
+						elif i >= 10 and i <= 49:
+							leaderboardtext = f"<:top50:759751162860929054>**#{place}** - {username}\n"
+							listplace.append(leaderboardtext)
+						elif i >= 50 and i <= 99:
+							leaderboardtext = f"<:top100:759751174580338747>**#{place}** - {username}\n"
+							listplace.append(leaderboardtext)
+					listcomplete5 = "".join(listplace)
+					embed5 = discord.Embed(title=f"<:reviewed:726371160589205524> {top100reviews}",description=f"{listcomplete5}",color=0xfeff00)
+					embed5.add_field(name=f"{information}", value=f"{page} 5/5 - {reactions}", inline=False)
+					
+					await msg.delete()
+					messages = (embed1,embed2,embed3,embed4,embed5)
+					index = 0
+					msg = None
+					action = message.channel.send
+					while True:
+						res = await action(embed=messages[index])
+						if res is not None:
+							msg = res
+						l = index != 0
+						r = index != len(messages) - 1
+						if l:
+							await msg.add_reaction(left)
+						if r:
+							await msg.add_reaction(right)
+						try:
+							react, user = await client.wait_for('reaction_add', check=predicate(msg, l, r), timeout=30)
+						except Exception:
+							print("BROKE")
+							break
+						if react.emoji == left:
+							index -= 1
+						elif react.emoji == right:
+							index += 1
+						action = msg.edit					
+					return
+				elif typeleaderboard == "reviewsapproved":
+					cursor.execute("SELECT userid FROM users ORDER BY levelreviewapprovedcount DESC LIMIT 100")
+					userslist = cursor.fetchall()
+					userslist = [x[0] for x in userslist]
+					listplace = []
+					
+					for i in range(0,20):
+						userprofile = userslist[i]
+						username = client.get_user(int(userprofile))
+						place = i+1
+						if i == 0:
+							leaderboardtext = f"<:top1:759751131114373161>**#{place}** - {username}\n"
+							listplace.append(leaderboardtext)
+						elif i >= 1 and i <= 9:
+							leaderboardtext = f"<:top10:759751146368925757>**#{place}** - {username}\n"
+							listplace.append(leaderboardtext)
+						elif i >= 10 and i <= 49:
+							leaderboardtext = f"<:top50:759751162860929054>**#{place}** - {username}\n"
+							listplace.append(leaderboardtext)
+						elif i >= 50 and i <= 99:
+							leaderboardtext = f"<:top100:759751174580338747>**#{place}** - {username}\n"
+							listplace.append(leaderboardtext)
+					listcomplete1 = "".join(listplace)
+					embed1 = discord.Embed(title=f"<:approved:726371180075810816> {top100approved}",description=f"{listcomplete1}",color=0xfeff00)
+					embed1.add_field(name=f"{information}", value=f"{page} 1/5 - {reactions}", inline=False)
+					
+					listplace = []
+					for i in range(20,40):
+						userprofile = userslist[i]
+						username = client.get_user(int(userprofile))
+						place = i+1
+						if i == 0:
+							leaderboardtext = f"<:top1:759751131114373161>**#{place}** - {username}\n"
+							listplace.append(leaderboardtext)
+						elif i >= 1 and i <= 9:
+							leaderboardtext = f"<:top10:759751146368925757>**#{place}** - {username}\n"
+							listplace.append(leaderboardtext)
+						elif i >= 10 and i <= 49:
+							leaderboardtext = f"<:top50:759751162860929054>**#{place}** - {username}\n"
+							listplace.append(leaderboardtext)
+						elif i >= 50 and i <= 99:
+							leaderboardtext = f"<:top100:759751174580338747>**#{place}** - {username}\n"
+							listplace.append(leaderboardtext)
+					listcomplete2 = "".join(listplace)
+					embed2 = discord.Embed(title=f"<:approved:726371180075810816> {top100approved}",description=f"{listcomplete2}",color=0xfeff00)
+					embed2.add_field(name=f"{information}", value=f"{page} 2/5 - {reactions}", inline=False)
+					
+					listplace = []
+					for i in range(40,60):
+						userprofile = userslist[i]
+						username = client.get_user(int(userprofile))
+						place = i+1
+						if i == 0:
+							leaderboardtext = f"<:top1:759751131114373161>**#{place}** - {username}\n"
+							listplace.append(leaderboardtext)
+						elif i >= 1 and i <= 9:
+							leaderboardtext = f"<:top10:759751146368925757>**#{place}** - {username}\n"
+							listplace.append(leaderboardtext)
+						elif i >= 10 and i <= 49:
+							leaderboardtext = f"<:top50:759751162860929054>**#{place}** - {username}\n"
+							listplace.append(leaderboardtext)
+						elif i >= 50 and i <= 99:
+							leaderboardtext = f"<:top100:759751174580338747>**#{place}** - {username}\n"
+							listplace.append(leaderboardtext)
+					listcomplete3 = "".join(listplace)
+					embed3 = discord.Embed(title=f"<:approved:726371180075810816> {top100approved}",description=f"{listcomplete3}",color=0xfeff00)
+					embed3.add_field(name=f"{information}", value=f"{page} 3/5 - {reactions}", inline=False)
+					
+					listplace = []
+					for i in range(60,80):
+						userprofile = userslist[i]
+						username = client.get_user(int(userprofile))
+						place = i+1
+						if i == 0:
+							leaderboardtext = f"<:top1:759751131114373161>**#{place}** - {username}\n"
+							listplace.append(leaderboardtext)
+						elif i >= 1 and i <= 9:
+							leaderboardtext = f"<:top10:759751146368925757>**#{place}** - {username}\n"
+							listplace.append(leaderboardtext)
+						elif i >= 10 and i <= 49:
+							leaderboardtext = f"<:top50:759751162860929054>**#{place}** - {username}\n"
+							listplace.append(leaderboardtext)
+						elif i >= 50 and i <= 99:
+							leaderboardtext = f"<:top100:759751174580338747>**#{place}** - {username}\n"
+							listplace.append(leaderboardtext)
+					listcomplete4 = "".join(listplace)
+					embed4 = discord.Embed(title=f"<:approved:726371180075810816> {top100approved}",description=f"{listcomplete4}",color=0xfeff00)
+					embed4.add_field(name=f"{information}", value=f"{page} 4/5 - {reactions}", inline=False)
+					
+					listplace = []
+					for i in range(80,100):
+						userprofile = userslist[i]
+						username = client.get_user(int(userprofile))
+						place = i+1
+						if i == 0:
+							leaderboardtext = f"<:top1:759751131114373161>**#{place}** - {username}\n"
+							listplace.append(leaderboardtext)
+						elif i >= 1 and i <= 9:
+							leaderboardtext = f"<:top10:759751146368925757>**#{place}** - {username}\n"
+							listplace.append(leaderboardtext)
+						elif i >= 10 and i <= 49:
+							leaderboardtext = f"<:top50:759751162860929054>**#{place}** - {username}\n"
+							listplace.append(leaderboardtext)
+						elif i >= 50 and i <= 99:
+							leaderboardtext = f"<:top100:759751174580338747>**#{place}** - {username}\n"
+							listplace.append(leaderboardtext)
+					listcomplete5 = "".join(listplace)
+					embed5 = discord.Embed(title=f"<:approved:726371180075810816> {top100approved}",description=f"{listcomplete5}",color=0xfeff00)
+					embed5.add_field(name=f"{information}", value=f"{page} 5/5 - {reactions}", inline=False)
+					
+					await msg.delete()
+					messages = (embed1,embed2,embed3,embed4,embed5)
+					index = 0
+					msg = None
+					action = message.channel.send
+					while True:
+						res = await action(embed=messages[index])
+						if res is not None:
+							msg = res
+						l = index != 0
+						r = index != len(messages) - 1
+						if l:
+							await msg.add_reaction(left)
+						if r:
+							await msg.add_reaction(right)
+						try:
+							react, user = await client.wait_for('reaction_add', check=predicate(msg, l, r), timeout=30)
+						except Exception:
+							print("BROKE")
+							break
+						if react.emoji == left:
+							index -= 1
+						elif react.emoji == right:
+							index += 1
+						action = msg.edit					
+					return
+				elif typeleaderboard == "reviewsunapproved":
+					cursor.execute("SELECT userid FROM users ORDER BY levelreviewunapprovedcount DESC LIMIT 100")
+					userslist = cursor.fetchall()
+					userslist = [x[0] for x in userslist]
+					listplace = []
+					
+					for i in range(0,20):
+						userprofile = userslist[i]
+						username = client.get_user(int(userprofile))
+						place = i+1
+						if i == 0:
+							leaderboardtext = f"<:top1:759751131114373161>**#{place}** - {username}\n"
+							listplace.append(leaderboardtext)
+						elif i >= 1 and i <= 9:
+							leaderboardtext = f"<:top10:759751146368925757>**#{place}** - {username}\n"
+							listplace.append(leaderboardtext)
+						elif i >= 10 and i <= 49:
+							leaderboardtext = f"<:top50:759751162860929054>**#{place}** - {username}\n"
+							listplace.append(leaderboardtext)
+						elif i >= 50 and i <= 99:
+							leaderboardtext = f"<:top100:759751174580338747>**#{place}** - {username}\n"
+							listplace.append(leaderboardtext)
+					listcomplete1 = "".join(listplace)
+					embed1 = discord.Embed(title=f"<:unapproved:726371181875429406> {top100unapproved}",description=f"{listcomplete1}",color=0xfeff00)
+					embed1.add_field(name=f"{information}", value=f"{page} 1/5 - {reactions}", inline=False)
+					
+					listplace = []
+					for i in range(20,40):
+						userprofile = userslist[i]
+						username = client.get_user(int(userprofile))
+						place = i+1
+						if i == 0:
+							leaderboardtext = f"<:top1:759751131114373161>**#{place}** - {username}\n"
+							listplace.append(leaderboardtext)
+						elif i >= 1 and i <= 9:
+							leaderboardtext = f"<:top10:759751146368925757>**#{place}** - {username}\n"
+							listplace.append(leaderboardtext)
+						elif i >= 10 and i <= 49:
+							leaderboardtext = f"<:top50:759751162860929054>**#{place}** - {username}\n"
+							listplace.append(leaderboardtext)
+						elif i >= 50 and i <= 99:
+							leaderboardtext = f"<:top100:759751174580338747>**#{place}** - {username}\n"
+							listplace.append(leaderboardtext)
+					listcomplete2 = "".join(listplace)
+					embed2 = discord.Embed(title=f"<:unapproved:726371181875429406> {top100unapproved}",description=f"{listcomplete2}",color=0xfeff00)
+					embed2.add_field(name=f"{information}", value=f"{page} 2/5 - {reactions}", inline=False)
+					
+					listplace = []
+					for i in range(40,60):
+						userprofile = userslist[i]
+						username = client.get_user(int(userprofile))
+						place = i+1
+						if i == 0:
+							leaderboardtext = f"<:top1:759751131114373161>**#{place}** - {username}\n"
+							listplace.append(leaderboardtext)
+						elif i >= 1 and i <= 9:
+							leaderboardtext = f"<:top10:759751146368925757>**#{place}** - {username}\n"
+							listplace.append(leaderboardtext)
+						elif i >= 10 and i <= 49:
+							leaderboardtext = f"<:top50:759751162860929054>**#{place}** - {username}\n"
+							listplace.append(leaderboardtext)
+						elif i >= 50 and i <= 99:
+							leaderboardtext = f"<:top100:759751174580338747>**#{place}** - {username}\n"
+							listplace.append(leaderboardtext)
+					listcomplete3 = "".join(listplace)
+					embed3 = discord.Embed(title=f"<:unapproved:726371181875429406> {top100unapproved}",description=f"{listcomplete3}",color=0xfeff00)
+					embed3.add_field(name=f"{information}", value=f"{page} 3/5 - {reactions}", inline=False)
+					
+					listplace = []
+					for i in range(60,80):
+						userprofile = userslist[i]
+						username = client.get_user(int(userprofile))
+						place = i+1
+						if i == 0:
+							leaderboardtext = f"<:top1:759751131114373161>**#{place}** - {username}\n"
+							listplace.append(leaderboardtext)
+						elif i >= 1 and i <= 9:
+							leaderboardtext = f"<:top10:759751146368925757>**#{place}** - {username}\n"
+							listplace.append(leaderboardtext)
+						elif i >= 10 and i <= 49:
+							leaderboardtext = f"<:top50:759751162860929054>**#{place}** - {username}\n"
+							listplace.append(leaderboardtext)
+						elif i >= 50 and i <= 99:
+							leaderboardtext = f"<:top100:759751174580338747>**#{place}** - {username}\n"
+							listplace.append(leaderboardtext)
+					listcomplete4 = "".join(listplace)
+					embed4 = discord.Embed(title=f"<:unapproved:726371181875429406> {top100unapproved}",description=f"{listcomplete4}",color=0xfeff00)
+					embed4.add_field(name=f"{information}", value=f"{page} 4/5 - {reactions}", inline=False)
+					
+					listplace = []
+					for i in range(80,100):
+						userprofile = userslist[i]
+						username = client.get_user(int(userprofile))
+						place = i+1
+						if i == 0:
+							leaderboardtext = f"<:top1:759751131114373161>**#{place}** - {username}\n"
+							listplace.append(leaderboardtext)
+						elif i >= 1 and i <= 9:
+							leaderboardtext = f"<:top10:759751146368925757>**#{place}** - {username}\n"
+							listplace.append(leaderboardtext)
+						elif i >= 10 and i <= 49:
+							leaderboardtext = f"<:top50:759751162860929054>**#{place}** - {username}\n"
+							listplace.append(leaderboardtext)
+						elif i >= 50 and i <= 99:
+							leaderboardtext = f"<:top100:759751174580338747>**#{place}** - {username}\n"
+							listplace.append(leaderboardtext)
+					listcomplete5 = "".join(listplace)
+					embed5 = discord.Embed(title=f"<:unapproved:726371181875429406> {top100unapproved}",description=f"{listcomplete5}",color=0xfeff00)
+					embed5.add_field(name=f"{information}", value=f"{page} 5/5 - {reactions}", inline=False)
+					
+					await msg.delete()
+					messages = (embed1,embed2,embed3,embed4,embed5)
+					index = 0
+					msg = None
+					action = message.channel.send
+					while True:
+						res = await action(embed=messages[index])
+						if res is not None:
+							msg = res
+						l = index != 0
+						r = index != len(messages) - 1
+						if l:
+							await msg.add_reaction(left)
+						if r:
+							await msg.add_reaction(right)
+						try:
+							react, user = await client.wait_for('reaction_add', check=predicate(msg, l, r), timeout=30)
+						except Exception:
+							print("BROKE")
+							break
+						if react.emoji == left:
+							index -= 1
+						elif react.emoji == right:
+							index += 1
+						action = msg.edit					
+					return
+				else:
+					cursor.execute("SELECT userid FROM users ORDER BY levelrequestedcount DESC LIMIT 100")
+					userslist = cursor.fetchall()
+					userslist = [x[0] for x in userslist]
+					listplace = []
+					
+					for i in range(0,20):
+						userprofile = userslist[i]
+						username = client.get_user(int(userprofile))
+						place = i+1
+						if i == 0:
+							leaderboardtext = f"<:top1:759751131114373161>**#{place}** - {username}\n"
+							listplace.append(leaderboardtext)
+						elif i >= 1 and i <= 9:
+							leaderboardtext = f"<:top10:759751146368925757>**#{place}** - {username}\n"
+							listplace.append(leaderboardtext)
+						elif i >= 10 and i <= 49:
+							leaderboardtext = f"<:top50:759751162860929054>**#{place}** - {username}\n"
+							listplace.append(leaderboardtext)
+						elif i >= 50 and i <= 99:
+							leaderboardtext = f"<:top100:759751174580338747>**#{place}** - {username}\n"
+							listplace.append(leaderboardtext)
+					listcomplete1 = "".join(listplace)
+					embed1 = discord.Embed(title=f"<:requests:726371180508086283> {top100requests}",description=f"{listcomplete1}",color=0xfeff00)
+					embed1.add_field(name=f"{information}", value=f"{page} 1/5 - {reactions}", inline=False)
+					
+					listplace = []
+					for i in range(20,40):
+						userprofile = userslist[i]
+						username = client.get_user(int(userprofile))
+						place = i+1
+						if i == 0:
+							leaderboardtext = f"<:top1:759751131114373161>**#{place}** - {username}\n"
+							listplace.append(leaderboardtext)
+						elif i >= 1 and i <= 9:
+							leaderboardtext = f"<:top10:759751146368925757>**#{place}** - {username}\n"
+							listplace.append(leaderboardtext)
+						elif i >= 10 and i <= 49:
+							leaderboardtext = f"<:top50:759751162860929054>**#{place}** - {username}\n"
+							listplace.append(leaderboardtext)
+						elif i >= 50 and i <= 99:
+							leaderboardtext = f"<:top100:759751174580338747>**#{place}** - {username}\n"
+							listplace.append(leaderboardtext)
+					listcomplete2 = "".join(listplace)
+					embed2 = discord.Embed(title=f"<:requests:726371180508086283> {top100requests}",description=f"{listcomplete2}",color=0xfeff00)
+					embed2.add_field(name=f"{information}", value=f"{page} 2/5 - {reactions}", inline=False)
+					
+					listplace = []
+					for i in range(40,60):
+						userprofile = userslist[i]
+						username = client.get_user(int(userprofile))
+						place = i+1
+						if i == 0:
+							leaderboardtext = f"<:top1:759751131114373161>**#{place}** - {username}\n"
+							listplace.append(leaderboardtext)
+						elif i >= 1 and i <= 9:
+							leaderboardtext = f"<:top10:759751146368925757>**#{place}** - {username}\n"
+							listplace.append(leaderboardtext)
+						elif i >= 10 and i <= 49:
+							leaderboardtext = f"<:top50:759751162860929054>**#{place}** - {username}\n"
+							listplace.append(leaderboardtext)
+						elif i >= 50 and i <= 99:
+							leaderboardtext = f"<:top100:759751174580338747>**#{place}** - {username}\n"
+							listplace.append(leaderboardtext)
+					listcomplete3 = "".join(listplace)
+					embed3 = discord.Embed(title=f"<:requests:726371180508086283> {top100requests}",description=f"{listcomplete3}",color=0xfeff00)
+					embed3.add_field(name=f"{information}", value=f"{page} 3/5 - {reactions}", inline=False)
+					
+					listplace = []
+					for i in range(60,80):
+						userprofile = userslist[i]
+						username = client.get_user(int(userprofile))
+						place = i+1
+						if i == 0:
+							leaderboardtext = f"<:top1:759751131114373161>**#{place}** - {username}\n"
+							listplace.append(leaderboardtext)
+						elif i >= 1 and i <= 9:
+							leaderboardtext = f"<:top10:759751146368925757>**#{place}** - {username}\n"
+							listplace.append(leaderboardtext)
+						elif i >= 10 and i <= 49:
+							leaderboardtext = f"<:top50:759751162860929054>**#{place}** - {username}\n"
+							listplace.append(leaderboardtext)
+						elif i >= 50 and i <= 99:
+							leaderboardtext = f"<:top100:759751174580338747>**#{place}** - {username}\n"
+							listplace.append(leaderboardtext)
+					listcomplete4 = "".join(listplace)
+					embed4 = discord.Embed(title=f"<:requests:726371180508086283> {top100requests}",description=f"{listcomplete4}",color=0xfeff00)
+					embed4.add_field(name=f"{information}", value=f"{page} 4/5 - {reactions}", inline=False)
+					
+					listplace = []
+					for i in range(80,100):
+						userprofile = userslist[i]
+						username = client.get_user(int(userprofile))
+						place = i+1
+						if i == 0:
+							leaderboardtext = f"<:top1:759751131114373161>**#{place}** - {username}\n"
+							listplace.append(leaderboardtext)
+						elif i >= 1 and i <= 9:
+							leaderboardtext = f"<:top10:759751146368925757>**#{place}** - {username}\n"
+							listplace.append(leaderboardtext)
+						elif i >= 10 and i <= 49:
+							leaderboardtext = f"<:top50:759751162860929054>**#{place}** - {username}\n"
+							listplace.append(leaderboardtext)
+						elif i >= 50 and i <= 99:
+							leaderboardtext = f"<:top100:759751174580338747>**#{place}** - {username}\n"
+							listplace.append(leaderboardtext)
+					listcomplete5 = "".join(listplace)
+					embed5 = discord.Embed(title=f"<:requests:726371180508086283> {top100requests}",description=f"{listcomplete5}",color=0xfeff00)
+					embed5.add_field(name=f"{information}", value=f"{page} 5/5 - {reactions}", inline=False)
+					
+					await msg.delete()
+					messages = (embed1,embed2,embed3,embed4,embed5)
+					index = 0
+					msg = None
+					action = message.channel.send
+					while True:
+						res = await action(embed=messages[index])
+						if res is not None:
+							msg = res
+						l = index != 0
+						r = index != len(messages) - 1
+						if l:
+							await msg.add_reaction(left)
+						if r:
+							await msg.add_reaction(right)
+						try:
+							react, user = await client.wait_for('reaction_add', check=predicate(msg, l, r), timeout=30)
+						except Exception:
+							print("BROKE")
+							break
+						if react.emoji == left:
+							index -= 1
+						elif react.emoji == right:
+							index += 1
+						action = msg.edit					
+					return
+				
+		'''if msg.startswith("token"):
+			try:
+				conn = MC.connect(host = dbhost, database = dbdatabase, user = dbuser, password = dbpassword)
+				cursor = conn.cursor()
+			except MC.Error as err:
+				if err.errno == errorcode.ER_ACCESS_DENIED_ERROR:
+					print("Something is not right with your username or your password")
+					return
+				elif err.errno == errorcode.ER_BAD_DB_ERROR:
+					print("Database does not exist")
+					return
+				else:
+					print(err)
+					return
+			else:
+				conn.cursor()
+				tokenurl = secrets.token_urlsafe(10)
+				author = message.author.id
+				ts = time.time()
+				timestamp = int(ts) + 86400
+				timern = datetime.datetime.fromtimestamp(timestamp).strftime('%Y-%m-%d %H:%M:%S')
+				sql = "INSERT INTO tokens (token, client, timestamp, chesttype) VALUES (%s, %s, %s, %s)"
+				var = (tokenurl,author,timern,1)
+				cursor.execute(sql, var)
+				conn.commit()
+				return
+
+		if msg.startswith("demonroulette"):
+			return'''
 
 		if msg.startswith("remove"):
 			serverid = message.guild.id
+			author = message.author.id
 			try:
 				conn = MC.connect(host = dbhost, database = dbdatabase, user = dbuser, password = dbpassword)
 				cursor = conn.cursor()
@@ -16254,6 +15289,17 @@ async def on_message(message):
 					return
 			else:
 				authorid = message.author.id
+
+				maincommand = "reqremove"
+				checkmaintenance = checkmaintenance(maincommand)
+				if checkmaintenance == "yes":
+					embed = discord.Embed(title="", color=0xff0000)
+					embed.add_field(name=f'Error. <:error:472907618386575370>', value=f"**The command is under maintenance, please try again later.**")
+					msg2 = await message.channel.send(embed=embed)
+					time.sleep(5)
+					await msg2.delete()
+					return
+
 				cursor.execute(f"SELECT language FROM users WHERE userid = {authorid}")
 				try:
 					language = cursor.fetchone()[0]
@@ -16275,6 +15321,26 @@ async def on_message(message):
 				completed = translate_messages[10]
 				levelscompleted = translate_messages[11]
 				levelcompleted = translate_messages[12]
+				
+				translate_cooldown_messages = open(f"language/client/cooldown-{language2}.txt").read().splitlines()
+				errorcooldown1 = translate_cooldown_messages[0]
+				errorcooldown2 = translate_cooldown_messages[1]
+				
+				#cooldowncheck(author)
+				alwayscooldown,secondcooldown = cooldowncheck(author)
+				
+				if alwayscooldown == 1:
+					embed = discord.Embed(title="", color=0xff0000)
+					embed.add_field(name=f'{errormessage}', value=f"{errorcooldown1} {secondcooldown} {errorcooldown2}")
+					msg2 = await message.channel.send(embed=embed)
+					time.sleep(5)
+					await msg2.delete()
+					return
+				sql = "INSERT INTO cooldowns (userid, cooldown) VALUES (%s, %s)"
+				datetime_object_cooldown = datetime_object + datetime.timedelta(seconds=30)
+				val = (author, datetime_object_cooldown)
+				cursor.execute(sql,val)
+				conn.commit()
 
 				try:
 					level = args[1]
@@ -16287,6 +15353,19 @@ async def on_message(message):
 							embed = discord.Embed(title=f"{loadingtitle}", color=0xffce08)
 							embed.add_field(name=f'{loadingdesc}', value="\u200b")
 							msg = await message.channel.send(embed=embed)
+							
+							cursor.execute(f"SELECT messageid FROM levels WHERE server = {serverid}")
+							messages = cursor.fetchall()
+							for row in messages:
+								try:
+									msg101 = await message.channel.fetch_message(int(row[0]))
+								except:
+									msg101 = None
+								else:
+									try:
+										await msg101.delete()
+									except TypeError:
+										pass
 
 							cursor.execute(f"DELETE FROM levels WHERE server = {serverid}")
 							conn.commit()
@@ -16298,7 +15377,16 @@ async def on_message(message):
 							embed.set_footer(text=f"{message.guild.name} --- {message.author}")
 							msg2 = await message.channel.send(embed=embed)
 							return
-						pogga = cursor.execute(f"SELECT levelid FROM levels WHERE server = {serverid} AND levelid = {level}")
+						data = f"gameVersion=21&binaryVersion=35&gdw=0&type=0&str={level}&diff=-&len=-&page=0&total=0&secret=Wmfd2893gb7".encode()
+						result = urlopen("http://www.boomlings.com/database/getGJLevels21.php",data).read().decode()
+						if result == "-1":
+							embed = discord.Embed(title="", color=0xff0000)
+							embed.add_field(name=f'{errormessage}', value=f"{errorlevelid}")
+							msg2 = await message.channel.send(embed=embed)
+							time.sleep(5)
+							await msg2.delete()
+							return
+						pogga = cursor.execute(f"SELECT levelid FROM levels WHERE server = {serverid} AND levelid = %s", (level, ))
 						try:
 							number = cursor.fetchone()[0]
 						except TypeError:
@@ -16308,8 +15396,21 @@ async def on_message(message):
 								embed = discord.Embed(title=f"{loadingtitle}", color=0xffce08)
 								embed.add_field(name=f'{loadingdesc}', value="\u200b")
 								msg = await message.channel.send(embed=embed)
+								
+								cursor.execute(f"SELECT messageid FROM levels WHERE server = {serverid} AND levelid = {level}")
+								messages = cursor.fetchall()
+								for row in messages:
+									try:
+										msg101 = await message.channel.fetch_message(int(row[0]))
+									except:
+										msg101 = None
+									else:
+										try:
+											await msg101.delete()
+										except TypeError:
+											pass
 
-								cursor.execute(f"DELETE FROM levels WHERE server = {serverid} AND levelid = {level}")
+								cursor.execute(f"DELETE FROM levels WHERE server = {serverid} AND levelid = %s", (level, ))
 								conn.commit()
 								await asyncio.sleep(3)
 								await msg.delete()
@@ -16385,14 +15486,14 @@ async def on_guild_join(guild):
 		serverid = guild.id
 		servername = guild.name
 		conn.cursor()
-		sql = "INSERT INTO setup (serverid, ReviewerRole, OwnerRole, RequestChannel, ReviewChannel, CheckedReviewChannel, AnnouncementBot, GDModChannel, TagReviewer, NeedVideo, language) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
-		var = (serverid,default,default,default,default,default,default,default,zero,zero,"en")
+		sql = "INSERT INTO setup (serverid, ReviewerRole, OwnerRole, RequestChannel, ReviewChannel, CheckedReviewChannel, AnnouncementBot, GDModChannel, TagReviewer, NeedVideo, language, RemoveRated, GDModCheckedChannel) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
+		var = (serverid,default,default,default,default,default,default,default,zero,zero,"en",zero,default)
 		cursor.execute(sql, var)
 		embed = discord.Embed(title="", color=0x00ff00)
 		embed.add_field(name='Thanks for adding me! <:success:472908961176092702>', value='Hello, thank you for adding me on your server ! Before starting the tutorial, I would like to tell you that this bot is completely unrelated to Geometry Dash (except on searchs). So, this robot will in no case request your identifiers or a means of using your GD account. Now, to start using the bot you need to type the command `req!help` for see every commands (i recomment you after to setup your discord with the commands too).')
 		try:
 			msg300 = await bot_entry[0].user.send(embed=embed)
-		except discord.errors.Forbidden:
+		except discord.errors:
 			pass
 		await client.change_presence(activity=discord.Streaming(name="req!help | In "+str(len(client.guilds))+" servers!", url="https://www.twitch.tv/joucayt"))
 		channel2 = client.get_channel(int(719566509264863282))
@@ -16435,5 +15536,8 @@ async def on_ready():
 	print(client.user.id)
 	print('------')
 	await client.change_presence(activity=discord.Streaming(name="req!help | In "+str(len(client.guilds))+" servers!", url="https://www.twitch.tv/joucayt"))
+	datetime_object = datetime.datetime.now()
+	channellog = client.get_channel(int(765611422389633064))
+	await channellog.send(f"<:granted:718913909905424474> **[{datetime_object}]** Bot is ready !")
 
 client.run(TOKEN)

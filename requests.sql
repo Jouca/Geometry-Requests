@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Client :  localhost:3306
--- Généré le :  Mer 12 Août 2020 à 18:50
+-- Généré le :  Mar 09 Février 2021 à 18:27
 -- Version du serveur :  10.1.41-MariaDB-0+deb9u1
 -- Version de PHP :  7.0.33-0+deb9u6
 
@@ -28,6 +28,17 @@ SET time_zone = "+00:00";
 
 CREATE TABLE `banned` (
   `userid` bigint(20) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+-- --------------------------------------------------------
+
+--
+-- Structure de la table `cooldowns`
+--
+
+CREATE TABLE `cooldowns` (
+  `userid` bigint(25) NOT NULL,
+  `cooldown` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 -- --------------------------------------------------------
@@ -67,7 +78,56 @@ CREATE TABLE `levels` (
   `requester` bigint(25) NOT NULL,
   `server` bigint(20) NOT NULL,
   `video` varchar(50) DEFAULT NULL,
-  `reviewed` varchar(5) NOT NULL
+  `reviewed` varchar(5) NOT NULL,
+  `messageid` bigint(25) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+-- --------------------------------------------------------
+
+--
+-- Structure de la table `maintenance`
+--
+
+CREATE TABLE `maintenance` (
+  `reqhelp` int(4) NOT NULL,
+  `reqabout` int(4) NOT NULL,
+  `reqsetup` int(4) NOT NULL,
+  `reqsetconfig` int(4) NOT NULL,
+  `reqsearch` int(4) NOT NULL,
+  `reqlevel` int(4) NOT NULL,
+  `reqqueue` int(4) NOT NULL,
+  `reqmyqueue` int(4) NOT NULL,
+  `reqreview` int(4) NOT NULL,
+  `reqsend` int(4) NOT NULL,
+  `reqreport` int(4) NOT NULL,
+  `reqmod approve` int(4) NOT NULL,
+  `reqmod unapprove` int(4) NOT NULL,
+  `reqmod ban` int(4) NOT NULL,
+  `reqmod unban` int(4) NOT NULL,
+  `reqprofile link` int(4) NOT NULL,
+  `reqprofile unlink` int(4) NOT NULL,
+  `reqannouncement` int(4) NOT NULL,
+  `reqachievements` int(4) NOT NULL,
+  `reqachievement give` int(4) NOT NULL,
+  `reqachievement remove` int(4) NOT NULL,
+  `reqprofile` int(4) NOT NULL,
+  `reqsettings profile` int(4) NOT NULL,
+  `reqsetsettings profile` int(4) NOT NULL,
+  `reqleaderboard` int(4) NOT NULL,
+  `reqremove` int(4) NOT NULL,
+  `ID` int(3) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+-- --------------------------------------------------------
+
+--
+-- Structure de la table `modlist`
+--
+
+CREATE TABLE `modlist` (
+  `username` varchar(26) NOT NULL,
+  `accountID` int(11) NOT NULL,
+  `playerID` int(11) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 -- --------------------------------------------------------
@@ -100,7 +160,9 @@ CREATE TABLE `setup` (
   `GDModChannel` varchar(25) DEFAULT NULL,
   `TagReviewer` varchar(10) NOT NULL,
   `NeedVideo` varchar(10) NOT NULL,
-  `language` varchar(8) NOT NULL
+  `language` varchar(8) NOT NULL,
+  `RemoveRated` varchar(10) NOT NULL,
+  `GDModCheckedChannel` bigint(20) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 -- --------------------------------------------------------
@@ -160,6 +222,13 @@ ALTER TABLE `banned`
   ADD UNIQUE KEY `userid` (`userid`);
 
 --
+-- Index pour la table `cooldowns`
+--
+ALTER TABLE `cooldowns`
+  ADD UNIQUE KEY `userid_2` (`userid`),
+  ADD KEY `userid` (`userid`);
+
+--
 -- Index pour la table `GDmoderators`
 --
 ALTER TABLE `GDmoderators`
@@ -177,6 +246,20 @@ ALTER TABLE `GRmoderators`
 --
 ALTER TABLE `levels`
   ADD PRIMARY KEY (`ID`);
+
+--
+-- Index pour la table `maintenance`
+--
+ALTER TABLE `maintenance`
+  ADD PRIMARY KEY (`ID`);
+
+--
+-- Index pour la table `modlist`
+--
+ALTER TABLE `modlist`
+  ADD PRIMARY KEY (`username`),
+  ADD UNIQUE KEY `username` (`username`),
+  ADD KEY `username_2` (`username`);
 
 --
 -- Index pour la table `reports`
@@ -205,22 +288,27 @@ ALTER TABLE `users`
 -- AUTO_INCREMENT pour la table `levels`
 --
 ALTER TABLE `levels`
-  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=521;
+  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2093;
+--
+-- AUTO_INCREMENT pour la table `maintenance`
+--
+ALTER TABLE `maintenance`
+  MODIFY `ID` int(3) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
 --
 -- AUTO_INCREMENT pour la table `reports`
 --
 ALTER TABLE `reports`
-  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
 --
 -- AUTO_INCREMENT pour la table `setup`
 --
 ALTER TABLE `setup`
-  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=121;
+  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=247;
 --
 -- AUTO_INCREMENT pour la table `users`
 --
 ALTER TABLE `users`
-  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=169;
+  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=565;
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
 /*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
