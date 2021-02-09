@@ -13,6 +13,8 @@ Vôtre requête doit être partagé dans
 Vous avez été banni car vous n'avez pas suivi les règles du bot, vous n'êtes plus capâble d'envoyer/d'évaluer/de rapporter des niveaux. Si ceci est une erreur, Merci de contacter le support à cette adresse email : joucagame@gmail.com.
 Ce niveau est sous liste noire sur le bot. Les raisons sont que ce niveau est contre les règles de Geometry Dash.
 Vous avez besoin de mettre une vidéo sur vôtre requête sur ce serveur.
+Les niveaux déjà évalué sont désactivés sur ce serveur.
+Ce serveur a atteint les 100 requêtes envoyés. Merci de patienter le temps que des requêtes soient évalué.
 
 Succès! <:success:472908961176092702>
 par

@@ -13,6 +13,8 @@ Your request need to be shared on
 You were banned because you didn't followed the bot rules, you will no longer be able to send/review/report levels. If this is an error, please contact support at this email address: joucagame@gmail.com.
 This level is blacklisted on the bot. The reasons are because this level is against the rules of Geometry Dash.
 You need to put a video on your request on this server.
+Rated levels are disabled on this server.
+This server has reached 100 requests sent. Please wait until requests are evaluated.
 
 Success! <:success:472908961176092702>
 by

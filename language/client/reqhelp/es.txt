@@ -13,7 +13,7 @@ Lista de comandos de ayuda
 `req!settings profile` = Muestra todas las configuraciones para el usuario.
 `req!setsettings profile (language/color1/color2/cubeid/glowoutline) (('fr'/'en'/'es')/colorID/colorID/cubeid/(1/0))` = Editar una configuración en la configuración del perfil.
 `req!review (IDdelnivel) (yes/no) (opcional: opinión)` = Darle una revisión a un nivel de la lista (Requiere ReviewerRole, CheckedReviewChannel seleccionado en las configuraciones y en el permiso del Reviewer Role. Si el servidor es de un Mod de GD, por favor ponga 'gdmodchannel'.
-`req!setconfig (reviewerrole/ownerrole/requestchannel/reviewchannel/checkedreviewchannel/announcementbot/gdmodchannel/tagreviewer/needvideo/language) (ID/(1/0 for tagreviewer and needvideo)/('fr'/'en'/'en'))` = Configura las opciones, puedes usarlo para taguear un canal o algún rol.
+`req!setconfig (reviewerrole/ownerrole/requestchannel/reviewchannel/checkedreviewchannel/announcementbot/gdmodchannel/gdmodcheckedchannel/tagreviewer/needvideo/language) (ID/(1/0 for tagreviewer and needvideo)/('fr'/'en'/'en'))` = Configura las opciones, puedes usarlo para taguear un canal o algún rol.
 `req!remove (levelid/all)` = Elimina un nivel (o todos los niveles) de la lista.
 `req!send (levelid) (star/featured) (numero de estrellas) (opcional: 1=Easy Demon, 2=Medium Demon, 3=Hard Demon, 4=Insane Demon, 5=Extreme Demon) (optional: captura de pantalla)` = Enviar el nivel de la lista de tu servidor (Requiere permisos de GD Mod).
 `req!mod approve (levelid)` = Hacer que un nivel reportado esté en lista negra (Requiere permiso de Mod de GR).

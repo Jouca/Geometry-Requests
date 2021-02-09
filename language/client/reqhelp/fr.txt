@@ -13,7 +13,7 @@ Liste des commandes d'aide
 `req!settings profile` = Montre toute les configurations pour l'utilisateur
 `req!setsettings profile (language/color1/color2/cubeid/glowoutline) (('fr'/'en'/'es')/colorID/colorID/cubeid/(1/0))` = Change une configuration dans les configurations du profil.
 `req!review (levelid) (yes/no) (optionnel: feedback)` = Evalue le niveau depuis la liste d'attente (Exige ReviewerRole, CheckedReviewChannel sélectionner dans les configurations et la permission Reviewer Role). Si c'est un serveur GD Mod, veuillez configurer 'gdmodchannel'.
-`req!setconfig (reviewerrole/ownerrole/requestchannel/reviewchannel/checkedreviewchannel/announcementbot/gdmodchannel/tagreviewer/needvideo/language) (ID/(1/0 pour tagreviewer et needvideo)/('fr'/'en'/'es'))` = Configure les paramètres, vous pouvez l'utiliser en taguant un salon ou un rôle.
+`req!setconfig (reviewerrole/ownerrole/requestchannel/reviewchannel/checkedreviewchannel/announcementbot/gdmodchannel/gdmodcheckedchannel/tagreviewer/needvideo/language) (ID/(1/0 pour tagreviewer et needvideo)/('fr'/'en'/'es'))` = Configure les paramètres, vous pouvez l'utiliser en taguant un salon ou un rôle.
 `req!remove (levelid/all)` = Enlève un niveau (ou tout les niveaux) de la liste d'attente.
 `req!send (levelid) (star/featured) (number of stars) (optionnal: 1=Easy Demon, 2=Medium Demon, 3=Hard Demon, 4=Insane Demon, 5=Extreme Demon) (optionnal: screenshot image)` = Envoie le niveau de vôtre liste d'attente sur vôtre serveur (Exige la permission GD Mod).
 `req!mod approve (levelid)` = Met le niveau rapporté en liste noire (Exige la permission GR Mod).

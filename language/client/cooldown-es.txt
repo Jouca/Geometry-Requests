@@ -1,0 +1,4 @@
+Estás en enfriamiento, espera otro
+segundo(s) para usar tu pedido.
+
+Error. <:error:472907618386575370>

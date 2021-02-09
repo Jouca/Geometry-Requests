@@ -1,0 +1,4 @@
+You're on cooldown, please wait
+second(s) to use your command.
+
+Error. <:error:472907618386575370>

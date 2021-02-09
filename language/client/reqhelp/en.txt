@@ -13,7 +13,7 @@ Help command list
 `req!settings profile` = Show every settings for the user.
 `req!setsettings profile (language/color1/color2/cubeid/glowoutline) (('fr'/'en'/'es')/colorID/colorID/cubeid/(1/0))` = Edit a setting in the profile settings.
 `req!review (levelid) (yes/no) (optionnal: feedback)` = Review the level from the queue (Require ReviewerRole, CheckedReviewChannel selected on the configs and the Reviewer Role permission). If it's a GD Mod server, please setup 'gdmodchannel'.
-`req!setconfig (reviewerrole/ownerrole/requestchannel/reviewchannel/checkedreviewchannel/announcementbot/gdmodchannel/tagreviewer/needvideo/language) (ID/(1/0 for tagreviewer and needvideo)/('fr'/'en'/'es'))` = Config the settings, you can use it for tag a channel or a role.
+`req!setconfig (reviewerrole/ownerrole/requestchannel/reviewchannel/checkedreviewchannel/announcementbot/gdmodchannel/gdmodcheckedchannel/tagreviewer/needvideo/language) (ID/(1/0 for tagreviewer and needvideo)/('fr'/'en'/'es'))` = Config the settings, you can use it for tag a channel or a role.
 `req!remove (levelid/all)` = Remove a level (or all levels) from the queue.
 `req!send (levelid) (star/featured) (number of stars) (optionnal: 1=Easy Demon, 2=Medium Demon, 3=Hard Demon, 4=Insane Demon, 5=Extreme Demon) (optionnal: screenshot image)` = Sent the level of your server queue (Require GD Mod permission).
 `req!mod approve (levelid)` = Make the reported level blacklisted (Require GR Mod permission).

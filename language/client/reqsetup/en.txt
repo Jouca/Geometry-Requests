@@ -21,6 +21,7 @@ GDModChannel =
 TagReviewer =
 NeedVideo =
 Language =
+RemoveRated =
 
 Error. <:error:472907618386575370>
 You don't have the admin permissions to use this command.

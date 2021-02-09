@@ -1,0 +1,4 @@
+Vous êtes en temps de recharge, veuillez attendre encore
+seconde(s) pour utiliser votre commande.
+
+Erreur. <:error:472907618386575370>

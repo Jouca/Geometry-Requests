@@ -13,6 +13,8 @@ Su solicitud debe ser compartida en
 Has sido baneado porque no has cumplido las reglas del bot, ya no podrás enviar/revisar/reportar niveles. Si crees que ha sido un error, por favor póngase en contacto con el soporte del bot con esta dirección de email: joucagame@gmail.com.
 Este nivel esta en la lista negra del bot. Las razones se deben a que este nivel va en contra de las normas de Geometry Dash.
 Necesitas poner un video en tu solicitud en este servidor.
+Los niveles con estrellas están deshabilitados en este server.
+This server has reached 100 requests sent. Please wait until requests are evaluated.
 
 Finalizado! <:success:472908961176092702>
 de
