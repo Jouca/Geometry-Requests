@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Client :  localhost:3306
--- Généré le :  Mar 09 Février 2021 à 18:27
+-- Généré le :  Mer 10 Février 2021 à 14:49
 -- Version du serveur :  10.1.41-MariaDB-0+deb9u1
 -- Version de PHP :  7.0.33-0+deb9u6
 
@@ -19,6 +19,8 @@ SET time_zone = "+00:00";
 --
 -- Base de données :  `requests`
 --
+CREATE DATABASE IF NOT EXISTS `requests` DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci;
+USE `requests`;
 
 -- --------------------------------------------------------
 
@@ -26,6 +28,7 @@ SET time_zone = "+00:00";
 -- Structure de la table `banned`
 --
 
+DROP TABLE IF EXISTS `banned`;
 CREATE TABLE `banned` (
   `userid` bigint(20) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
@@ -36,6 +39,7 @@ CREATE TABLE `banned` (
 -- Structure de la table `cooldowns`
 --
 
+DROP TABLE IF EXISTS `cooldowns`;
 CREATE TABLE `cooldowns` (
   `userid` bigint(25) NOT NULL,
   `cooldown` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
@@ -47,6 +51,7 @@ CREATE TABLE `cooldowns` (
 -- Structure de la table `GDmoderators`
 --
 
+DROP TABLE IF EXISTS `GDmoderators`;
 CREATE TABLE `GDmoderators` (
   `moderatorname` varchar(25) DEFAULT NULL,
   `userid` varchar(25) NOT NULL,
@@ -61,6 +66,7 @@ CREATE TABLE `GDmoderators` (
 -- Structure de la table `GRmoderators`
 --
 
+DROP TABLE IF EXISTS `GRmoderators`;
 CREATE TABLE `GRmoderators` (
   `userid` varchar(25) NOT NULL,
   `name` varchar(20) NOT NULL
@@ -72,6 +78,7 @@ CREATE TABLE `GRmoderators` (
 -- Structure de la table `levels`
 --
 
+DROP TABLE IF EXISTS `levels`;
 CREATE TABLE `levels` (
   `ID` int(11) NOT NULL,
   `levelid` int(11) NOT NULL,
@@ -88,6 +95,7 @@ CREATE TABLE `levels` (
 -- Structure de la table `maintenance`
 --
 
+DROP TABLE IF EXISTS `maintenance`;
 CREATE TABLE `maintenance` (
   `reqhelp` int(4) NOT NULL,
   `reqabout` int(4) NOT NULL,
@@ -100,19 +108,19 @@ CREATE TABLE `maintenance` (
   `reqreview` int(4) NOT NULL,
   `reqsend` int(4) NOT NULL,
   `reqreport` int(4) NOT NULL,
-  `reqmod approve` int(4) NOT NULL,
-  `reqmod unapprove` int(4) NOT NULL,
-  `reqmod ban` int(4) NOT NULL,
-  `reqmod unban` int(4) NOT NULL,
-  `reqprofile link` int(4) NOT NULL,
-  `reqprofile unlink` int(4) NOT NULL,
+  `reqmodapprove` int(4) NOT NULL,
+  `reqmodunapprove` int(4) NOT NULL,
+  `reqmodban` int(4) NOT NULL,
+  `reqmodunban` int(4) NOT NULL,
+  `reqprofilelink` int(4) NOT NULL,
+  `reqprofileunlink` int(4) NOT NULL,
   `reqannouncement` int(4) NOT NULL,
   `reqachievements` int(4) NOT NULL,
-  `reqachievement give` int(4) NOT NULL,
-  `reqachievement remove` int(4) NOT NULL,
+  `reqachievementgive` int(4) NOT NULL,
+  `reqachievementremove` int(4) NOT NULL,
   `reqprofile` int(4) NOT NULL,
-  `reqsettings profile` int(4) NOT NULL,
-  `reqsetsettings profile` int(4) NOT NULL,
+  `reqsettingsprofile` int(4) NOT NULL,
+  `reqsetsettingsprofile` int(4) NOT NULL,
   `reqleaderboard` int(4) NOT NULL,
   `reqremove` int(4) NOT NULL,
   `ID` int(3) NOT NULL
@@ -124,6 +132,7 @@ CREATE TABLE `maintenance` (
 -- Structure de la table `modlist`
 --
 
+DROP TABLE IF EXISTS `modlist`;
 CREATE TABLE `modlist` (
   `username` varchar(26) NOT NULL,
   `accountID` int(11) NOT NULL,
@@ -136,6 +145,7 @@ CREATE TABLE `modlist` (
 -- Structure de la table `reports`
 --
 
+DROP TABLE IF EXISTS `reports`;
 CREATE TABLE `reports` (
   `ID` int(11) NOT NULL,
   `levelid` int(11) NOT NULL,
@@ -145,9 +155,228 @@ CREATE TABLE `reports` (
 -- --------------------------------------------------------
 
 --
+-- Structure de la table `rewards`
+--
+
+DROP TABLE IF EXISTS `rewards`;
+CREATE TABLE `rewards` (
+  `userid` bigint(25) NOT NULL,
+  `ship1` bigint(11) NOT NULL DEFAULT '0',
+  `ship2` bigint(11) NOT NULL DEFAULT '0',
+  `ship3` bigint(11) NOT NULL DEFAULT '0',
+  `ship4` bigint(11) NOT NULL DEFAULT '0',
+  `ship5` bigint(11) NOT NULL DEFAULT '0',
+  `ship6` bigint(11) NOT NULL DEFAULT '0',
+  `ship7` bigint(11) NOT NULL DEFAULT '0',
+  `ship8` bigint(11) NOT NULL DEFAULT '0',
+  `ship9` bigint(11) NOT NULL DEFAULT '0',
+  `ship10` bigint(11) NOT NULL DEFAULT '0',
+  `ship11` bigint(11) NOT NULL DEFAULT '0',
+  `ship12` bigint(11) NOT NULL DEFAULT '0',
+  `ship13` bigint(11) NOT NULL DEFAULT '0',
+  `ship14` bigint(11) NOT NULL DEFAULT '0',
+  `ship15` bigint(11) NOT NULL DEFAULT '0',
+  `ship16` bigint(11) NOT NULL DEFAULT '0',
+  `ship17` bigint(11) NOT NULL DEFAULT '0',
+  `ship18` bigint(11) NOT NULL DEFAULT '0',
+  `ship19` bigint(11) NOT NULL DEFAULT '0',
+  `ship20` bigint(11) NOT NULL DEFAULT '0',
+  `ship21` bigint(11) NOT NULL DEFAULT '0',
+  `ship22` bigint(11) NOT NULL DEFAULT '0',
+  `ship23` bigint(11) NOT NULL DEFAULT '0',
+  `ship24` bigint(11) NOT NULL DEFAULT '0',
+  `ship25` bigint(11) NOT NULL DEFAULT '0',
+  `ship26` bigint(11) NOT NULL DEFAULT '0',
+  `ship27` bigint(11) NOT NULL DEFAULT '0',
+  `ship28` bigint(11) NOT NULL DEFAULT '0',
+  `ship29` bigint(11) NOT NULL DEFAULT '0',
+  `ship30` bigint(11) NOT NULL DEFAULT '0',
+  `ship31` bigint(11) NOT NULL DEFAULT '0',
+  `ship32` bigint(11) NOT NULL DEFAULT '0',
+  `ship33` bigint(11) NOT NULL DEFAULT '0',
+  `ship34` bigint(11) NOT NULL DEFAULT '0',
+  `ship35` bigint(11) NOT NULL DEFAULT '0',
+  `ship36` bigint(11) NOT NULL DEFAULT '0',
+  `ship37` bigint(11) NOT NULL DEFAULT '0',
+  `ship38` bigint(11) NOT NULL DEFAULT '0',
+  `ship39` bigint(11) NOT NULL DEFAULT '0',
+  `ship40` bigint(11) NOT NULL DEFAULT '0',
+  `ship41` bigint(11) NOT NULL DEFAULT '0',
+  `ship42` bigint(11) NOT NULL DEFAULT '0',
+  `ship43` bigint(11) NOT NULL DEFAULT '0',
+  `ship44` bigint(11) NOT NULL DEFAULT '0',
+  `ship45` bigint(11) NOT NULL DEFAULT '0',
+  `ship46` bigint(11) NOT NULL DEFAULT '0',
+  `ship47` bigint(11) NOT NULL DEFAULT '0',
+  `ship48` bigint(11) NOT NULL DEFAULT '0',
+  `ship49` bigint(11) NOT NULL DEFAULT '0',
+  `ship50` bigint(11) NOT NULL DEFAULT '0',
+  `ship51` bigint(11) NOT NULL DEFAULT '0',
+  `ball1` bigint(11) NOT NULL DEFAULT '0',
+  `ball2` bigint(11) NOT NULL DEFAULT '0',
+  `ball3` bigint(11) NOT NULL DEFAULT '0',
+  `ball4` bigint(11) NOT NULL DEFAULT '0',
+  `ball5` bigint(11) NOT NULL DEFAULT '0',
+  `ball6` bigint(11) NOT NULL DEFAULT '0',
+  `ball7` bigint(11) NOT NULL DEFAULT '0',
+  `ball8` bigint(11) NOT NULL DEFAULT '0',
+  `ball9` bigint(11) NOT NULL DEFAULT '0',
+  `ball10` bigint(11) NOT NULL DEFAULT '0',
+  `ball11` bigint(11) NOT NULL DEFAULT '0',
+  `ball12` bigint(11) NOT NULL DEFAULT '0',
+  `ball13` bigint(11) NOT NULL DEFAULT '0',
+  `ball14` bigint(11) NOT NULL DEFAULT '0',
+  `ball15` bigint(11) NOT NULL DEFAULT '0',
+  `ball16` bigint(11) NOT NULL DEFAULT '0',
+  `ball17` bigint(11) NOT NULL DEFAULT '0',
+  `ball18` bigint(11) NOT NULL DEFAULT '0',
+  `ball19` bigint(11) NOT NULL DEFAULT '0',
+  `ball20` bigint(11) NOT NULL DEFAULT '0',
+  `ball21` bigint(11) NOT NULL DEFAULT '0',
+  `ball22` bigint(11) NOT NULL DEFAULT '0',
+  `ball23` bigint(11) NOT NULL DEFAULT '0',
+  `ball24` bigint(11) NOT NULL DEFAULT '0',
+  `ball25` bigint(11) NOT NULL DEFAULT '0',
+  `ball26` bigint(11) NOT NULL DEFAULT '0',
+  `ball27` bigint(11) NOT NULL DEFAULT '0',
+  `ball28` bigint(11) NOT NULL DEFAULT '0',
+  `ball29` bigint(11) NOT NULL DEFAULT '0',
+  `ball30` bigint(11) NOT NULL DEFAULT '0',
+  `ball31` bigint(11) NOT NULL DEFAULT '0',
+  `ball32` bigint(11) NOT NULL DEFAULT '0',
+  `ball33` bigint(11) NOT NULL DEFAULT '0',
+  `ball34` bigint(11) NOT NULL DEFAULT '0',
+  `ball35` bigint(11) NOT NULL DEFAULT '0',
+  `ball36` bigint(11) NOT NULL DEFAULT '0',
+  `ball37` bigint(11) NOT NULL DEFAULT '0',
+  `ball38` bigint(11) NOT NULL DEFAULT '0',
+  `ball39` bigint(11) NOT NULL DEFAULT '0',
+  `ball40` bigint(11) NOT NULL DEFAULT '0',
+  `ball41` bigint(11) NOT NULL DEFAULT '0',
+  `ball42` bigint(11) NOT NULL DEFAULT '0',
+  `ball43` bigint(11) NOT NULL DEFAULT '0',
+  `ufo1` bigint(11) NOT NULL DEFAULT '0',
+  `ufo2` bigint(11) NOT NULL DEFAULT '0',
+  `ufo3` bigint(11) NOT NULL DEFAULT '0',
+  `ufo4` bigint(11) NOT NULL DEFAULT '0',
+  `ufo5` bigint(11) NOT NULL DEFAULT '0',
+  `ufo6` bigint(11) NOT NULL DEFAULT '0',
+  `ufo7` bigint(11) NOT NULL DEFAULT '0',
+  `ufo8` bigint(11) NOT NULL DEFAULT '0',
+  `ufo9` bigint(11) NOT NULL DEFAULT '0',
+  `ufo10` bigint(11) NOT NULL DEFAULT '0',
+  `ufo11` bigint(11) NOT NULL DEFAULT '0',
+  `ufo12` bigint(11) NOT NULL DEFAULT '0',
+  `ufo13` bigint(11) NOT NULL DEFAULT '0',
+  `ufo14` bigint(11) NOT NULL DEFAULT '0',
+  `ufo15` bigint(11) NOT NULL DEFAULT '0',
+  `ufo16` bigint(11) NOT NULL DEFAULT '0',
+  `ufo17` bigint(11) NOT NULL DEFAULT '0',
+  `ufo18` bigint(11) NOT NULL DEFAULT '0',
+  `ufo19` bigint(11) NOT NULL DEFAULT '0',
+  `ufo20` bigint(11) NOT NULL DEFAULT '0',
+  `ufo21` bigint(11) NOT NULL DEFAULT '0',
+  `ufo22` bigint(11) NOT NULL DEFAULT '0',
+  `ufo23` bigint(11) NOT NULL DEFAULT '0',
+  `ufo24` bigint(11) NOT NULL DEFAULT '0',
+  `ufo25` bigint(11) NOT NULL DEFAULT '0',
+  `ufo26` bigint(11) NOT NULL DEFAULT '0',
+  `ufo27` bigint(11) NOT NULL DEFAULT '0',
+  `ufo28` bigint(11) NOT NULL DEFAULT '0',
+  `ufo29` bigint(11) NOT NULL DEFAULT '0',
+  `ufo30` bigint(11) NOT NULL DEFAULT '0',
+  `ufo31` bigint(11) NOT NULL DEFAULT '0',
+  `ufo32` bigint(11) NOT NULL DEFAULT '0',
+  `ufo33` bigint(11) NOT NULL DEFAULT '0',
+  `ufo34` bigint(11) NOT NULL DEFAULT '0',
+  `ufo35` bigint(11) NOT NULL DEFAULT '0',
+  `wave1` bigint(11) NOT NULL DEFAULT '0',
+  `wave2` bigint(11) NOT NULL DEFAULT '0',
+  `wave3` bigint(11) NOT NULL DEFAULT '0',
+  `wave4` bigint(11) NOT NULL DEFAULT '0',
+  `wave5` bigint(11) NOT NULL DEFAULT '0',
+  `wave6` bigint(11) NOT NULL DEFAULT '0',
+  `wave7` bigint(11) NOT NULL DEFAULT '0',
+  `wave8` bigint(11) NOT NULL DEFAULT '0',
+  `wave9` bigint(11) NOT NULL DEFAULT '0',
+  `wave10` bigint(11) NOT NULL DEFAULT '0',
+  `wave11` bigint(11) NOT NULL DEFAULT '0',
+  `wave12` bigint(11) NOT NULL DEFAULT '0',
+  `wave13` bigint(11) NOT NULL DEFAULT '0',
+  `wave14` bigint(11) NOT NULL DEFAULT '0',
+  `wave15` bigint(11) NOT NULL DEFAULT '0',
+  `wave16` bigint(11) NOT NULL DEFAULT '0',
+  `wave17` bigint(11) NOT NULL DEFAULT '0',
+  `wave18` bigint(11) NOT NULL DEFAULT '0',
+  `wave19` bigint(11) NOT NULL DEFAULT '0',
+  `wave20` bigint(11) NOT NULL DEFAULT '0',
+  `wave21` bigint(11) NOT NULL DEFAULT '0',
+  `wave22` bigint(11) NOT NULL DEFAULT '0',
+  `wave23` bigint(11) NOT NULL DEFAULT '0',
+  `wave24` bigint(11) NOT NULL DEFAULT '0',
+  `wave25` bigint(11) NOT NULL DEFAULT '0',
+  `wave26` bigint(11) NOT NULL DEFAULT '0',
+  `wave27` bigint(11) NOT NULL DEFAULT '0',
+  `wave28` bigint(11) NOT NULL DEFAULT '0',
+  `wave29` bigint(11) NOT NULL DEFAULT '0',
+  `wave30` bigint(11) NOT NULL DEFAULT '0',
+  `wave31` bigint(11) NOT NULL DEFAULT '0',
+  `wave32` bigint(11) NOT NULL DEFAULT '0',
+  `wave33` bigint(11) NOT NULL DEFAULT '0',
+  `wave34` bigint(11) NOT NULL DEFAULT '0',
+  `wave35` bigint(11) NOT NULL DEFAULT '0',
+  `robot1` bigint(11) NOT NULL DEFAULT '0',
+  `robot2` bigint(11) NOT NULL DEFAULT '0',
+  `robot3` bigint(11) NOT NULL DEFAULT '0',
+  `robot4` bigint(11) NOT NULL DEFAULT '0',
+  `robot5` bigint(11) NOT NULL DEFAULT '0',
+  `robot6` bigint(11) NOT NULL DEFAULT '0',
+  `robot7` bigint(11) NOT NULL DEFAULT '0',
+  `robot8` bigint(11) NOT NULL DEFAULT '0',
+  `robot9` bigint(11) NOT NULL DEFAULT '0',
+  `robot10` bigint(11) NOT NULL DEFAULT '0',
+  `robot11` bigint(11) NOT NULL DEFAULT '0',
+  `robot12` bigint(11) NOT NULL DEFAULT '0',
+  `robot13` bigint(11) NOT NULL DEFAULT '0',
+  `robot14` bigint(11) NOT NULL DEFAULT '0',
+  `robot15` bigint(11) NOT NULL DEFAULT '0',
+  `robot16` bigint(11) NOT NULL DEFAULT '0',
+  `robot17` bigint(11) NOT NULL DEFAULT '0',
+  `robot18` bigint(11) NOT NULL DEFAULT '0',
+  `robot19` bigint(11) NOT NULL DEFAULT '0',
+  `robot20` bigint(11) NOT NULL DEFAULT '0',
+  `robot21` bigint(11) NOT NULL DEFAULT '0',
+  `robot22` bigint(11) NOT NULL DEFAULT '0',
+  `robot23` bigint(11) NOT NULL DEFAULT '0',
+  `robot24` bigint(11) NOT NULL DEFAULT '0',
+  `robot25` bigint(11) NOT NULL DEFAULT '0',
+  `robot26` bigint(11) NOT NULL DEFAULT '0',
+  `spider1` bigint(11) NOT NULL DEFAULT '0',
+  `spider2` bigint(11) NOT NULL DEFAULT '0',
+  `spider3` bigint(11) NOT NULL DEFAULT '0',
+  `spider4` bigint(11) NOT NULL DEFAULT '0',
+  `spider5` bigint(11) NOT NULL DEFAULT '0',
+  `spider6` bigint(11) NOT NULL DEFAULT '0',
+  `spider7` bigint(11) NOT NULL DEFAULT '0',
+  `spider8` bigint(11) NOT NULL DEFAULT '0',
+  `spider9` bigint(11) NOT NULL DEFAULT '0',
+  `spider10` bigint(11) NOT NULL DEFAULT '0',
+  `spider11` bigint(11) NOT NULL DEFAULT '0',
+  `spider12` bigint(11) NOT NULL DEFAULT '0',
+  `spider13` bigint(11) NOT NULL DEFAULT '0',
+  `spider14` bigint(11) NOT NULL DEFAULT '0',
+  `spider15` bigint(11) NOT NULL DEFAULT '0',
+  `spider16` bigint(11) NOT NULL DEFAULT '0',
+  `spider17` bigint(11) NOT NULL DEFAULT '0'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+-- --------------------------------------------------------
+
+--
 -- Structure de la table `setup`
 --
 
+DROP TABLE IF EXISTS `setup`;
 CREATE TABLE `setup` (
   `ID` int(11) NOT NULL,
   `serverid` varchar(25) NOT NULL,
@@ -168,9 +397,42 @@ CREATE TABLE `setup` (
 -- --------------------------------------------------------
 
 --
+-- Structure de la table `tokenrewards`
+--
+
+DROP TABLE IF EXISTS `tokenrewards`;
+CREATE TABLE `tokenrewards` (
+  `ID` int(11) NOT NULL,
+  `name` varchar(50) NOT NULL,
+  `amount` int(20) NOT NULL,
+  `percentage` decimal(4,2) NOT NULL,
+  `rarity` varchar(15) NOT NULL,
+  `thumbnail` text NOT NULL,
+  `nameid` varchar(15) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+-- --------------------------------------------------------
+
+--
+-- Structure de la table `tokens`
+--
+
+DROP TABLE IF EXISTS `tokens`;
+CREATE TABLE `tokens` (
+  `ID` int(10) NOT NULL,
+  `token` varchar(10) NOT NULL,
+  `client` bigint(25) NOT NULL,
+  `timestamp` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `chesttype` int(2) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+-- --------------------------------------------------------
+
+--
 -- Structure de la table `users`
 --
 
+DROP TABLE IF EXISTS `users`;
 CREATE TABLE `users` (
   `ID` int(11) NOT NULL,
   `userid` varchar(25) NOT NULL,
@@ -268,9 +530,28 @@ ALTER TABLE `reports`
   ADD PRIMARY KEY (`ID`);
 
 --
+-- Index pour la table `rewards`
+--
+ALTER TABLE `rewards`
+  ADD UNIQUE KEY `userid` (`userid`),
+  ADD KEY `userid_2` (`userid`);
+
+--
 -- Index pour la table `setup`
 --
 ALTER TABLE `setup`
+  ADD PRIMARY KEY (`ID`);
+
+--
+-- Index pour la table `tokenrewards`
+--
+ALTER TABLE `tokenrewards`
+  ADD PRIMARY KEY (`ID`);
+
+--
+-- Index pour la table `tokens`
+--
+ALTER TABLE `tokens`
   ADD PRIMARY KEY (`ID`);
 
 --
@@ -288,7 +569,7 @@ ALTER TABLE `users`
 -- AUTO_INCREMENT pour la table `levels`
 --
 ALTER TABLE `levels`
-  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2093;
+  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2110;
 --
 -- AUTO_INCREMENT pour la table `maintenance`
 --
@@ -305,10 +586,20 @@ ALTER TABLE `reports`
 ALTER TABLE `setup`
   MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=247;
 --
+-- AUTO_INCREMENT pour la table `tokenrewards`
+--
+ALTER TABLE `tokenrewards`
+  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=369;
+--
+-- AUTO_INCREMENT pour la table `tokens`
+--
+ALTER TABLE `tokens`
+  MODIFY `ID` int(10) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
+--
 -- AUTO_INCREMENT pour la table `users`
 --
 ALTER TABLE `users`
-  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=565;
+  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=570;
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
 /*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;

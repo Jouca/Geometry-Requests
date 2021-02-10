@@ -28,7 +28,7 @@ color_palette = ['0x7dff00','0x00ff01','0x00ff7e','0x01ffff','0x01c8ff','0x0000f
 
 jouca = 216708683290247168
 
-TOKEN = "TOKEN of the Discord bot"
+TOKEN = "TOKEN of the Discord Bot"
 prefix = "req!"
 
 #########################
@@ -4121,7 +4121,7 @@ async def on_message(message):
 													conn.commit()
 													#requestachievement1(author)
 													embed5 = requestachievement1(author)
-													username = client.get_user(int(jaj))
+													username = await client.fetch_user(int(jaj))
 													channel = await username.create_dm()
 													try:
 														await channel.send(embed=embed5)
@@ -4135,7 +4135,7 @@ async def on_message(message):
 													conn.commit()
 													#requestachievement5(author)
 													embed5 = requestachievement5(author)
-													username = client.get_user(int(jaj))
+													username = await client.fetch_user(int(jaj))
 													channel = await username.create_dm()
 													try:
 														await channel.send(embed=embed5)
@@ -4149,7 +4149,7 @@ async def on_message(message):
 													conn.commit()
 													#requestachievement10(author)
 													embed5 = requestachievement10(author)
-													username = client.get_user(int(jaj))
+													username = await client.fetch_user(int(jaj))
 													channel = await username.create_dm()
 													try:
 														await channel.send(embed=embed5)
@@ -4163,7 +4163,7 @@ async def on_message(message):
 													conn.commit()
 													#requestachievement50(author)
 													embed5 = requestachievement50(author)
-													username = client.get_user(int(jaj))
+													username = await client.fetch_user(int(jaj))
 													channel = await username.create_dm()
 													try:
 														await channel.send(embed=embed5)
@@ -4177,7 +4177,7 @@ async def on_message(message):
 													conn.commit()
 													#requestachievement100(author)
 													embed5 = requestachievement100(author)
-													username = client.get_user(int(jaj))
+													username = await client.fetch_user(int(jaj))
 													channel = await username.create_dm()
 													try:
 														await channel.send(embed=embed5)
@@ -4360,7 +4360,7 @@ async def on_message(message):
 														conn.commit()
 														#requestachievement1(author)
 														embed5 = requestachievement1(author)
-														username = client.get_user(int(jaj))
+														username = await client.fetch_user(int(jaj))
 														channel = await username.create_dm()
 														try:
 															await channel.send(embed=embed5)
@@ -4374,7 +4374,7 @@ async def on_message(message):
 														conn.commit()
 														#requestachievement5(author)
 														embed5 = requestachievement5(author)
-														username = client.get_user(int(jaj))
+														username = await client.fetch_user(int(jaj))
 														channel = await username.create_dm()
 														try:
 															await channel.send(embed=embed5)
@@ -4388,7 +4388,7 @@ async def on_message(message):
 														conn.commit()
 														#requestachievement10(author)
 														embed5 = requestachievement10(author)
-														username = client.get_user(int(jaj))
+														username = await client.fetch_user(int(jaj))
 														channel = await username.create_dm()
 														try:
 															await channel.send(embed=embed5)
@@ -4402,7 +4402,7 @@ async def on_message(message):
 														conn.commit()
 														#requestachievement50(author)
 														embed5 = requestachievement50(author)
-														username = client.get_user(int(jaj))
+														username = await client.fetch_user(int(jaj))
 														channel = await username.create_dm()
 														try:
 															await channel.send(embed=embed5)
@@ -4416,7 +4416,7 @@ async def on_message(message):
 														conn.commit()
 														#requestachievement100(author)
 														embed5 = requestachievement100(author)
-														username = client.get_user(int(jaj))
+														username = await client.fetch_user(int(jaj))
 														channel = await username.create_dm()
 														try:
 															await channel.send(embed=embed5)
@@ -4663,7 +4663,7 @@ async def on_message(message):
 														conn.commit()
 														#requestachievement1(author)
 														embed5 = requestachievement1(author)
-														username = client.get_user(int(jaj))
+														username = await client.fetch_user(int(jaj))
 														channel = await username.create_dm()
 														try:
 															await channel.send(embed=embed5)
@@ -4677,7 +4677,7 @@ async def on_message(message):
 														conn.commit()
 														#requestachievement5(author)
 														embed5 = requestachievement5(author)
-														username = client.get_user(int(jaj))
+														username = await client.fetch_user(int(jaj))
 														channel = await username.create_dm()
 														try:
 															await channel.send(embed=embed5)
@@ -4691,7 +4691,7 @@ async def on_message(message):
 														conn.commit()
 														#requestachievement10(author)
 														embed5 = requestachievement10(author)
-														username = client.get_user(int(jaj))
+														username = await client.fetch_user(int(jaj))
 														channel = await username.create_dm()
 														try:
 															await channel.send(embed=embed5)
@@ -4705,7 +4705,7 @@ async def on_message(message):
 														conn.commit()
 														#requestachievement50(author)
 														embed5 = requestachievement50(author)
-														username = client.get_user(int(jaj))
+														username = await client.fetch_user(int(jaj))
 														channel = await username.create_dm()
 														try:
 															await channel.send(embed=embed5)
@@ -4719,7 +4719,7 @@ async def on_message(message):
 														conn.commit()
 														#requestachievement100(author)
 														embed5 = requestachievement100(author)
-														username = client.get_user(int(jaj))
+														username = await client.fetch_user(int(jaj))
 														channel = await username.create_dm()
 														try:
 															await channel.send(embed=embed5)
@@ -4901,7 +4901,7 @@ async def on_message(message):
 															conn.commit()
 															#requestachievement1(author)
 															embed5 = requestachievement1(author)
-															username = client.get_user(int(jaj))
+															username = await client.fetch_user(int(jaj))
 															channel = await username.create_dm()
 															try:
 																await channel.send(embed=embed5)
@@ -4915,7 +4915,7 @@ async def on_message(message):
 															conn.commit()
 															#requestachievement5(author)
 															embed5 = requestachievement5(author)
-															username = client.get_user(int(jaj))
+															username = await client.fetch_user(int(jaj))
 															channel = await username.create_dm()
 															try:
 																await channel.send(embed=embed5)
@@ -4929,7 +4929,7 @@ async def on_message(message):
 															conn.commit()
 															#requestachievement10(author)
 															embed5 = requestachievement10(author)
-															username = client.get_user(int(jaj))
+															username = await client.fetch_user(int(jaj))
 															channel = await username.create_dm()
 															try:
 																await channel.send(embed=embed5)
@@ -4943,7 +4943,7 @@ async def on_message(message):
 															conn.commit()
 															#requestachievement50(author)
 															embed5 = requestachievement50(author)
-															username = client.get_user(int(jaj))
+															username = await client.fetch_user(int(jaj))
 															channel = await username.create_dm()
 															try:
 																await channel.send(embed=embed5)
@@ -4957,7 +4957,7 @@ async def on_message(message):
 															conn.commit()
 															#requestachievement100(author)
 															embed5 = requestachievement100(author)
-															username = client.get_user(int(jaj))
+															username = await client.fetch_user(int(jaj))
 															channel = await username.create_dm()
 															try:
 																await channel.send(embed=embed5)
@@ -5679,9 +5679,9 @@ async def on_message(message):
 							poggare = cursor.execute(f"SELECT userid FROM banned WHERE userid = {jaj} LIMIT 1")
 							maybe_number3 = cursor.fetchone()
 							if maybe_number3 is None:
-								nani = cursor.execute(f"SELECT requester FROM levels WHERE levelid = %s LIMIT 1", (level, ))
+								nani = cursor.execute(f"SELECT requester FROM levels WHERE levelid = %s AND server = {serverid} LIMIT 1", (level, ))
 								user1 = cursor.fetchone()[0]
-								username = client.get_user(int(user1))
+								username = await client.fetch_user(int(user1))
 								if validation == "yes":
 									if feedback != []:
 										sentence = ' '.join(feedback)
@@ -5818,7 +5818,7 @@ async def on_message(message):
 														conn.commit()
 														reviewachievement1(author)
 														embed5 = reviewachievement1(author)
-														username = client.get_user(int(jaj))
+														username = await client.fetch_user(int(jaj))
 														channel = await username.create_dm()
 														try:
 															await channel.send(embed=embed5)
@@ -5836,7 +5836,7 @@ async def on_message(message):
 														conn.commit()
 														reviewachievement5(author)
 														embed5 = reviewachievement5(author)
-														username = client.get_user(int(jaj))
+														username = await client.fetch_user(int(jaj))
 														channel = await username.create_dm()
 														try:
 															await channel.send(embed=embed5)
@@ -5854,7 +5854,7 @@ async def on_message(message):
 														conn.commit()
 														reviewachievement10(author)
 														embed5 = reviewachievement10(author)
-														username = client.get_user(int(jaj))
+														username = await client.fetch_user(int(jaj))
 														channel = await username.create_dm()
 														try:
 															await channel.send(embed=embed5)
@@ -5872,7 +5872,7 @@ async def on_message(message):
 														conn.commit()
 														reviewachievement50(author)
 														embed5 = reviewachievement50(author)
-														username = client.get_user(int(jaj))
+														username = await client.fetch_user(int(jaj))
 														channel = await username.create_dm()
 														try:
 															await channel.send(embed=embed5)
@@ -5890,7 +5890,7 @@ async def on_message(message):
 														conn.commit()
 														reviewachievement100(author)
 														embed5 = reviewachievement100(author)
-														username = client.get_user(int(jaj))
+														username = await client.fetch_user(int(jaj))
 														channel = await username.create_dm()
 														try:
 															await channel.send(embed=embed5)
@@ -5914,7 +5914,7 @@ async def on_message(message):
 														conn.commit()
 														reviewapprovedachievement1(user1)
 														embed5 = reviewapprovedachievement1(user1)
-														username = client.get_user(int(user1))
+														username = await client.fetch_user(int(user1))
 														channel = await username.create_dm()
 														try:
 															await channel.send(embed=embed5)
@@ -5932,7 +5932,7 @@ async def on_message(message):
 														conn.commit()
 														reviewapprovedachievement5(user1)
 														embed5 = reviewapprovedachievement5(user1)
-														username = client.get_user(int(user1))
+														username = await client.fetch_user(int(user1))
 														channel = await username.create_dm()
 														try:
 															await channel.send(embed=embed5)
@@ -5950,7 +5950,7 @@ async def on_message(message):
 														conn.commit()
 														reviewapprovedachievement10(user1)
 														embed5 = reviewapprovedachievement10(user1)
-														username = client.get_user(int(user1))
+														username = await client.fetch_user(int(user1))
 														channel = await username.create_dm()
 														try:
 															await channel.send(embed=embed5)
@@ -5968,7 +5968,7 @@ async def on_message(message):
 														conn.commit()
 														reviewapprovedachievement50(user1)
 														embed5 = reviewapprovedachievement50(user1)
-														username = client.get_user(int(user1))
+														username = await client.fetch_user(int(user1))
 														channel = await username.create_dm()
 														try:
 															await channel.send(embed=embed5)
@@ -5986,7 +5986,7 @@ async def on_message(message):
 														conn.commit()
 														reviewapprovedachievement100(user1)
 														embed5 = reviewapprovedachievement100(user1)
-														username = client.get_user(int(user1))
+														username = await client.fetch_user(int(user1))
 														channel = await username.create_dm()
 														try:
 															await channel.send(embed=embed5)
@@ -6106,7 +6106,7 @@ async def on_message(message):
 														conn.commit()
 														reviewachievement1(author)
 														embed5 = reviewachievement1(author)
-														username = client.get_user(int(jaj))
+														username = await client.fetch_user(int(jaj))
 														channel = await username.create_dm()
 														try:
 															await channel.send(embed=embed5)
@@ -6124,7 +6124,7 @@ async def on_message(message):
 														conn.commit()
 														reviewachievement5(author)
 														embed5 = reviewachievement5(author)
-														username = client.get_user(int(jaj))
+														username = await client.fetch_user(int(jaj))
 														channel = await username.create_dm()
 														try:
 															await channel.send(embed=embed5)
@@ -6142,7 +6142,7 @@ async def on_message(message):
 														conn.commit()
 														reviewachievement10(author)
 														embed5 = reviewachievement10(author)
-														username = client.get_user(int(jaj))
+														username = await client.fetch_user(int(jaj))
 														channel = await username.create_dm()
 														try:
 															await channel.send(embed=embed5)
@@ -6160,7 +6160,7 @@ async def on_message(message):
 														conn.commit()
 														reviewachievement50(author)
 														embed5 = reviewachievement50(author)
-														username = client.get_user(int(jaj))
+														username = await client.fetch_user(int(jaj))
 														channel = await username.create_dm()
 														try:
 															await channel.send(embed=embed5)
@@ -6178,7 +6178,7 @@ async def on_message(message):
 														conn.commit()
 														reviewachievement100(author)
 														embed5 = reviewachievement100(author)
-														username = client.get_user(int(jaj))
+														username = await client.fetch_user(int(jaj))
 														channel = await username.create_dm()
 														try:
 															await channel.send(embed=embed5)
@@ -6202,7 +6202,7 @@ async def on_message(message):
 														conn.commit()
 														reviewapprovedachievement1(user1)
 														embed5 = reviewapprovedachievement1(user1)
-														username = client.get_user(int(user1))
+														username = await client.fetch_user(int(user1))
 														channel = await username.create_dm()
 														try:
 															await channel.send(embed=embed5)
@@ -6220,7 +6220,7 @@ async def on_message(message):
 														conn.commit()
 														reviewapprovedachievement5(user1)
 														embed5 = reviewapprovedachievement5(user1)
-														username = client.get_user(int(user1))
+														username = await client.fetch_user(int(user1))
 														channel = await username.create_dm()
 														try:
 															await channel.send(embed=embed5)
@@ -6238,7 +6238,7 @@ async def on_message(message):
 														conn.commit()
 														reviewapprovedachievement10(user1)
 														embed5 = reviewapprovedachievement10(user1)
-														username = client.get_user(int(user1))
+														username = await client.fetch_user(int(user1))
 														channel = await username.create_dm()
 														try:
 															await channel.send(embed=embed5)
@@ -6256,7 +6256,7 @@ async def on_message(message):
 														conn.commit()
 														reviewapprovedachievement50(user1)
 														embed5 = reviewapprovedachievement50(user1)
-														username = client.get_user(int(user1))
+														username = await client.fetch_user(int(user1))
 														channel = await username.create_dm()
 														try:
 															await channel.send(embed=embed5)
@@ -6274,7 +6274,7 @@ async def on_message(message):
 														conn.commit()
 														reviewapprovedachievement100(user1)
 														embed5 = reviewapprovedachievement100(user1)
-														username = client.get_user(int(user1))
+														username = await client.fetch_user(int(user1))
 														channel = await username.create_dm()
 														try:
 															await channel.send(embed=embed5)
@@ -6425,7 +6425,7 @@ async def on_message(message):
 														conn.commit()
 														reviewachievement1(author)
 														embed5 = reviewachievement1(author)
-														username = client.get_user(int(jaj))
+														username = await client.fetch_user(int(jaj))
 														channel = await username.create_dm()
 														try:
 															await channel.send(embed=embed5)
@@ -6443,7 +6443,7 @@ async def on_message(message):
 														conn.commit()
 														reviewachievement5(author)
 														embed5 = reviewachievement5(author)
-														username = client.get_user(int(jaj))
+														username = await client.fetch_user(int(jaj))
 														channel = await username.create_dm()
 														try:
 															await channel.send(embed=embed5)
@@ -6461,7 +6461,7 @@ async def on_message(message):
 														conn.commit()
 														reviewachievement10(author)
 														embed5 = reviewachievement10(author)
-														username = client.get_user(int(jaj))
+														username = await client.fetch_user(int(jaj))
 														channel = await username.create_dm()
 														try:
 															await channel.send(embed=embed5)
@@ -6479,7 +6479,7 @@ async def on_message(message):
 														conn.commit()
 														reviewachievement50(author)
 														embed5 = reviewachievement50(author)
-														username = client.get_user(int(jaj))
+														username = await client.fetch_user(int(jaj))
 														channel = await username.create_dm()
 														try:
 															await channel.send(embed=embed5)
@@ -6497,7 +6497,7 @@ async def on_message(message):
 														conn.commit()
 														reviewachievement100(author)
 														embed5 = reviewachievement100(author)
-														username = client.get_user(int(jaj))
+														username = await client.fetch_user(int(jaj))
 														channel = await username.create_dm()
 														try:
 															await channel.send(embed=embed5)
@@ -6521,7 +6521,7 @@ async def on_message(message):
 														conn.commit()
 														reviewapprovedachievement1(user1)
 														embed5 = reviewapprovedachievement1(user1)
-														username = client.get_user(int(user1))
+														username = await client.fetch_user(int(user1))
 														channel = await username.create_dm()
 														try:
 															await channel.send(embed=embed5)
@@ -6539,7 +6539,7 @@ async def on_message(message):
 														conn.commit()
 														reviewapprovedachievement5(user1)
 														embed5 = reviewapprovedachievement5(user1)
-														username = client.get_user(int(user1))
+														username = await client.fetch_user(int(user1))
 														channel = await username.create_dm()
 														try:
 															await channel.send(embed=embed5)
@@ -6557,7 +6557,7 @@ async def on_message(message):
 														conn.commit()
 														reviewapprovedachievement10(user1)
 														embed5 = reviewapprovedachievement10(user1)
-														username = client.get_user(int(user1))
+														username = await client.fetch_user(int(user1))
 														channel = await username.create_dm()
 														try:
 															await channel.send(embed=embed5)
@@ -6575,7 +6575,7 @@ async def on_message(message):
 														conn.commit()
 														reviewapprovedachievement50(user1)
 														embed5 = reviewapprovedachievement50(user1)
-														username = client.get_user(int(user1))
+														username = await client.fetch_user(int(user1))
 														channel = await username.create_dm()
 														try:
 															await channel.send(embed=embed5)
@@ -6593,7 +6593,7 @@ async def on_message(message):
 														conn.commit()
 														reviewapprovedachievement100(user1)
 														embed5 = reviewapprovedachievement100(user1)
-														username = client.get_user(int(user1))
+														username = await client.fetch_user(int(user1))
 														channel = await username.create_dm()
 														try:
 															await channel.send(embed=embed5)
@@ -6713,7 +6713,7 @@ async def on_message(message):
 														conn.commit()
 														reviewachievement1(author)
 														embed5 = reviewachievement1(author)
-														username = client.get_user(int(jaj))
+														username = await client.fetch_user(int(jaj))
 														channel = await username.create_dm()
 														try:
 															await channel.send(embed=embed5)
@@ -6731,7 +6731,7 @@ async def on_message(message):
 														conn.commit()
 														reviewachievement5(author)
 														embed5 = reviewachievement5(author)
-														username = client.get_user(int(jaj))
+														username = await client.fetch_user(int(jaj))
 														channel = await username.create_dm()
 														try:
 															await channel.send(embed=embed5)
@@ -6749,7 +6749,7 @@ async def on_message(message):
 														conn.commit()
 														reviewachievement10(author)
 														embed5 = reviewachievement10(author)
-														username = client.get_user(int(jaj))
+														username = await client.fetch_user(int(jaj))
 														channel = await username.create_dm()
 														try:
 															await channel.send(embed=embed5)
@@ -6767,7 +6767,7 @@ async def on_message(message):
 														conn.commit()
 														reviewachievement50(author)
 														embed5 = reviewachievement50(author)
-														username = client.get_user(int(jaj))
+														username = await client.fetch_user(int(jaj))
 														channel = await username.create_dm()
 														try:
 															await channel.send(embed=embed5)
@@ -6785,7 +6785,7 @@ async def on_message(message):
 														conn.commit()
 														reviewachievement100(author)
 														embed5 = reviewachievement100(author)
-														username = client.get_user(int(jaj))
+														username = await client.fetch_user(int(jaj))
 														channel = await username.create_dm()
 														try:
 															await channel.send(embed=embed5)
@@ -6809,7 +6809,7 @@ async def on_message(message):
 														conn.commit()
 														reviewapprovedachievement1(user1)
 														embed5 = reviewapprovedachievement1(user1)
-														username = client.get_user(int(user1))
+														username = await client.fetch_user(int(user1))
 														channel = await username.create_dm()
 														try:
 															await channel.send(embed=embed5)
@@ -6827,7 +6827,7 @@ async def on_message(message):
 														conn.commit()
 														reviewapprovedachievement5(user1)
 														embed5 = reviewapprovedachievement5(user1)
-														username = client.get_user(int(user1))
+														username = await client.fetch_user(int(user1))
 														channel = await username.create_dm()
 														try:
 															await channel.send(embed=embed5)
@@ -6845,7 +6845,7 @@ async def on_message(message):
 														conn.commit()
 														reviewapprovedachievement10(user1)
 														embed5 = reviewapprovedachievement10(user1)
-														username = client.get_user(int(user1))
+														username = await client.fetch_user(int(user1))
 														channel = await username.create_dm()
 														try:
 															await channel.send(embed=embed5)
@@ -6863,7 +6863,7 @@ async def on_message(message):
 														conn.commit()
 														reviewapprovedachievement50(user1)
 														embed5 = reviewapprovedachievement50(user1)
-														username = client.get_user(int(user1))
+														username = await client.fetch_user(int(user1))
 														channel = await username.create_dm()
 														try:
 															await channel.send(embed=embed5)
@@ -6881,7 +6881,7 @@ async def on_message(message):
 														conn.commit()
 														reviewapprovedachievement100(user1)
 														embed5 = reviewapprovedachievement100(user1)
-														username = client.get_user(int(user1))
+														username = await client.fetch_user(int(user1))
 														channel = await username.create_dm()
 														try:
 															await channel.send(embed=embed5)
@@ -7018,7 +7018,7 @@ async def on_message(message):
 													conn.commit()
 													reviewachievement1(author)
 													embed5 = reviewachievement1(author)
-													username = client.get_user(int(jaj))
+													username = await client.fetch_user(int(jaj))
 													channel = await username.create_dm()
 													try:
 														await channel.send(embed=embed5)
@@ -7036,7 +7036,7 @@ async def on_message(message):
 													conn.commit()
 													reviewachievement5(author)
 													embed5 = reviewachievement5(author)
-													username = client.get_user(int(jaj))
+													username = await client.fetch_user(int(jaj))
 													channel = await username.create_dm()
 													try:
 														await channel.send(embed=embed5)
@@ -7054,7 +7054,7 @@ async def on_message(message):
 													conn.commit()
 													reviewachievement10(author)
 													embed5 = reviewachievement10(author)
-													username = client.get_user(int(jaj))
+													username = await client.fetch_user(int(jaj))
 													channel = await username.create_dm()
 													try:
 														await channel.send(embed=embed5)
@@ -7072,7 +7072,7 @@ async def on_message(message):
 													conn.commit()
 													reviewachievement50(author)
 													embed5 = reviewachievement50(author)
-													username = client.get_user(int(jaj))
+													username = await client.fetch_user(int(jaj))
 													channel = await username.create_dm()
 													try:
 														await channel.send(embed=embed5)
@@ -7090,7 +7090,7 @@ async def on_message(message):
 													conn.commit()
 													reviewachievement100(author)
 													embed5 = reviewachievement100(author)
-													username = client.get_user(int(jaj))
+													username = await client.fetch_user(int(jaj))
 													channel = await username.create_dm()
 													try:
 														await channel.send(embed=embed5)
@@ -7114,7 +7114,7 @@ async def on_message(message):
 													conn.commit()
 													reviewunapprovedachievement1(user1)
 													embed5 = reviewunapprovedachievement1(user1)
-													username = client.get_user(int(user1))
+													username = await client.fetch_user(int(user1))
 													channel = await username.create_dm()
 													try:
 														await channel.send(embed=embed5)
@@ -7132,7 +7132,7 @@ async def on_message(message):
 													conn.commit()
 													reviewunapprovedachievement5(user1)
 													embed5 = reviewunapprovedachievement5(user1)
-													username = client.get_user(int(user1))
+													username = await client.fetch_user(int(user1))
 													channel = await username.create_dm()
 													try:
 														await channel.send(embed=embed5)
@@ -7150,7 +7150,7 @@ async def on_message(message):
 													conn.commit()
 													reviewunapprovedachievement10(user1)
 													embed5 = reviewunapprovedachievement10(user1)
-													username = client.get_user(int(user1))
+													username = await client.fetch_user(int(user1))
 													channel = await username.create_dm()
 													try:
 														await channel.send(embed=embed5)
@@ -7168,7 +7168,7 @@ async def on_message(message):
 													conn.commit()
 													reviewunapprovedachievement50(user1)
 													embed5 = reviewunapprovedachievement50(user1)
-													username = client.get_user(int(user1))
+													username = await client.fetch_user(int(user1))
 													channel = await username.create_dm()
 													try:
 														await channel.send(embed=embed5)
@@ -7186,7 +7186,7 @@ async def on_message(message):
 													conn.commit()
 													reviewunapprovedachievement100(user1)
 													embed5 = reviewunapprovedachievement100(user1)
-													username = client.get_user(int(user1))
+													username = await client.fetch_user(int(user1))
 													channel = await username.create_dm()
 													try:
 														await channel.send(embed=embed5)
@@ -7321,7 +7321,7 @@ async def on_message(message):
 													conn.commit()
 													reviewachievement1(author)
 													embed5 = reviewachievement1(author)
-													username = client.get_user(int(jaj))
+													username = await client.fetch_user(int(jaj))
 													channel = await username.create_dm()
 													try:
 														await channel.send(embed=embed5)
@@ -7339,7 +7339,7 @@ async def on_message(message):
 													conn.commit()
 													reviewachievement5(author)
 													embed5 = reviewachievement5(author)
-													username = client.get_user(int(jaj))
+													username = await client.fetch_user(int(jaj))
 													channel = await username.create_dm()
 													try:
 														await channel.send(embed=embed5)
@@ -7357,7 +7357,7 @@ async def on_message(message):
 													conn.commit()
 													reviewachievement10(author)
 													embed5 = reviewachievement10(author)
-													username = client.get_user(int(jaj))
+													username = await client.fetch_user(int(jaj))
 													channel = await username.create_dm()
 													try:
 														await channel.send(embed=embed5)
@@ -7375,7 +7375,7 @@ async def on_message(message):
 													conn.commit()
 													reviewachievement50(author)
 													embed5 = reviewachievement50(author)
-													username = client.get_user(int(jaj))
+													username = await client.fetch_user(int(jaj))
 													channel = await username.create_dm()
 													try:
 														await channel.send(embed=embed5)
@@ -7393,7 +7393,7 @@ async def on_message(message):
 													conn.commit()
 													reviewachievement100(author)
 													embed5 = reviewachievement100(author)
-													username = client.get_user(int(jaj))
+													username = await client.fetch_user(int(jaj))
 													channel = await username.create_dm()
 													try:
 														await channel.send(embed=embed5)
@@ -7417,7 +7417,7 @@ async def on_message(message):
 													conn.commit()
 													reviewunapprovedachievement1(user1)
 													embed5 = reviewunapprovedachievement1(user1)
-													username = client.get_user(int(user1))
+													username = await client.fetch_user(int(user1))
 													channel = await username.create_dm()
 													try:
 														await channel.send(embed=embed5)
@@ -7435,7 +7435,7 @@ async def on_message(message):
 													conn.commit()
 													reviewunapprovedachievement5(user1)
 													embed5 = reviewunapprovedachievement5(user1)
-													username = client.get_user(int(user1))
+													username = await client.fetch_user(int(user1))
 													channel = await username.create_dm()
 													try:
 														await channel.send(embed=embed5)
@@ -7453,7 +7453,7 @@ async def on_message(message):
 													conn.commit()
 													reviewunapprovedachievement10(user1)
 													embed5 = reviewunapprovedachievement10(user1)
-													username = client.get_user(int(user1))
+													username = await client.fetch_user(int(user1))
 													channel = await username.create_dm()
 													try:
 														await channel.send(embed=embed5)
@@ -7471,7 +7471,7 @@ async def on_message(message):
 													conn.commit()
 													reviewunapprovedachievement50(user1)
 													embed5 = reviewunapprovedachievement50(user1)
-													username = client.get_user(int(user1))
+													username = await client.fetch_user(int(user1))
 													channel = await username.create_dm()
 													try:
 														await channel.send(embed=embed5)
@@ -7489,7 +7489,7 @@ async def on_message(message):
 													conn.commit()
 													reviewunapprovedachievement100(user1)
 													embed5 = reviewunapprovedachievement100(user1)
-													username = client.get_user(int(user1))
+													username = await client.fetch_user(int(user1))
 													channel = await username.create_dm()
 													try:
 														await channel.send(embed=embed5)
@@ -7695,7 +7695,7 @@ async def on_message(message):
 									if validation == "star":
 										nyaya = cursor.execute(f"SELECT requester FROM levels WHERE levelid = %s AND server = %s LIMIT 1", (level, serverid))
 										user1 = cursor.fetchone()[0]
-										username = client.get_user(int(user1))
+										username = await client.fetch_user(int(user1))
 
 										cursor.execute(f"SELECT language FROM users WHERE userid = {user1}")
 										try:
@@ -7731,7 +7731,7 @@ async def on_message(message):
 												pass
 											nani = cursor.execute(f"SELECT requester FROM levels WHERE levelid = %s AND server = %s LIMIT 1", (level, serverid))
 											user1 = cursor.fetchone()[0]
-											username = client.get_user(int(user1))
+											username = await client.fetch_user(int(user1))
 											embed4 = discord.Embed(title=f'{successtitle}', color=0x00ff00)
 											embed4.add_field(name=f'{thelevel} `{level}` (**{levelname}** {by} **{creator}**) {successsend} **AUTO 1<:starrate:718204629858517003> RATE** !', value='\u200b')
 											await message.channel.send(embed=embed4)
@@ -7817,7 +7817,7 @@ async def on_message(message):
 												conn.commit()
 												levelsentbygdmod(user1)
 												embed5 = levelsentbygdmod(user1)
-												username = client.get_user(int(user1))
+												username = await client.fetch_user(int(user1))
 												channel = await username.create_dm()
 												try:
 													await channel.send(embed=embed5)
@@ -7857,7 +7857,7 @@ async def on_message(message):
 												pass
 											nani = cursor.execute(f"SELECT requester FROM levels WHERE levelid = %s AND server = %s LIMIT 1", (level, serverid))
 											user1 = cursor.fetchone()[0]
-											username = client.get_user(int(user1))
+											username = await client.fetch_user(int(user1))
 											embed4 = discord.Embed(title=f'{successtitle}', color=0x00ff00)
 											embed4.add_field(name=f'{thelevel} `{level}` (**{levelname}** {by} **{creator}**) {successsend} **EASY 2<:starrate:718204629858517003> RATE** !', value='\u200b')
 											await message.channel.send(embed=embed4)
@@ -7947,7 +7947,7 @@ async def on_message(message):
 												conn.commit()
 												levelsentbygdmod(user1)
 												embed5 = levelsentbygdmod(user1)
-												username = client.get_user(int(user1))
+												username = await client.fetch_user(int(user1))
 												channel = await username.create_dm()
 												try:
 													await channel.send(embed=embed5)
@@ -7987,7 +7987,7 @@ async def on_message(message):
 												pass
 											nani = cursor.execute(f"SELECT requester FROM levels WHERE levelid = %s AND server = %s LIMIT 1", (level, serverid))
 											user1 = cursor.fetchone()[0]
-											username = client.get_user(int(user1))
+											username = await client.fetch_user(int(user1))
 											embed4 = discord.Embed(title=f'{successtitle}', color=0x00ff00)
 											embed4.add_field(name=f'{thelevel} `{level}` (**{levelname}** {by} **{creator}**) {successsend} **NORMAL 3<:starrate:718204629858517003> RATE** !', value='\u200b')
 											await message.channel.send(embed=embed4)
@@ -8077,7 +8077,7 @@ async def on_message(message):
 												conn.commit()
 												levelsentbygdmod(user1)
 												embed5 = levelsentbygdmod(user1)
-												username = client.get_user(int(user1))
+												username = await client.fetch_user(int(user1))
 												channel = await username.create_dm()
 												try:
 													await channel.send(embed=embed5)
@@ -8117,7 +8117,7 @@ async def on_message(message):
 												pass
 											nani = cursor.execute(f"SELECT requester FROM levels WHERE levelid = %s AND server = %s LIMIT 1", (level, serverid))
 											user1 = cursor.fetchone()[0]
-											username = client.get_user(int(user1))
+											username = await client.fetch_user(int(user1))
 											embed4 = discord.Embed(title=f'{successtitle}', color=0x00ff00)
 											embed4.add_field(name=f'{thelevel} `{level}` (**{levelname}** {by} **{creator}**) {successsend} **HARD 4<:starrate:718204629858517003> RATE** !', value='\u200b')
 											await message.channel.send(embed=embed4)
@@ -8207,7 +8207,7 @@ async def on_message(message):
 												conn.commit()
 												levelsentbygdmod(user1)
 												embed5 = levelsentbygdmod(user1)
-												username = client.get_user(int(user1))
+												username = await client.fetch_user(int(user1))
 												channel = await username.create_dm()
 												try:
 													await channel.send(embed=embed5)
@@ -8247,7 +8247,7 @@ async def on_message(message):
 												pass
 											nani = cursor.execute(f"SELECT requester FROM levels WHERE levelid = %s AND server = %s LIMIT 1", (level, serverid))
 											user1 = cursor.fetchone()[0]
-											username = client.get_user(int(user1))
+											username = await client.fetch_user(int(user1))
 											embed4 = discord.Embed(title=f'{successtitle}', color=0x00ff00)
 											embed4.add_field(name=f'{thelevel} `{level}` (**{levelname}** {by} **{creator}**) {successsend} **HARD 5<:starrate:718204629858517003> RATE** !', value='\u200b')
 											await message.channel.send(embed=embed4)
@@ -8337,7 +8337,7 @@ async def on_message(message):
 												conn.commit()
 												levelsentbygdmod(user1)
 												embed5 = levelsentbygdmod(user1)
-												username = client.get_user(int(user1))
+												username = await client.fetch_user(int(user1))
 												channel = await username.create_dm()
 												try:
 													await channel.send(embed=embed5)
@@ -8377,7 +8377,7 @@ async def on_message(message):
 												pass
 											nani = cursor.execute(f"SELECT requester FROM levels WHERE levelid = %s AND server = %s LIMIT 1", (level, serverid))
 											user1 = cursor.fetchone()[0]
-											username = client.get_user(int(user1))
+											username = await client.fetch_user(int(user1))
 											embed4 = discord.Embed(title=f'{successtitle}', color=0x00ff00)
 											embed4.add_field(name=f'{thelevel} `{level}` (**{levelname}** {by} **{creator}**) {successsend} **HARDER 6<:starrate:718204629858517003> RATE** !', value='\u200b')
 											await message.channel.send(embed=embed4)
@@ -8467,7 +8467,7 @@ async def on_message(message):
 												conn.commit()
 												levelsentbygdmod(user1)
 												embed5 = levelsentbygdmod(user1)
-												username = client.get_user(int(user1))
+												username = await client.fetch_user(int(user1))
 												channel = await username.create_dm()
 												try:
 													await channel.send(embed=embed5)
@@ -8507,7 +8507,7 @@ async def on_message(message):
 												pass
 											nani = cursor.execute(f"SELECT requester FROM levels WHERE levelid = %s AND server = %s LIMIT 1", (level, serverid))
 											user1 = cursor.fetchone()[0]
-											username = client.get_user(int(user1))
+											username = await client.fetch_user(int(user1))
 											embed4 = discord.Embed(title=f'{successtitle}', color=0x00ff00)
 											embed4.add_field(name=f'{thelevel} `{level}` (**{levelname}** {by} **{creator}**) {successsend} **HARDER 7<:starrate:718204629858517003> RATE** !', value='\u200b')
 											await message.channel.send(embed=embed4)
@@ -8597,7 +8597,7 @@ async def on_message(message):
 												conn.commit()
 												levelsentbygdmod(user1)
 												embed5 = levelsentbygdmod(user1)
-												username = client.get_user(int(user1))
+												username = await client.fetch_user(int(user1))
 												channel = await username.create_dm()
 												try:
 													await channel.send(embed=embed5)
@@ -8637,7 +8637,7 @@ async def on_message(message):
 												pass
 											nani = cursor.execute(f"SELECT requester FROM levels WHERE levelid = %s AND server = %s LIMIT 1", (level, serverid))
 											user1 = cursor.fetchone()[0]
-											username = client.get_user(int(user1))
+											username = await client.fetch_user(int(user1))
 											embed4 = discord.Embed(title=f'{successtitle}', color=0x00ff00)
 											embed4.add_field(name=f'{thelevel} `{level}` (**{levelname}** {by} **{creator}**) {successsend} **INSANE 8<:starrate:718204629858517003> RATE** !', value='\u200b')
 											await message.channel.send(embed=embed4)
@@ -8727,7 +8727,7 @@ async def on_message(message):
 												conn.commit()
 												levelsentbygdmod(user1)
 												embed5 = levelsentbygdmod(user1)
-												username = client.get_user(int(user1))
+												username = await client.fetch_user(int(user1))
 												channel = await username.create_dm()
 												try:
 													await channel.send(embed=embed5)
@@ -8767,7 +8767,7 @@ async def on_message(message):
 												pass
 											nani = cursor.execute(f"SELECT requester FROM levels WHERE levelid = %s AND server = %s LIMIT 1", (level, serverid))
 											user1 = cursor.fetchone()[0]
-											username = client.get_user(int(user1))
+											username = await client.fetch_user(int(user1))
 											embed4 = discord.Embed(title=f'{successtitle}', color=0x00ff00)
 											embed4.add_field(name=f'{thelevel} `{level}` (**{levelname}** {by} **{creator}**) {successsend} **INSANE 9<:starrate:718204629858517003> RATE** !', value='\u200b')
 											await message.channel.send(embed=embed4)
@@ -8857,7 +8857,7 @@ async def on_message(message):
 												conn.commit()
 												levelsentbygdmod(user1)
 												embed5 = levelsentbygdmod(user1)
-												username = client.get_user(int(user1))
+												username = await client.fetch_user(int(user1))
 												channel = await username.create_dm()
 												try:
 													await channel.send(embed=embed5)
@@ -8898,7 +8898,7 @@ async def on_message(message):
 													pass
 												nani = cursor.execute(f"SELECT requester FROM levels WHERE levelid = %s AND server = %s LIMIT 1", (level, serverid))
 												user1 = cursor.fetchone()[0]
-												username = client.get_user(int(user1))
+												username = await client.fetch_user(int(user1))
 												embed4 = discord.Embed(title=f'{successtitle}', color=0x00ff00)
 												embed4.add_field(name=f'{thelevel} `{level}` (**{levelname}** {by} **{creator}**) {successsend} **EASY DEMON 10<:starrate:718204629858517003> RATE** !', value='\u200b')
 												await message.channel.send(embed=embed4)
@@ -8988,7 +8988,7 @@ async def on_message(message):
 													conn.commit()
 													levelsentbygdmod(user1)
 													embed5 = levelsentbygdmod(user1)
-													username = client.get_user(int(user1))
+													username = await client.fetch_user(int(user1))
 													channel = await username.create_dm()
 													try:
 														await channel.send(embed=embed5)
@@ -9028,7 +9028,7 @@ async def on_message(message):
 													pass
 												nani = cursor.execute(f"SELECT requester FROM levels WHERE levelid = %s AND server = %s LIMIT 1", (level, serverid))
 												user1 = cursor.fetchone()[0]
-												username = client.get_user(int(user1))
+												username = await client.fetch_user(int(user1))
 												embed4 = discord.Embed(title=f'{successtitle}', color=0x00ff00)
 												embed4.add_field(name=f'{thelevel} `{level}` (**{levelname}** {by} **{creator}**) {successsend} **MEDIUM DEMON 10<:starrate:718204629858517003> RATE** !', value='\u200b')
 												await message.channel.send(embed=embed4)
@@ -9118,7 +9118,7 @@ async def on_message(message):
 													conn.commit()
 													levelsentbygdmod(user1)
 													embed5 = levelsentbygdmod(user1)
-													username = client.get_user(int(user1))
+													username = await client.fetch_user(int(user1))
 													channel = await username.create_dm()
 													try:
 														await channel.send(embed=embed5)
@@ -9158,7 +9158,7 @@ async def on_message(message):
 													pass
 												nani = cursor.execute(f"SELECT requester FROM levels WHERE levelid = %s AND server = %s LIMIT 1", (level, serverid))
 												user1 = cursor.fetchone()[0]
-												username = client.get_user(int(user1))
+												username = await client.fetch_user(int(user1))
 												embed4 = discord.Embed(title=f'{successtitle}', color=0x00ff00)
 												embed4.add_field(name=f'{thelevel} `{level}` (**{levelname}** {by} **{creator}**) {successsend} **HARD DEMON 10<:starrate:718204629858517003> RATE** !', value='\u200b')
 												await message.channel.send(embed=embed4)
@@ -9248,7 +9248,7 @@ async def on_message(message):
 													conn.commit()
 													levelsentbygdmod(user1)
 													embed5 = levelsentbygdmod(user1)
-													username = client.get_user(int(user1))
+													username = await client.fetch_user(int(user1))
 													channel = await username.create_dm()
 													try:
 														await channel.send(embed=embed5)
@@ -9288,7 +9288,7 @@ async def on_message(message):
 													pass
 												nani = cursor.execute(f"SELECT requester FROM levels WHERE levelid = %s AND server = %s LIMIT 1", (level, serverid))
 												user1 = cursor.fetchone()[0]
-												username = client.get_user(int(user1))
+												username = await client.fetch_user(int(user1))
 												embed4 = discord.Embed(title=f'{successtitle}', color=0x00ff00)
 												embed4.add_field(name=f'{thelevel} `{level}` (**{levelname}** {by} **{creator}**) {successsend} **INSANE DEMON 10<:starrate:718204629858517003> RATE** !', value='\u200b')
 												await message.channel.send(embed=embed4)
@@ -9378,7 +9378,7 @@ async def on_message(message):
 													conn.commit()
 													levelsentbygdmod(user1)
 													embed5 = levelsentbygdmod(user1)
-													username = client.get_user(int(user1))
+													username = await client.fetch_user(int(user1))
 													channel = await username.create_dm()
 													try:
 														await channel.send(embed=embed5)
@@ -9418,7 +9418,7 @@ async def on_message(message):
 													pass
 												nani = cursor.execute(f"SELECT requester FROM levels WHERE levelid = %s AND server = %s LIMIT 1", (level, serverid))
 												user1 = cursor.fetchone()[0]
-												username = client.get_user(int(user1))
+												username = await client.fetch_user(int(user1))
 												embed4 = discord.Embed(title=f'{successtitle}', color=0x00ff00)
 												embed4.add_field(name=f'{thelevel} `{level}` (**{levelname}** {by} **{creator}**) {successsend} **EXTREME DEMON 10<:starrate:718204629858517003> RATE** !', value='\u200b')
 												await message.channel.send(embed=embed4)
@@ -9508,7 +9508,7 @@ async def on_message(message):
 													conn.commit()
 													levelsentbygdmod(user1)
 													embed5 = levelsentbygdmod(user1)
-													username = client.get_user(int(user1))
+													username = await client.fetch_user(int(user1))
 													channel = await username.create_dm()
 													try:
 														await channel.send(embed=embed5)
@@ -9548,7 +9548,7 @@ async def on_message(message):
 													pass
 												nani = cursor.execute(f"SELECT requester FROM levels WHERE levelid = %s AND server = %s LIMIT 1", (level, serverid))
 												user1 = cursor.fetchone()[0]
-												username = client.get_user(int(user1))
+												username = await client.fetch_user(int(user1))
 												embed4 = discord.Embed(title=f'{successtitle}', color=0x00ff00)
 												embed4.add_field(name=f'{thelevel} `{level}` (**{levelname}** {by} **{creator}**) {successsend} **DEMON 10<:starrate:718204629858517003> RATE** !', value='\u200b')
 												await message.channel.send(embed=embed4)
@@ -9638,7 +9638,7 @@ async def on_message(message):
 													conn.commit()
 													levelsentbygdmod(user1)
 													embed5 = levelsentbygdmod(user1)
-													username = client.get_user(int(user1))
+													username = await client.fetch_user(int(user1))
 													channel = await username.create_dm()
 													try:
 														await channel.send(embed=embed5)
@@ -9669,7 +9669,7 @@ async def on_message(message):
 									elif validation == "featured":
 										nyaya = cursor.execute(f"SELECT requester FROM levels WHERE levelid = %s AND server = %s LIMIT 1", (level, serverid))
 										user1 = cursor.fetchone()[0]
-										username = client.get_user(int(user1))
+										username = await client.fetch_user(int(user1))
 
 										cursor.execute(f"SELECT language FROM users WHERE userid = {user1}")
 										try:
@@ -9705,7 +9705,7 @@ async def on_message(message):
 												pass
 											nani = cursor.execute(f"SELECT requester FROM levels WHERE levelid = %s AND server = %s LIMIT 1", (level, serverid))
 											user1 = cursor.fetchone()[0]
-											username = client.get_user(int(user1))
+											username = await client.fetch_user(int(user1))
 											embed4 = discord.Embed(title=f'{successtitle}', color=0x00ff00)
 											embed4.add_field(name=f'{thelevel} `{level}` (**{levelname}** {by} **{creator}**) {successsend} **AUTO 1<:starrate:718204629858517003> FEATURED** !', value='\u200b')
 											await message.channel.send(embed=embed4)
@@ -9795,7 +9795,7 @@ async def on_message(message):
 												conn.commit()
 												levelsentbygdmod(user1)
 												embed5 = levelsentbygdmod(user1)
-												username = client.get_user(int(user1))
+												username = await client.fetch_user(int(user1))
 												channel = await username.create_dm()
 												try:
 													await channel.send(embed=embed5)
@@ -9835,7 +9835,7 @@ async def on_message(message):
 												pass
 											nani = cursor.execute(f"SELECT requester FROM levels WHERE levelid = %s AND server = %s LIMIT 1", (level, serverid))
 											user1 = cursor.fetchone()[0]
-											username = client.get_user(int(user1))
+											username = await client.fetch_user(int(user1))
 											embed4 = discord.Embed(title=f'{successtitle}', color=0x00ff00)
 											embed4.add_field(name=f'{thelevel} `{level}` (**{levelname}** {by} **{creator}**) {successsend} **EASY 2<:starrate:718204629858517003> FEATURED** !', value='\u200b')
 											await message.channel.send(embed=embed4)
@@ -9925,7 +9925,7 @@ async def on_message(message):
 												conn.commit()
 												levelsentbygdmod(user1)
 												embed5 = levelsentbygdmod(user1)
-												username = client.get_user(int(user1))
+												username = await client.fetch_user(int(user1))
 												channel = await username.create_dm()
 												try:
 													await channel.send(embed=embed5)
@@ -9965,7 +9965,7 @@ async def on_message(message):
 												pass
 											nani = cursor.execute(f"SELECT requester FROM levels WHERE levelid = %s AND server = %s LIMIT 1", (level, serverid))
 											user1 = cursor.fetchone()[0]
-											username = client.get_user(int(user1))
+											username = await client.fetch_user(int(user1))
 											embed4 = discord.Embed(title=f'{successtitle}', color=0x00ff00)
 											embed4.add_field(name=f'{thelevel} `{level}` (**{levelname}** {by} **{creator}**) {successsend} **NORMAL 3<:starrate:718204629858517003> FEATURED** !', value='\u200b')
 											await message.channel.send(embed=embed4)
@@ -10055,7 +10055,7 @@ async def on_message(message):
 												conn.commit()
 												levelsentbygdmod(user1)
 												embed5 = levelsentbygdmod(user1)
-												username = client.get_user(int(user1))
+												username = await client.fetch_user(int(user1))
 												channel = await username.create_dm()
 												try:
 													await channel.send(embed=embed5)
@@ -10095,7 +10095,7 @@ async def on_message(message):
 												pass
 											nani = cursor.execute(f"SELECT requester FROM levels WHERE levelid = %s AND server = %s LIMIT 1", (level, serverid))
 											user1 = cursor.fetchone()[0]
-											username = client.get_user(int(user1))
+											username = await client.fetch_user(int(user1))
 											embed4 = discord.Embed(title=f'{successtitle}', color=0x00ff00)
 											embed4.add_field(name=f'{thelevel} `{level}` (**{levelname}** {by} **{creator}**) {successsend} **HARD 4<:starrate:718204629858517003> FEATURED** !', value='\u200b')
 											await message.channel.send(embed=embed4)
@@ -10185,7 +10185,7 @@ async def on_message(message):
 												conn.commit()
 												levelsentbygdmod(user1)
 												embed5 = levelsentbygdmod(user1)
-												username = client.get_user(int(user1))
+												username = await client.fetch_user(int(user1))
 												channel = await username.create_dm()
 												try:
 													await channel.send(embed=embed5)
@@ -10225,7 +10225,7 @@ async def on_message(message):
 												pass
 											nani = cursor.execute(f"SELECT requester FROM levels WHERE levelid = %s AND server = %s LIMIT 1", (level, serverid))
 											user1 = cursor.fetchone()[0]
-											username = client.get_user(int(user1))
+											username = await client.fetch_user(int(user1))
 											embed4 = discord.Embed(title=f'{successtitle}', color=0x00ff00)
 											embed4.add_field(name=f'{thelevel} `{level}` (**{levelname}** {by} **{creator}**) {successsend} **HARD 5<:starrate:718204629858517003> FEATURED** !', value='\u200b')
 											await message.channel.send(embed=embed4)
@@ -10315,7 +10315,7 @@ async def on_message(message):
 												conn.commit()
 												levelsentbygdmod(user1)
 												embed5 = levelsentbygdmod(user1)
-												username = client.get_user(int(user1))
+												username = await client.fetch_user(int(user1))
 												channel = await username.create_dm()
 												try:
 													await channel.send(embed=embed5)
@@ -10355,7 +10355,7 @@ async def on_message(message):
 												pass
 											nani = cursor.execute(f"SELECT requester FROM levels WHERE levelid = %s AND server = %s LIMIT 1", (level, serverid))
 											user1 = cursor.fetchone()[0]
-											username = client.get_user(int(user1))
+											username = await client.fetch_user(int(user1))
 											embed4 = discord.Embed(title=f'{successtitle}', color=0x00ff00)
 											embed4.add_field(name=f'{thelevel} `{level}` (**{levelname}** {by} **{creator}**) {successsend} **HARDER 6<:starrate:718204629858517003> FEATURED** !', value='\u200b')
 											await message.channel.send(embed=embed4)
@@ -10445,7 +10445,7 @@ async def on_message(message):
 												conn.commit()
 												levelsentbygdmod(user1)
 												embed5 = levelsentbygdmod(user1)
-												username = client.get_user(int(user1))
+												username = await client.fetch_user(int(user1))
 												channel = await username.create_dm()
 												try:
 													await channel.send(embed=embed5)
@@ -10485,7 +10485,7 @@ async def on_message(message):
 												pass
 											nani = cursor.execute(f"SELECT requester FROM levels WHERE levelid = %s AND server = %s LIMIT 1", (level, serverid))
 											user1 = cursor.fetchone()[0]
-											username = client.get_user(int(user1))
+											username = await client.fetch_user(int(user1))
 											embed4 = discord.Embed(title=f'{successtitle}', color=0x00ff00)
 											embed4.add_field(name=f'{thelevel} `{level}` (**{levelname}** {by} **{creator}**) {successsend} **HARDER 7<:starrate:718204629858517003> FEATURED** !', value='\u200b')
 											await message.channel.send(embed=embed4)
@@ -10575,7 +10575,7 @@ async def on_message(message):
 												conn.commit()
 												levelsentbygdmod(user1)
 												embed5 = levelsentbygdmod(user1)
-												username = client.get_user(int(user1))
+												username = await client.fetch_user(int(user1))
 												channel = await username.create_dm()
 												try:
 													await channel.send(embed=embed5)
@@ -10615,7 +10615,7 @@ async def on_message(message):
 												pass
 											nani = cursor.execute(f"SELECT requester FROM levels WHERE levelid = %s AND server = %s LIMIT 1", (level, serverid))
 											user1 = cursor.fetchone()[0]
-											username = client.get_user(int(user1))
+											username = await client.fetch_user(int(user1))
 											embed4 = discord.Embed(title=f'{successtitle}', color=0x00ff00)
 											embed4.add_field(name=f'{thelevel} `{level}` (**{levelname}** {by} **{creator}**) {successsend} **INSANE 8<:starrate:718204629858517003> FEATURED** !', value='\u200b')
 											await message.channel.send(embed=embed4)
@@ -10705,7 +10705,7 @@ async def on_message(message):
 												conn.commit()
 												levelsentbygdmod(user1)
 												embed5 = levelsentbygdmod(user1)
-												username = client.get_user(int(user1))
+												username = await client.fetch_user(int(user1))
 												channel = await username.create_dm()
 												try:
 													await channel.send(embed=embed5)
@@ -10745,7 +10745,7 @@ async def on_message(message):
 												pass
 											nani = cursor.execute(f"SELECT requester FROM levels WHERE levelid = %s AND server = %s LIMIT 1", (level, serverid))
 											user1 = cursor.fetchone()[0]
-											username = client.get_user(int(user1))
+											username = await client.fetch_user(int(user1))
 											embed4 = discord.Embed(title=f'{successtitle}', color=0x00ff00)
 											embed4.add_field(name=f'{thelevel} `{level}` (**{levelname}** {by} **{creator}**) {successsend} **INSANE 9<:starrate:718204629858517003> FEATURED** !', value='\u200b')
 											await message.channel.send(embed=embed4)
@@ -10835,7 +10835,7 @@ async def on_message(message):
 												conn.commit()
 												levelsentbygdmod(user1)
 												embed5 = levelsentbygdmod(user1)
-												username = client.get_user(int(user1))
+												username = await client.fetch_user(int(user1))
 												channel = await username.create_dm()
 												try:
 													await channel.send(embed=embed5)
@@ -10876,7 +10876,7 @@ async def on_message(message):
 													pass
 												nani = cursor.execute(f"SELECT requester FROM levels WHERE levelid = %s AND server = %s LIMIT 1", (level, serverid))
 												user1 = cursor.fetchone()[0]
-												username = client.get_user(int(user1))
+												username = await client.fetch_user(int(user1))
 												embed4 = discord.Embed(title=f'{successtitle}', color=0x00ff00)
 												embed4.add_field(name=f'{thelevel} `{level}` (**{levelname}** {by} **{creator}**) {successsend} **EASY DEMON 10<:starrate:718204629858517003> FEATURED** !', value='\u200b')
 												await message.channel.send(embed=embed4)
@@ -10966,7 +10966,7 @@ async def on_message(message):
 													conn.commit()
 													levelsentbygdmod(user1)
 													embed5 = levelsentbygdmod(user1)
-													username = client.get_user(int(user1))
+													username = await client.fetch_user(int(user1))
 													channel = await username.create_dm()
 													try:
 														await channel.send(embed=embed5)
@@ -11006,7 +11006,7 @@ async def on_message(message):
 													pass
 												nani = cursor.execute(f"SELECT requester FROM levels WHERE levelid = %s AND server = %s LIMIT 1", (level, serverid))
 												user1 = cursor.fetchone()[0]
-												username = client.get_user(int(user1))
+												username = await client.fetch_user(int(user1))
 												embed4 = discord.Embed(title=f'{successtitle}', color=0x00ff00)
 												embed4.add_field(name=f'{thelevel} `{level}` (**{levelname}** {by} **{creator}**) {successsend} **MEDIUM DEMON 10<:starrate:718204629858517003> FEATURED** !', value='\u200b')
 												await message.channel.send(embed=embed4)
@@ -11096,7 +11096,7 @@ async def on_message(message):
 													conn.commit()
 													levelsentbygdmod(user1)
 													embed5 = levelsentbygdmod(user1)
-													username = client.get_user(int(user1))
+													username = await client.fetch_user(int(user1))
 													channel = await username.create_dm()
 													try:
 														await channel.send(embed=embed5)
@@ -11136,7 +11136,7 @@ async def on_message(message):
 													pass
 												nani = cursor.execute(f"SELECT requester FROM levels WHERE levelid = %s AND server = %s LIMIT 1", (level, serverid))
 												user1 = cursor.fetchone()[0]
-												username = client.get_user(int(user1))
+												username = await client.fetch_user(int(user1))
 												embed4 = discord.Embed(title=f'{successtitle}', color=0x00ff00)
 												embed4.add_field(name=f'{thelevel} `{level}` (**{levelname}** {by} **{creator}**) {successsend} **HARD DEMON 10<:starrate:718204629858517003> FEATURED** !', value='\u200b')
 												await message.channel.send(embed=embed4)
@@ -11226,7 +11226,7 @@ async def on_message(message):
 													conn.commit()
 													levelsentbygdmod(user1)
 													embed5 = levelsentbygdmod(user1)
-													username = client.get_user(int(user1))
+													username = await client.fetch_user(int(user1))
 													channel = await username.create_dm()
 													try:
 														await channel.send(embed=embed5)
@@ -11266,7 +11266,7 @@ async def on_message(message):
 													pass
 												nani = cursor.execute(f"SELECT requester FROM levels WHERE levelid = %s AND server = %s LIMIT 1", (level, serverid))
 												user1 = cursor.fetchone()[0]
-												username = client.get_user(int(user1))
+												username = await client.fetch_user(int(user1))
 												embed4 = discord.Embed(title=f'{successtitle}', color=0x00ff00)
 												embed4.add_field(name=f'{thelevel} `{level}` (**{levelname}** {by} **{creator}**) {successsend} **INSANE DEMON 10<:starrate:718204629858517003> FEATURED** !', value='\u200b')
 												await message.channel.send(embed=embed4)
@@ -11356,7 +11356,7 @@ async def on_message(message):
 													conn.commit()
 													levelsentbygdmod(user1)
 													embed5 = levelsentbygdmod(user1)
-													username = client.get_user(int(user1))
+													username = await client.fetch_user(int(user1))
 													channel = await username.create_dm()
 													try:
 														await channel.send(embed=embed5)
@@ -11396,7 +11396,7 @@ async def on_message(message):
 													pass
 												nani = cursor.execute(f"SELECT requester FROM levels WHERE levelid = %s AND server = %s LIMIT 1", (level, serverid))
 												user1 = cursor.fetchone()[0]
-												username = client.get_user(int(user1))
+												username = await client.fetch_user(int(user1))
 												embed4 = discord.Embed(title=f'{successtitle}', color=0x00ff00)
 												embed4.add_field(name=f'{thelevel} `{level}` (**{levelname}** {by} **{creator}**) {successsend} **EXTREME DEMON 10<:starrate:718204629858517003> FEATURED** !', value='\u200b')
 												await message.channel.send(embed=embed4)
@@ -11486,7 +11486,7 @@ async def on_message(message):
 													conn.commit()
 													levelsentbygdmod(user1)
 													embed5 = levelsentbygdmod(user1)
-													username = client.get_user(int(user1))
+													username = await client.fetch_user(int(user1))
 													channel = await username.create_dm()
 													try:
 														await channel.send(embed=embed5)
@@ -11526,7 +11526,7 @@ async def on_message(message):
 													pass
 												nani = cursor.execute(f"SELECT requester FROM levels WHERE levelid = %s AND server = %s LIMIT 1", (level, serverid))
 												user1 = cursor.fetchone()[0]
-												username = client.get_user(int(user1))
+												username = await client.fetch_user(int(user1))
 												embed4 = discord.Embed(title=f'{successtitle}', color=0x00ff00)
 												embed4.add_field(name=f'{thelevel} `{level}` (**{levelname}** {by} **{creator}**) {successsend} **DEMON 10<:starrate:718204629858517003> FEATURED** !', value='\u200b')
 												await message.channel.send(embed=embed4)
@@ -11616,7 +11616,7 @@ async def on_message(message):
 													conn.commit()
 													levelsentbygdmod(user1)
 													embed5 = levelsentbygdmod(user1)
-													username = client.get_user(int(user1))
+													username = await client.fetch_user(int(user1))
 													channel = await username.create_dm()
 													try:
 														await channel.send(embed=embed5)
@@ -11858,7 +11858,7 @@ async def on_message(message):
 			else:
 				conn.cursor(buffered=True)
 
-				maincommand = "reqmod approve"
+				maincommand = "reqmodapprove"
 				checkmaintenance = checkmaintenance(maincommand)
 				if checkmaintenance == "yes":
 					embed = discord.Embed(title="", color=0xff0000)
@@ -11951,7 +11951,7 @@ async def on_message(message):
 			else:
 				conn.cursor(buffered=True)
 
-				maincommand = "reqmod unapprove"
+				maincommand = "reqmodunapprove"
 				checkmaintenance = checkmaintenance(maincommand)
 				if checkmaintenance == "yes":
 					embed = discord.Embed(title="", color=0xff0000)
@@ -12044,7 +12044,7 @@ async def on_message(message):
 			else:
 				conn.cursor(buffered=True)
 
-				maincommand = "reqmod ban"
+				maincommand = "reqmodban"
 				checkmaintenance = checkmaintenance(maincommand)
 				if checkmaintenance == "yes":
 					embed = discord.Embed(title="", color=0xff0000)
@@ -12118,7 +12118,7 @@ async def on_message(message):
 							time.sleep(5)
 							await msg2.delete()
 							return
-						username = client.get_user(int(user1))
+						username = await client.fetch_user(int(user1))
 						if username is None:
 							await msg.delete()
 							embed = discord.Embed(title="", color=0xff0000)
@@ -12132,7 +12132,7 @@ async def on_message(message):
 							await asyncio.sleep(3)
 							await msg.delete()
 
-							username = client.get_user(int(user1))
+							username = await client.fetch_user(int(user1))
 							embed3 = discord.Embed(title=f'{successtitle}', color=0x00ff00)
 							embed3.add_field(name=f"{successban1} `{username}` {successban2}", value='\u200b')
 
@@ -12174,7 +12174,7 @@ async def on_message(message):
 			else:
 				conn.cursor(buffered=True)
 
-				maincommand = "reqmod unban"
+				maincommand = "reqmodunban"
 				checkmaintenance = checkmaintenance(maincommand)
 				if checkmaintenance == "yes":
 					embed = discord.Embed(title="", color=0xff0000)
@@ -12232,7 +12232,7 @@ async def on_message(message):
 						time.sleep(5)
 						await msg2.delete()
 						return
-					username = client.get_user(int(user))
+					username = await client.fetch_user(int(user))
 					if username is None:
 						await msg.delete()
 						embed = discord.Embed(title="", color=0xff0000)
@@ -12249,7 +12249,7 @@ async def on_message(message):
 						await msg.delete()
 
 						embed = discord.Embed(title=f'{successtitle}', color=0x00ff00)
-						username = client.get_user(int(user))
+						username = await client.fetch_user(int(user))
 
 						cursor.execute(f"SELECT language FROM users WHERE userid = {user}")
 						try:
@@ -12291,7 +12291,7 @@ async def on_message(message):
 			else:
 				conn.cursor(buffered=True)
 
-				maincommand = "reqprofile link"
+				maincommand = "reqprofilelink"
 				checkmaintenance = checkmaintenance(maincommand)
 				if checkmaintenance == "yes":
 					embed = discord.Embed(title="", color=0xff0000)
@@ -12343,7 +12343,7 @@ async def on_message(message):
 					msg1 = await message.channel.send(embed=embed)
 					firstsync(author)
 					embed5 = firstsync(author)
-					username = client.get_user(int(author))
+					username = await client.fetch_user(int(author))
 					channel = await username.create_dm()
 					try:
 						await channel.send(embed=embed5)
@@ -12376,7 +12376,7 @@ async def on_message(message):
 			else:
 				conn.cursor(buffered=True)
 
-				maincommand = "reqprofile unlink"
+				maincommand = "reqprofileunlink"
 				checkmaintenance = checkmaintenance(maincommand)
 				if checkmaintenance == "yes":
 					embed = discord.Embed(title="", color=0xff0000)
@@ -12981,7 +12981,7 @@ async def on_message(message):
 			else:
 				conn.cursor(buffered=True)
 
-				maincommand = "reqachievement give"
+				maincommand = "reqachievementgive"
 				checkmaintenance = checkmaintenance(maincommand)
 				if checkmaintenance == "yes":
 					embed = discord.Embed(title="", color=0xff0000)
@@ -13041,7 +13041,7 @@ async def on_message(message):
 							conn.commit()
 							#requestachievement1(author)
 							embed5 = requestachievement1(author)
-							username = client.get_user(int(user))
+							username = await client.fetch_user(int(user))
 							channel = await username.create_dm()
 							try:
 								await channel.send(embed=embed5)
@@ -13057,7 +13057,7 @@ async def on_message(message):
 							conn.commit()
 							#requestachievement5(author)
 							embed5 = requestachievement5(author)
-							username = client.get_user(int(user))
+							username = await client.fetch_user(int(user))
 							channel = await username.create_dm()
 							try:
 								await channel.send(embed=embed5)
@@ -13073,7 +13073,7 @@ async def on_message(message):
 							conn.commit()
 							#requestachievement10(author)
 							embed5 = requestachievement10(author)
-							username = client.get_user(int(user))
+							username = await client.fetch_user(int(user))
 							channel = await username.create_dm()
 							try:
 								await channel.send(embed=embed5)
@@ -13089,7 +13089,7 @@ async def on_message(message):
 							conn.commit()
 							#requestachievement50(author)
 							embed5 = requestachievement50(author)
-							username = client.get_user(int(user))
+							username = await client.fetch_user(int(user))
 							channel = await username.create_dm()
 							try:
 								await channel.send(embed=embed5)
@@ -13105,7 +13105,7 @@ async def on_message(message):
 							conn.commit()
 							#requestachievement100(author)
 							embed5 = requestachievement100(author)
-							username = client.get_user(int(user))
+							username = await client.fetch_user(int(user))
 							channel = await username.create_dm()
 							try:
 								await channel.send(embed=embed5)
@@ -13121,7 +13121,7 @@ async def on_message(message):
 							conn.commit()
 							reviewachievement1(author)
 							embed5 = reviewachievement1(author)
-							username = client.get_user(int(user))
+							username = await client.fetch_user(int(user))
 							channel = await username.create_dm()
 							try:
 								await channel.send(embed=embed5)
@@ -13137,7 +13137,7 @@ async def on_message(message):
 							conn.commit()
 							reviewachievement5(author)
 							embed5 = reviewachievement5(author)
-							username = client.get_user(int(user))
+							username = await client.fetch_user(int(user))
 							channel = await username.create_dm()
 							try:
 								await channel.send(embed=embed5)
@@ -13153,7 +13153,7 @@ async def on_message(message):
 							conn.commit()
 							reviewachievement10(author)
 							embed5 = reviewachievement10(author)
-							username = client.get_user(int(user))
+							username = await client.fetch_user(int(user))
 							channel = await username.create_dm()
 							try:
 								await channel.send(embed=embed5)
@@ -13169,7 +13169,7 @@ async def on_message(message):
 							conn.commit()
 							reviewachievement50(author)
 							embed5 = reviewachievement50(author)
-							username = client.get_user(int(user))
+							username = await client.fetch_user(int(user))
 							channel = await username.create_dm()
 							try:
 								await channel.send(embed=embed5)
@@ -13185,7 +13185,7 @@ async def on_message(message):
 							conn.commit()
 							reviewachievement100(author)
 							embed5 = reviewachievement100(author)
-							username = client.get_user(int(user))
+							username = await client.fetch_user(int(user))
 							channel = await username.create_dm()
 							try:
 								await channel.send(embed=embed5)
@@ -13201,7 +13201,7 @@ async def on_message(message):
 							conn.commit()
 							reviewapprovedachievement1(user1)
 							embed5 = reviewapprovedachievement1(user1)
-							username = client.get_user(int(user))
+							username = await client.fetch_user(int(user))
 							channel = await username.create_dm()
 							try:
 								await channel.send(embed=embed5)
@@ -13232,7 +13232,7 @@ async def on_message(message):
 							conn.commit()
 							reviewapprovedachievement10(user1)
 							embed5 = reviewapprovedachievement10(user1)
-							username = client.get_user(int(user))
+							username = await client.fetch_user(int(user))
 							channel = await username.create_dm()
 							try:
 								await channel.send(embed=embed5)
@@ -13248,7 +13248,7 @@ async def on_message(message):
 							conn.commit()
 							reviewapprovedachievement50(user1)
 							embed5 = reviewapprovedachievement50(user1)
-							username = client.get_user(int(user))
+							username = await client.fetch_user(int(user))
 							channel = await username.create_dm()
 							try:
 								await channel.send(embed=embed5)
@@ -13264,7 +13264,7 @@ async def on_message(message):
 							conn.commit()
 							reviewapprovedachievement100(user1)
 							embed5 = reviewapprovedachievement100(user1)
-							username = client.get_user(int(user))
+							username = await client.fetch_user(int(user))
 							channel = await username.create_dm()
 							try:
 								await channel.send(embed=embed5)
@@ -13280,7 +13280,7 @@ async def on_message(message):
 							conn.commit()
 							reviewunapprovedachievement1(user1)
 							embed5 = reviewunapprovedachievement1(user1)
-							username = client.get_user(int(user))
+							username = await client.fetch_user(int(user))
 							channel = await username.create_dm()
 							try:
 								await channel.send(embed=embed5)
@@ -13296,7 +13296,7 @@ async def on_message(message):
 							conn.commit()
 							reviewunapprovedachievement5(user1)
 							embed5 = reviewunapprovedachievement5(user1)
-							username = client.get_user(int(user))
+							username = await client.fetch_user(int(user))
 							channel = await username.create_dm()
 							try:
 								await channel.send(embed=embed5)
@@ -13312,7 +13312,7 @@ async def on_message(message):
 							conn.commit()
 							reviewunapprovedachievement10(user1)
 							embed5 = reviewunapprovedachievement10(user1)
-							username = client.get_user(int(user))
+							username = await client.fetch_user(int(user))
 							channel = await username.create_dm()
 							try:
 								await channel.send(embed=embed5)
@@ -13328,7 +13328,7 @@ async def on_message(message):
 							conn.commit()
 							reviewunapprovedachievement50(user1)
 							embed5 = reviewunapprovedachievement50(user1)
-							username = client.get_user(int(user))
+							username = await client.fetch_user(int(user))
 							channel = await username.create_dm()
 							try:
 								await channel.send(embed=embed5)
@@ -13344,7 +13344,7 @@ async def on_message(message):
 							conn.commit()
 							reviewunapprovedachievement100(user1)
 							embed5 = reviewunapprovedachievement100(user1)
-							username = client.get_user(int(user))
+							username = await client.fetch_user(int(user))
 							channel = await username.create_dm()
 							try:
 								await channel.send(embed=embed5)
@@ -13360,7 +13360,7 @@ async def on_message(message):
 							conn.commit()
 							levelsentbygdmod(user1)
 							embed5 = levelsentbygdmod(user1)
-							username = client.get_user(int(user))
+							username = await client.fetch_user(int(user))
 							channel = await username.create_dm()
 							try:
 								await channel.send(embed=embed5)
@@ -13376,7 +13376,7 @@ async def on_message(message):
 							conn.commit()
 							firstsync(author)
 							embed5 = firstsync(author)
-							username = client.get_user(int(user))
+							username = await client.fetch_user(int(user))
 							channel = await username.create_dm()
 							try:
 								await channel.send(embed=embed5)
@@ -13392,7 +13392,7 @@ async def on_message(message):
 							conn.commit()
 							suggestidea(author)
 							embed5 = suggestidea(author)
-							username = client.get_user(int(user))
+							username = await client.fetch_user(int(user))
 							channel = await username.create_dm()
 							try:
 								await channel.send(embed=embed5)
@@ -13408,7 +13408,7 @@ async def on_message(message):
 							conn.commit()
 							approvedidea(author)
 							embed5 = approvedidea(author)
-							username = client.get_user(int(user))
+							username = await client.fetch_user(int(user))
 							channel = await username.create_dm()
 							try:
 								await channel.send(embed=embed5)
@@ -13424,7 +13424,7 @@ async def on_message(message):
 							conn.commit()
 							approvedreport(author)
 							embed5 = approvedreport(author)
-							username = client.get_user(int(user))
+							username = await client.fetch_user(int(user))
 							channel = await username.create_dm()
 							try:
 								await channel.send(embed=embed5)
@@ -13476,7 +13476,7 @@ async def on_message(message):
 			else:
 				conn.cursor(buffered=True)
 
-				maincommand = "reqachievement remove"
+				maincommand = "reqachievementremove"
 				checkmaintenance = checkmaintenance(maincommand)
 				if checkmaintenance == "yes":
 					embed = discord.Embed(title="", color=0xff0000)
@@ -14032,7 +14032,7 @@ async def on_message(message):
 						botmod = "<:GRmod:741965487096987739>"
 					elif modbot is None:
 						botmod = ""
-					username = client.get_user(int(userprofile))
+					username = await client.fetch_user(int(userprofile))
 					embed2 = discord.Embed(title=f"", color=0x696969)
 					embed2.set_author(name=f"__{username}'s profile__", icon_url=(iconprofile))
 					cursor.execute(f"SELECT levelrequestedcount,levelreviewedcount,levelreviewapprovedcount,levelreviewunapprovedcount FROM users WHERE userid = {userprofile}")
@@ -14183,7 +14183,7 @@ async def on_message(message):
 			else:
 				conn.cursor()
 
-				maincommand = "reqsettings profile"
+				maincommand = "reqsettingsprofile"
 				checkmaintenance = checkmaintenance(maincommand)
 				if checkmaintenance == "yes":
 					embed = discord.Embed(title="", color=0xff0000)
@@ -14300,7 +14300,7 @@ async def on_message(message):
 			else:
 				conn.cursor()
 
-				maincommand = "reqsetsettings profile"
+				maincommand = "reqsetsettingsprofile"
 				checkmaintenance = checkmaintenance(maincommand)
 				if checkmaintenance == "yes":
 					embed = discord.Embed(title="", color=0xff0000)
@@ -14568,7 +14568,7 @@ async def on_message(message):
 					
 					for i in range(0,20):
 						userprofile = userslist[i]
-						username = client.get_user(int(userprofile))
+						username = await client.fetch_user(int(userprofile))
 						place = i+1
 						if i == 0:
 							leaderboardtext = f"<:top1:759751131114373161>**#{place}** - {username}\n"
@@ -14589,7 +14589,7 @@ async def on_message(message):
 					listplace = []
 					for i in range(20,40):
 						userprofile = userslist[i]
-						username = client.get_user(int(userprofile))
+						username = await client.fetch_user(int(userprofile))
 						place = i+1
 						if i == 0:
 							leaderboardtext = f"<:top1:759751131114373161>**#{place}** - {username}\n"
@@ -14610,7 +14610,7 @@ async def on_message(message):
 					listplace = []
 					for i in range(40,60):
 						userprofile = userslist[i]
-						username = client.get_user(int(userprofile))
+						username = await client.fetch_user(int(userprofile))
 						place = i+1
 						if i == 0:
 							leaderboardtext = f"<:top1:759751131114373161>**#{place}** - {username}\n"
@@ -14631,7 +14631,7 @@ async def on_message(message):
 					listplace = []
 					for i in range(60,80):
 						userprofile = userslist[i]
-						username = client.get_user(int(userprofile))
+						username = await client.fetch_user(int(userprofile))
 						place = i+1
 						if i == 0:
 							leaderboardtext = f"<:top1:759751131114373161>**#{place}** - {username}\n"
@@ -14652,7 +14652,7 @@ async def on_message(message):
 					listplace = []
 					for i in range(80,100):
 						userprofile = userslist[i]
-						username = client.get_user(int(userprofile))
+						username = await client.fetch_user(int(userprofile))
 						place = i+1
 						if i == 0:
 							leaderboardtext = f"<:top1:759751131114373161>**#{place}** - {username}\n"
@@ -14704,7 +14704,7 @@ async def on_message(message):
 					
 					for i in range(0,20):
 						userprofile = userslist[i]
-						username = client.get_user(int(userprofile))
+						username = await client.fetch_user(int(userprofile))
 						place = i+1
 						if i == 0:
 							leaderboardtext = f"<:top1:759751131114373161>**#{place}** - {username}\n"
@@ -14725,7 +14725,7 @@ async def on_message(message):
 					listplace = []
 					for i in range(20,40):
 						userprofile = userslist[i]
-						username = client.get_user(int(userprofile))
+						username = await client.fetch_user(int(userprofile))
 						place = i+1
 						if i == 0:
 							leaderboardtext = f"<:top1:759751131114373161>**#{place}** - {username}\n"
@@ -14746,7 +14746,7 @@ async def on_message(message):
 					listplace = []
 					for i in range(40,60):
 						userprofile = userslist[i]
-						username = client.get_user(int(userprofile))
+						username = await client.fetch_user(int(userprofile))
 						place = i+1
 						if i == 0:
 							leaderboardtext = f"<:top1:759751131114373161>**#{place}** - {username}\n"
@@ -14767,7 +14767,7 @@ async def on_message(message):
 					listplace = []
 					for i in range(60,80):
 						userprofile = userslist[i]
-						username = client.get_user(int(userprofile))
+						username = await client.fetch_user(int(userprofile))
 						place = i+1
 						if i == 0:
 							leaderboardtext = f"<:top1:759751131114373161>**#{place}** - {username}\n"
@@ -14788,7 +14788,7 @@ async def on_message(message):
 					listplace = []
 					for i in range(80,100):
 						userprofile = userslist[i]
-						username = client.get_user(int(userprofile))
+						username = await client.fetch_user(int(userprofile))
 						place = i+1
 						if i == 0:
 							leaderboardtext = f"<:top1:759751131114373161>**#{place}** - {username}\n"
@@ -14840,7 +14840,7 @@ async def on_message(message):
 					
 					for i in range(0,20):
 						userprofile = userslist[i]
-						username = client.get_user(int(userprofile))
+						username = await client.fetch_user(int(userprofile))
 						place = i+1
 						if i == 0:
 							leaderboardtext = f"<:top1:759751131114373161>**#{place}** - {username}\n"
@@ -14861,7 +14861,7 @@ async def on_message(message):
 					listplace = []
 					for i in range(20,40):
 						userprofile = userslist[i]
-						username = client.get_user(int(userprofile))
+						username = await client.fetch_user(int(userprofile))
 						place = i+1
 						if i == 0:
 							leaderboardtext = f"<:top1:759751131114373161>**#{place}** - {username}\n"
@@ -14882,7 +14882,7 @@ async def on_message(message):
 					listplace = []
 					for i in range(40,60):
 						userprofile = userslist[i]
-						username = client.get_user(int(userprofile))
+						username = await client.fetch_user(int(userprofile))
 						place = i+1
 						if i == 0:
 							leaderboardtext = f"<:top1:759751131114373161>**#{place}** - {username}\n"
@@ -14903,7 +14903,7 @@ async def on_message(message):
 					listplace = []
 					for i in range(60,80):
 						userprofile = userslist[i]
-						username = client.get_user(int(userprofile))
+						username = await client.fetch_user(int(userprofile))
 						place = i+1
 						if i == 0:
 							leaderboardtext = f"<:top1:759751131114373161>**#{place}** - {username}\n"
@@ -14924,7 +14924,7 @@ async def on_message(message):
 					listplace = []
 					for i in range(80,100):
 						userprofile = userslist[i]
-						username = client.get_user(int(userprofile))
+						username = await client.fetch_user(int(userprofile))
 						place = i+1
 						if i == 0:
 							leaderboardtext = f"<:top1:759751131114373161>**#{place}** - {username}\n"
@@ -14976,7 +14976,7 @@ async def on_message(message):
 					
 					for i in range(0,20):
 						userprofile = userslist[i]
-						username = client.get_user(int(userprofile))
+						username = await client.fetch_user(int(userprofile))
 						place = i+1
 						if i == 0:
 							leaderboardtext = f"<:top1:759751131114373161>**#{place}** - {username}\n"
@@ -14997,7 +14997,7 @@ async def on_message(message):
 					listplace = []
 					for i in range(20,40):
 						userprofile = userslist[i]
-						username = client.get_user(int(userprofile))
+						username = await client.fetch_user(int(userprofile))
 						place = i+1
 						if i == 0:
 							leaderboardtext = f"<:top1:759751131114373161>**#{place}** - {username}\n"
@@ -15018,7 +15018,7 @@ async def on_message(message):
 					listplace = []
 					for i in range(40,60):
 						userprofile = userslist[i]
-						username = client.get_user(int(userprofile))
+						username = await client.fetch_user(int(userprofile))
 						place = i+1
 						if i == 0:
 							leaderboardtext = f"<:top1:759751131114373161>**#{place}** - {username}\n"
@@ -15039,7 +15039,7 @@ async def on_message(message):
 					listplace = []
 					for i in range(60,80):
 						userprofile = userslist[i]
-						username = client.get_user(int(userprofile))
+						username = await client.fetch_user(int(userprofile))
 						place = i+1
 						if i == 0:
 							leaderboardtext = f"<:top1:759751131114373161>**#{place}** - {username}\n"
@@ -15060,7 +15060,7 @@ async def on_message(message):
 					listplace = []
 					for i in range(80,100):
 						userprofile = userslist[i]
-						username = client.get_user(int(userprofile))
+						username = await client.fetch_user(int(userprofile))
 						place = i+1
 						if i == 0:
 							leaderboardtext = f"<:top1:759751131114373161>**#{place}** - {username}\n"
@@ -15112,7 +15112,7 @@ async def on_message(message):
 					
 					for i in range(0,20):
 						userprofile = userslist[i]
-						username = client.get_user(int(userprofile))
+						username = await client.fetch_user(int(userprofile))
 						place = i+1
 						if i == 0:
 							leaderboardtext = f"<:top1:759751131114373161>**#{place}** - {username}\n"
@@ -15133,7 +15133,7 @@ async def on_message(message):
 					listplace = []
 					for i in range(20,40):
 						userprofile = userslist[i]
-						username = client.get_user(int(userprofile))
+						username = await client.fetch_user(int(userprofile))
 						place = i+1
 						if i == 0:
 							leaderboardtext = f"<:top1:759751131114373161>**#{place}** - {username}\n"
@@ -15154,7 +15154,7 @@ async def on_message(message):
 					listplace = []
 					for i in range(40,60):
 						userprofile = userslist[i]
-						username = client.get_user(int(userprofile))
+						username = await client.fetch_user(int(userprofile))
 						place = i+1
 						if i == 0:
 							leaderboardtext = f"<:top1:759751131114373161>**#{place}** - {username}\n"
@@ -15175,7 +15175,7 @@ async def on_message(message):
 					listplace = []
 					for i in range(60,80):
 						userprofile = userslist[i]
-						username = client.get_user(int(userprofile))
+						username = await client.fetch_user(int(userprofile))
 						place = i+1
 						if i == 0:
 							leaderboardtext = f"<:top1:759751131114373161>**#{place}** - {username}\n"
@@ -15196,7 +15196,7 @@ async def on_message(message):
 					listplace = []
 					for i in range(80,100):
 						userprofile = userslist[i]
-						username = client.get_user(int(userprofile))
+						username = await client.fetch_user(int(userprofile))
 						place = i+1
 						if i == 0:
 							leaderboardtext = f"<:top1:759751131114373161>**#{place}** - {username}\n"
