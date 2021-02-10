@@ -1,10 +1,10 @@
-**Merci d'avoir utilisé Geometry Request !**
-**Version du Bot = 1.2 (Translation Update)**
-**Version de Discord.py = 1.3.4**
-Geometry Request est possédé par **Jouca#9408** et fait pour les joueurs de Geometry Dash. La principale fonction du bot est pour les "level requests" sur Discord, Il donne quelques fonctionnalités pour aider les joueurs à configurer correctement les "level requests" avec ce bot. Ce bot n'est absolument pas connecté à Geometry Dash, excepté pour chercher les niveaux sur le jeu.
+**Merci d'avoir utilisé Geometry Requests !**
+**Version du Bot = 1.3.02 (Translation Update)**
+**Version de Discord.py = 1.4.1**
+Geometry Requests est possédé par **Jouca#9408** et fait pour les joueurs de Geometry Dash. La principale fonction du bot est pour les "level requests" sur Discord, Il donne quelques fonctionnalités pour aider les joueurs à configurer correctement les "level requests" avec ce bot. Ce bot n'est absolument pas connecté à Geometry Dash, excepté pour chercher les niveaux sur le jeu.
 Le bot est actuellement de s'ocupper de 
 serveurs, si vous voulez avoir ce bot, le lien est en dessous de ce message !
-Lien d'invitation de Geometry Request = <https://discord.com/oauth2/authorize?client_id=707756141114949674&scope=bot&permissions=8>
+Lien d'invitation de Geometry Requests = <https://discord.com/oauth2/authorize?client_id=707756141114949674&scope=bot&permissions=8>
 Vous ave une suggestion, ou un rapport, ou que vous avez trouvé des bugs ? Merci de rejoindre le serveur Discord officiel de Geometry Requests.
 Lien du Discord = <https://discord.com/invite/eHeXQf2>
 Image de profil du bot fait par **Hir0shi**
