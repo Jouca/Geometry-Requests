@@ -28,7 +28,7 @@ color_palette = ['0x7dff00','0x00ff01','0x00ff7e','0x01ffff','0x01c8ff','0x0000f
 
 jouca = 216708683290247168
 
-TOKEN = "TOKEN of the Discord Bot"
+TOKEN = "Token of the Discord BOT"
 prefix = "req!"
 
 #########################
@@ -695,15 +695,16 @@ async def on_message(message):
 		def reqsearch2(level):
 			data = f"gameVersion=21&binaryVersion=35&gdw=0&type=0&str={level}&diff=-&len=-&page=0&total=0&secret=Wmfd2893gb7".encode()
 			result = urlopen("http://www.boomlings.com/database/getGJLevels21.php",data).read().decode()
-			result = result.split(":")
-			idlevel = result[1]
-			data = f"gameVersion=21&binaryVersion=35&gdw=0&type=0&str={idlevel}&diff=-&len=-&page=0&total=0&secret=Wmfd2893gb7".encode()
-			result3 = urlopen("http://www.boomlings.com/database/getGJLevels21.php",data).read().decode()
-			result3 = result3.split(":")
-			result2 = result3[55]
+			result3 = result.split(":")
+			idlevel = result3[1]
+			songidpart = result3[53]
+			result4 = songidpart.split("#")
+			customsongid = result4[0]
+			result5 = result.split("#")
+			result5 = result5[2]
+			result2 = result5.split("~|~")
 			print(result2)
-			result2 = result2.split("~|~")
-			print(result2)
+			print(result3)
 
 			try:
 				songname = result2[3]
@@ -712,8 +713,8 @@ async def on_message(message):
 				sizesong = result2[9]
 				songlink = result2[13]
 			except IndexError:
-				officialsong = result[15]
-				if int(officialsong) == 0:
+				officialsong = result3[15]
+				if int(officialsong) == 0 and int(customsongid) == 0 :
 					songname = "Stereo Madness"
 					songauthor = "ForeverBound"
 					songid = 500476
@@ -5799,8 +5800,9 @@ async def on_message(message):
 												pognyanya = cursor.execute(f"SELECT userid FROM GDmoderators WHERE serverid = {serverid} LIMIT 1")
 												gdmodchannel1234 = cursor.fetchone()
 												msgmod = await channel3.send(f"<@{gdmodchannel1234[0]}>",embed=embed4)
+												msgmod2 = getattr(msgmod,"id")
 												
-												cursor.execute(f"UPDATE levels SET messageid = {msgmod} WHERE server = {serverid} AND levelid = {level}")
+												cursor.execute(f"UPDATE levels SET messageid = {msgmod2} WHERE server = {serverid} AND levelid = {level}")
 												conn.commit()
 
 												cursor.execute(f"SELECT levelreviewedcount FROM users WHERE userid = {jaj}")
@@ -6406,8 +6408,9 @@ async def on_message(message):
 												pognyanya = cursor.execute(f"SELECT userid FROM GDmoderators WHERE serverid = {serverid} LIMIT 1")
 												gdmodchannel1234 = cursor.fetchone()[0]
 												msgmod = await channel3.send(f"<@{gdmodchannel1234}>",embed=embed4)
+												msgmod2 = getattr(msgmod,"id")
 												
-												cursor.execute(f"UPDATE levels SET messageid = {msgmod} WHERE server = {serverid} AND levelid = {level}")
+												cursor.execute(f"UPDATE levels SET messageid = {msgmod2} WHERE server = {serverid} AND levelid = {level}")
 												conn.commit()
 
 												cursor.execute(f"SELECT levelreviewedcount FROM users WHERE userid = {jaj}")
