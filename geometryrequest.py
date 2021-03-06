@@ -12,9 +12,9 @@ from PIL import Image,ImageFont,ImageDraw
 
 # Configs for database :
 
-dbhost = "host"
+dbhost = "localhost"
 dbdatabase = "database"
-dbuser = "username"
+dbuser = "user"
 dbpassword = "password"
 
 #########################
@@ -28,13 +28,13 @@ color_palette = ['0x7dff00','0x00ff01','0x00ff7e','0x01ffff','0x01c8ff','0x0000f
 
 jouca = 216708683290247168
 
-TOKEN = "Token of the Discord BOT"
+TOKEN = "token of the bot"
 prefix = "req!"
 
 #########################
 
-left = '⬅️'
-right = '➡️'
+left = u"\u2B05"
+right = u"\u27A1"
 
 #########################
 
@@ -270,7 +270,6 @@ async def on_message(message):
 				isAuto = "0"
 			elif result != "-1":
 				result = result.split(":")
-				print(result)
 				levelname = result[3]
 				creator = convertinfo("u","n",result[7])
 				downloads = result[13]
@@ -408,7 +407,6 @@ async def on_message(message):
 			data = f"gameVersion=21&binaryVersion=35&gdw=0&type=0&str={level}&diff=-&len=-&page=0&total=0&secret=Wmfd2893gb7".encode()
 			result = urlopen("http://www.boomlings.com/database/getGJLevels21.php",data).read().decode()
 			result = result.split(":")
-			print(result)
 			idlevel = result[1]
 			version = result[5]
 			gdversion2 = result[17]
@@ -703,8 +701,6 @@ async def on_message(message):
 			result5 = result.split("#")
 			result5 = result5[2]
 			result2 = result5.split("~|~")
-			print(result2)
-			print(result3)
 
 			try:
 				songname = result2[3]
@@ -3719,7 +3715,6 @@ async def on_message(message):
 
 				description += '=' * (-len(description) % 4)
 				base64_bytes = description.encode('ascii')
-				print(base64_bytes)
 				message_bytes = base64.urlsafe_b64decode(base64_bytes)
 				descbase64 = message_bytes.decode('ascii')
 
@@ -3913,7 +3908,6 @@ async def on_message(message):
 					video = args[2]
 				except IndexError as error:
 					video = "no"
-				print(video)
 				#if msg.count(" ") < 1:
 					#embed = discord.Embed(title="", color=0xff0000)
 					#embed.set_thumbnail(url="https://cdn.discordapp.com/emojis/472907618386575370.png")
@@ -4050,7 +4044,6 @@ async def on_message(message):
 											stars,objectplus,levelname,creator,ratingemote,stars,downloads,likes,likesemote,description,coins,verifiedcoins,lengthvalue,idlevel,version,gdversion,color = reqsearch(level)
 											description += '=' * (-len(description) % 4)
 											base64_bytes = description.encode('ascii')
-											print(base64_bytes)
 											message_bytes = base64.urlsafe_b64decode(base64_bytes)
 											descbase64 = message_bytes.decode('ascii')
 
@@ -4288,7 +4281,6 @@ async def on_message(message):
 												stars,objectplus,levelname,creator,ratingemote,stars,downloads,likes,likesemote,description,coins,verifiedcoins,lengthvalue,idlevel,version,gdversion,color = reqsearch(level)
 												description += '=' * (-len(description) % 4)
 												base64_bytes = description.encode('ascii')
-												print(base64_bytes)
 												message_bytes = base64.urlsafe_b64decode(base64_bytes)
 												descbase64 = message_bytes.decode('ascii')
 
@@ -4592,7 +4584,6 @@ async def on_message(message):
 												stars,objectplus,levelname,creator,ratingemote,stars,downloads,likes,likesemote,description,coins,verifiedcoins,lengthvalue,idlevel,version,gdversion,color = reqsearch(level)
 												description += '=' * (-len(description) % 4)
 												base64_bytes = description.encode('ascii')
-												print(base64_bytes)
 												message_bytes = base64.urlsafe_b64decode(base64_bytes)
 												descbase64 = message_bytes.decode('ascii')
 
@@ -4830,7 +4821,6 @@ async def on_message(message):
 													stars,objectplus,levelname,creator,ratingemote,stars,downloads,likes,likesemote,description,coins,verifiedcoins,lengthvalue,idlevel,version,gdversion,color = reqsearch(level)
 													description += '=' * (-len(description) % 4)
 													base64_bytes = description.encode('ascii')
-													print(base64_bytes)
 													message_bytes = base64.urlsafe_b64decode(base64_bytes)
 													descbase64 = message_bytes.decode('ascii')
 
@@ -5098,8 +5088,47 @@ async def on_message(message):
 
 				var = message.guild.id
 
-				cursor.execute("SELECT COUNT(*) FROM levels WHERE server = {} AND reviewed = 'no' ORDER BY ID ASC LIMIT 100".format(var))
-				totallevelsresult = cursor.fetchone()[0]
+				cursor.execute("SELECT levelid,video FROM levels WHERE server = {} AND reviewed = 'no' ORDER BY ID ASC LIMIT 100".format(var))
+				datas = cursor.fetchall()
+				levels = []
+				creators = []
+
+				for k in range(len(datas)):
+					levels.append(str(datas[k][0]))
+
+				result = queuedecryptor(levels)
+
+				# Getting level datas
+				levels = []
+				result = result.split("#")
+				result1 = result[0]
+				#Getting Username
+				result2 = result[1]
+				result = result1.split("|")
+
+				result2 = result2.split("|")
+
+				for g in range(len(result)):
+					levelids = result[g]
+					levelids = levelids.split(":")
+					levels.append(levelids[1])
+					for k in range(len(result2)):
+						accountid = result2[k]
+						accountid = accountid.split(":")
+						if levelids[7] == accountid[0]:
+							creatornamed = result2[k]
+							creatornamed = creatornamed.split(":")
+							creators.append(creatornamed[1])
+							break
+
+				minpage = 0
+				maxpage = round((len(levels)+5-1) // 5)
+
+				pageselect = 0
+				current = 1
+				maxshow = 5
+
+				totallevelsresult = len(levels)
 
 				embed1 = discord.Embed(title=f"{queuetitle} "+str(message.guild.name), color=0x00ff00)
 				embed1.add_field(name=f'{queuedesc}', value="\u200b", inline=False)
@@ -5163,54 +5192,14 @@ async def on_message(message):
 				embed20.add_field(name=f'{totallevels} {totallevelsresult}', value="\u200b", inline=False)
 
 				iconprofile = message.guild.icon_url
-				embed1.set_thumbnail(url=(iconprofile))	
-
-				pages = [embed1,embed2,embed3,embed4,embed5,embed6,embed7,embed8,embed9,embed10,embed11,embed12,embed13,embed14,embed15,embed16,embed17,embed18,embed19,embed20]
-				
-				cursor.execute("SELECT levelid,video FROM levels WHERE server = {} AND reviewed = 'no' ORDER BY ID ASC LIMIT 100".format(var))
-				datas = cursor.fetchall()
-				levels = []
-				creators = []
-
-				for k in range(len(datas)):
-					levels.append(str(datas[k][0]))
-
-				result = queuedecryptor(levels)
-
-				minpage = 0
-				maxpage = len(result)/5
-
-				pageselect = 0
-				current = 1
-				maxshow = 5
+				embed1.set_thumbnail(url=(iconprofile))
 
 				if result == "-1":
 					await msg.delete()
 					msg1 = await message.channel.send(embed=embed1)
 					return
 
-				# Getting level datas
-				levels = []
-				result = result.split("#")
-				result1 = result[0]
-				#Getting Username
-				result2 = result[1]
-				result = result1.split("|")
-
-				result2 = result2.split("|")
-
-				for g in range(len(result)):
-					levelids = result[g]
-					levelids = levelids.split(":")
-					levels.append(levelids[1])
-					for k in range(len(result2)):
-						accountid = result2[k]
-						accountid = accountid.split(":")
-						if levelids[7] == accountid[0]:
-							creatornamed = result2[k]
-							creatornamed = creatornamed.split(":")
-							creators.append(creatornamed[1])
-							break
+				pages = [embed1,embed2,embed3,embed4,embed5,embed6,embed7,embed8,embed9,embed10,embed11,embed12,embed13,embed14,embed15,embed16,embed17,embed18,embed19,embed20]
 				
 				for h in range(len(result)):
 					video = datas[h][1]
@@ -5344,8 +5333,47 @@ async def on_message(message):
 
 				requester = message.author.id
 
-				cursor.execute("SELECT COUNT(*) FROM levels WHERE requester = {} AND reviewed = 'no' ORDER BY ID ASC LIMIT 100".format(requester))
-				totallevelsresult = cursor.fetchone()[0]
+				cursor.execute("SELECT levelid,video,server FROM levels WHERE requester = {} AND reviewed = 'no' ORDER BY ID ASC LIMIT 100".format(requester))
+				datas = cursor.fetchall()
+				levels = []
+				creators = []
+
+				for k in range(len(datas)):
+					levels.append(str(datas[k][0]))
+
+				result = queuedecryptor(levels)
+
+				minpage = 0
+				maxpage = round((len(levels)+5-1) // 5)
+
+				pageselect = 0
+				current = 1
+				maxshow = 5
+
+				totallevelsresult = len(levels)
+
+				# Getting level datas
+				levels = []
+				result = result.split("#")
+				result1 = result[0]
+				#Getting Username
+				result2 = result[1]
+				result = result1.split("|")
+
+				result2 = result2.split("|")
+
+				for g in range(len(result)):
+					levelids = result[g]
+					levelids = levelids.split(":")
+					levels.append(levelids[1])
+					for k in range(len(result2)):
+						accountid = result2[k]
+						accountid = accountid.split(":")
+						if levelids[7] == accountid[0]:
+							creatornamed = result2[k]
+							creatornamed = creatornamed.split(":")
+							creators.append(creatornamed[1])
+							break
 
 				embed1 = discord.Embed(title=f"{queuetitle} "+str(message.guild.name), color=0x00ff00)
 				embed1.add_field(name=f'{queuedesc}', value="\u200b", inline=False)
@@ -5412,52 +5440,12 @@ async def on_message(message):
 				iconprofile = usera.avatar_url
 				embed1.set_thumbnail(url=(iconprofile))
 
-				pages = [embed1,embed2,embed3,embed4,embed5,embed6,embed7,embed8,embed9,embed10,embed11,embed12,embed13,embed14,embed15,embed16,embed17,embed18,embed19,embed20]
-				
-				cursor.execute("SELECT levelid,video,server FROM levels WHERE requester = {} AND reviewed = 'no' ORDER BY ID ASC LIMIT 100".format(requester))
-				datas = cursor.fetchall()
-				levels = []
-				creators = []
-
-				for k in range(len(datas)):
-					levels.append(str(datas[k][0]))
-
-				result = queuedecryptor(levels)
-
-				minpage = 0
-				maxpage = len(result)/5
-
-				pageselect = 0
-				current = 1
-				maxshow = 5
-
 				if result == "-1":
 					await msg.delete()
 					msg1 = await message.channel.send(embed=embed1)
 					return
 
-				# Getting level datas
-				levels = []
-				result = result.split("#")
-				result1 = result[0]
-				#Getting Username
-				result2 = result[1]
-				result = result1.split("|")
-
-				result2 = result2.split("|")
-
-				for g in range(len(result)):
-					levelids = result[g]
-					levelids = levelids.split(":")
-					levels.append(levelids[1])
-					for k in range(len(result2)):
-						accountid = result2[k]
-						accountid = accountid.split(":")
-						if levelids[7] == accountid[0]:
-							creatornamed = result2[k]
-							creatornamed = creatornamed.split(":")
-							creators.append(creatornamed[1])
-							break
+				pages = [embed1,embed2,embed3,embed4,embed5,embed6,embed7,embed8,embed9,embed10,embed11,embed12,embed13,embed14,embed15,embed16,embed17,embed18,embed19,embed20]
 				
 				for h in range(len(result)):
 					video = datas[h][1]
@@ -5705,7 +5693,6 @@ async def on_message(message):
 												stars,objectplus,levelname,creator,ratingemote,stars,downloads,likes,likesemote,description,coins,verifiedcoins,lengthvalue,idlevel,version,gdversion,color = reqsearch(level)
 												description += '=' * (-len(description) % 4)
 												base64_bytes = description.encode('ascii')
-												print(base64_bytes)
 												message_bytes = base64.urlsafe_b64decode(base64_bytes)
 												descbase64 = message_bytes.decode('ascii')
 
@@ -6004,7 +5991,6 @@ async def on_message(message):
 												stars,objectplus,levelname,creator,ratingemote,stars,downloads,likes,likesemote,description,coins,verifiedcoins,lengthvalue,idlevel,version,gdversion,color = reqsearch(level)
 												description += '=' * (-len(description) % 4)
 												base64_bytes = description.encode('ascii')
-												print(base64_bytes)
 												message_bytes = base64.urlsafe_b64decode(base64_bytes)
 												descbase64 = message_bytes.decode('ascii')
 
@@ -6313,7 +6299,6 @@ async def on_message(message):
 												stars,objectplus,levelname,creator,ratingemote,stars,downloads,likes,likesemote,description,coins,verifiedcoins,lengthvalue,idlevel,version,gdversion,color = reqsearch(level)
 												description += '=' * (-len(description) % 4)
 												base64_bytes = description.encode('ascii')
-												print(base64_bytes)
 												message_bytes = base64.urlsafe_b64decode(base64_bytes)
 												descbase64 = message_bytes.decode('ascii')
 
@@ -6612,7 +6597,6 @@ async def on_message(message):
 												stars,objectplus,levelname,creator,ratingemote,stars,downloads,likes,likesemote,description,coins,verifiedcoins,lengthvalue,idlevel,version,gdversion,color = reqsearch(level)
 												description += '=' * (-len(description) % 4)
 												base64_bytes = description.encode('ascii')
-												print(base64_bytes)
 												message_bytes = base64.urlsafe_b64decode(base64_bytes)
 												descbase64 = message_bytes.decode('ascii')
 
@@ -6917,7 +6901,6 @@ async def on_message(message):
 											stars,objectplus,levelname,creator,ratingemote,stars,downloads,likes,likesemote,description,coins,verifiedcoins,lengthvalue,idlevel,version,gdversion,color = reqsearch(level)
 											description += '=' * (-len(description) % 4)
 											base64_bytes = description.encode('ascii')
-											print(base64_bytes)
 											message_bytes = base64.urlsafe_b64decode(base64_bytes)
 											descbase64 = message_bytes.decode('ascii')
 
@@ -7220,7 +7203,6 @@ async def on_message(message):
 											stars,objectplus,levelname,creator,ratingemote,stars,downloads,likes,likesemote,description,coins,verifiedcoins,lengthvalue,idlevel,version,gdversion,color = reqsearch(level)
 											description += '=' * (-len(description) % 4)
 											base64_bytes = description.encode('ascii')
-											print(base64_bytes)
 											message_bytes = base64.urlsafe_b64decode(base64_bytes)
 											descbase64 = message_bytes.decode('ascii')
 
@@ -7754,7 +7736,6 @@ async def on_message(message):
 		
 												description += '=' * (-len(description) % 4)
 												base64_bytes = description.encode('ascii')
-												print(base64_bytes)
 												message_bytes = base64.urlsafe_b64decode(base64_bytes)
 												descbase64 = message_bytes.decode('ascii')
 
@@ -7884,7 +7865,6 @@ async def on_message(message):
 		
 												description += '=' * (-len(description) % 4)
 												base64_bytes = description.encode('ascii')
-												print(base64_bytes)
 												message_bytes = base64.urlsafe_b64decode(base64_bytes)
 												descbase64 = message_bytes.decode('ascii')
 
@@ -8014,7 +7994,6 @@ async def on_message(message):
 		
 												description += '=' * (-len(description) % 4)
 												base64_bytes = description.encode('ascii')
-												print(base64_bytes)
 												message_bytes = base64.urlsafe_b64decode(base64_bytes)
 												descbase64 = message_bytes.decode('ascii')
 
@@ -8144,7 +8123,6 @@ async def on_message(message):
 		
 												description += '=' * (-len(description) % 4)
 												base64_bytes = description.encode('ascii')
-												print(base64_bytes)
 												message_bytes = base64.urlsafe_b64decode(base64_bytes)
 												descbase64 = message_bytes.decode('ascii')
 
@@ -8274,7 +8252,6 @@ async def on_message(message):
 		
 												description += '=' * (-len(description) % 4)
 												base64_bytes = description.encode('ascii')
-												print(base64_bytes)
 												message_bytes = base64.urlsafe_b64decode(base64_bytes)
 												descbase64 = message_bytes.decode('ascii')
 
@@ -8404,7 +8381,6 @@ async def on_message(message):
 		
 												description += '=' * (-len(description) % 4)
 												base64_bytes = description.encode('ascii')
-												print(base64_bytes)
 												message_bytes = base64.urlsafe_b64decode(base64_bytes)
 												descbase64 = message_bytes.decode('ascii')
 
@@ -8534,7 +8510,6 @@ async def on_message(message):
 		
 												description += '=' * (-len(description) % 4)
 												base64_bytes = description.encode('ascii')
-												print(base64_bytes)
 												message_bytes = base64.urlsafe_b64decode(base64_bytes)
 												descbase64 = message_bytes.decode('ascii')
 
@@ -8664,7 +8639,6 @@ async def on_message(message):
 		
 												description += '=' * (-len(description) % 4)
 												base64_bytes = description.encode('ascii')
-												print(base64_bytes)
 												message_bytes = base64.urlsafe_b64decode(base64_bytes)
 												descbase64 = message_bytes.decode('ascii')
 
@@ -8794,7 +8768,6 @@ async def on_message(message):
 		
 												description += '=' * (-len(description) % 4)
 												base64_bytes = description.encode('ascii')
-												print(base64_bytes)
 												message_bytes = base64.urlsafe_b64decode(base64_bytes)
 												descbase64 = message_bytes.decode('ascii')
 
@@ -8925,7 +8898,6 @@ async def on_message(message):
 			
 													description += '=' * (-len(description) % 4)
 													base64_bytes = description.encode('ascii')
-													print(base64_bytes)
 													message_bytes = base64.urlsafe_b64decode(base64_bytes)
 													descbase64 = message_bytes.decode('ascii')
 
@@ -9055,7 +9027,6 @@ async def on_message(message):
 			
 													description += '=' * (-len(description) % 4)
 													base64_bytes = description.encode('ascii')
-													print(base64_bytes)
 													message_bytes = base64.urlsafe_b64decode(base64_bytes)
 													descbase64 = message_bytes.decode('ascii')
 
@@ -9185,7 +9156,6 @@ async def on_message(message):
 			
 													description += '=' * (-len(description) % 4)
 													base64_bytes = description.encode('ascii')
-													print(base64_bytes)
 													message_bytes = base64.urlsafe_b64decode(base64_bytes)
 													descbase64 = message_bytes.decode('ascii')
 
@@ -9315,7 +9285,6 @@ async def on_message(message):
 			
 													description += '=' * (-len(description) % 4)
 													base64_bytes = description.encode('ascii')
-													print(base64_bytes)
 													message_bytes = base64.urlsafe_b64decode(base64_bytes)
 													descbase64 = message_bytes.decode('ascii')
 
@@ -9445,7 +9414,7 @@ async def on_message(message):
 			
 													description += '=' * (-len(description) % 4)
 													base64_bytes = description.encode('ascii')
-													print(base64_bytes)
+													
 													message_bytes = base64.urlsafe_b64decode(base64_bytes)
 													descbase64 = message_bytes.decode('ascii')
 
@@ -9575,7 +9544,7 @@ async def on_message(message):
 			
 													description += '=' * (-len(description) % 4)
 													base64_bytes = description.encode('ascii')
-													print(base64_bytes)
+													
 													message_bytes = base64.urlsafe_b64decode(base64_bytes)
 													descbase64 = message_bytes.decode('ascii')
 
@@ -9732,7 +9701,7 @@ async def on_message(message):
 		
 												description += '=' * (-len(description) % 4)
 												base64_bytes = description.encode('ascii')
-												print(base64_bytes)
+												
 												message_bytes = base64.urlsafe_b64decode(base64_bytes)
 												descbase64 = message_bytes.decode('ascii')
 
@@ -9862,7 +9831,7 @@ async def on_message(message):
 		
 												description += '=' * (-len(description) % 4)
 												base64_bytes = description.encode('ascii')
-												print(base64_bytes)
+												
 												message_bytes = base64.urlsafe_b64decode(base64_bytes)
 												descbase64 = message_bytes.decode('ascii')
 
@@ -9992,7 +9961,7 @@ async def on_message(message):
 		
 												description += '=' * (-len(description) % 4)
 												base64_bytes = description.encode('ascii')
-												print(base64_bytes)
+												
 												message_bytes = base64.urlsafe_b64decode(base64_bytes)
 												descbase64 = message_bytes.decode('ascii')
 
@@ -10122,7 +10091,7 @@ async def on_message(message):
 		
 												description += '=' * (-len(description) % 4)
 												base64_bytes = description.encode('ascii')
-												print(base64_bytes)
+												
 												message_bytes = base64.urlsafe_b64decode(base64_bytes)
 												descbase64 = message_bytes.decode('ascii')
 
@@ -10252,7 +10221,7 @@ async def on_message(message):
 		
 												description += '=' * (-len(description) % 4)
 												base64_bytes = description.encode('ascii')
-												print(base64_bytes)
+												
 												message_bytes = base64.urlsafe_b64decode(base64_bytes)
 												descbase64 = message_bytes.decode('ascii')
 
@@ -10382,7 +10351,7 @@ async def on_message(message):
 		
 												description += '=' * (-len(description) % 4)
 												base64_bytes = description.encode('ascii')
-												print(base64_bytes)
+												
 												message_bytes = base64.urlsafe_b64decode(base64_bytes)
 												descbase64 = message_bytes.decode('ascii')
 
@@ -10512,7 +10481,7 @@ async def on_message(message):
 		
 												description += '=' * (-len(description) % 4)
 												base64_bytes = description.encode('ascii')
-												print(base64_bytes)
+												
 												message_bytes = base64.urlsafe_b64decode(base64_bytes)
 												descbase64 = message_bytes.decode('ascii')
 
@@ -10642,7 +10611,7 @@ async def on_message(message):
 		
 												description += '=' * (-len(description) % 4)
 												base64_bytes = description.encode('ascii')
-												print(base64_bytes)
+												
 												message_bytes = base64.urlsafe_b64decode(base64_bytes)
 												descbase64 = message_bytes.decode('ascii')
 
@@ -10772,7 +10741,7 @@ async def on_message(message):
 		
 												description += '=' * (-len(description) % 4)
 												base64_bytes = description.encode('ascii')
-												print(base64_bytes)
+												
 												message_bytes = base64.urlsafe_b64decode(base64_bytes)
 												descbase64 = message_bytes.decode('ascii')
 
@@ -10903,7 +10872,7 @@ async def on_message(message):
 			
 													description += '=' * (-len(description) % 4)
 													base64_bytes = description.encode('ascii')
-													print(base64_bytes)
+													
 													message_bytes = base64.urlsafe_b64decode(base64_bytes)
 													descbase64 = message_bytes.decode('ascii')
 
@@ -11033,7 +11002,7 @@ async def on_message(message):
 			
 													description += '=' * (-len(description) % 4)
 													base64_bytes = description.encode('ascii')
-													print(base64_bytes)
+													
 													message_bytes = base64.urlsafe_b64decode(base64_bytes)
 													descbase64 = message_bytes.decode('ascii')
 
@@ -11163,7 +11132,7 @@ async def on_message(message):
 			
 													description += '=' * (-len(description) % 4)
 													base64_bytes = description.encode('ascii')
-													print(base64_bytes)
+													
 													message_bytes = base64.urlsafe_b64decode(base64_bytes)
 													descbase64 = message_bytes.decode('ascii')
 
@@ -11293,7 +11262,7 @@ async def on_message(message):
 			
 													description += '=' * (-len(description) % 4)
 													base64_bytes = description.encode('ascii')
-													print(base64_bytes)
+													
 													message_bytes = base64.urlsafe_b64decode(base64_bytes)
 													descbase64 = message_bytes.decode('ascii')
 
@@ -11423,7 +11392,7 @@ async def on_message(message):
 			
 													description += '=' * (-len(description) % 4)
 													base64_bytes = description.encode('ascii')
-													print(base64_bytes)
+													
 													message_bytes = base64.urlsafe_b64decode(base64_bytes)
 													descbase64 = message_bytes.decode('ascii')
 
@@ -11553,7 +11522,7 @@ async def on_message(message):
 			
 													description += '=' * (-len(description) % 4)
 													base64_bytes = description.encode('ascii')
-													print(base64_bytes)
+													
 													message_bytes = base64.urlsafe_b64decode(base64_bytes)
 													descbase64 = message_bytes.decode('ascii')
 
@@ -13958,7 +13927,6 @@ async def on_message(message):
 							icontypeid = cursor.fetchone()[0]
 							cursor.execute(f"SELECT color1,color2 FROM users WHERE userid = {author}")
 							icons = cursor.fetchone()
-							print(icons)
 							color1 = int(icons[0],base=16)
 							color2 = int(icons[1],base=16)
 							cursor.execute(f"SELECT glowoutline FROM users WHERE userid = {author}")
@@ -13988,8 +13956,9 @@ async def on_message(message):
 					time.sleep(5)
 					await msg2.delete()
 					return
-				usera = await message.guild.fetch_member(int(userprofile))
-				if usera is None:
+				try:
+					cursor.execute(f"SELECT userid FROM users WHERE userid = {userprofile}")
+				except:
 					await msg.delete()
 					embed5 = discord.Embed(title="", color=0xff0000)
 					embed5.add_field(name=f'{errormessage}', value=f"{errorprofile}")
@@ -13997,10 +13966,17 @@ async def on_message(message):
 					time.sleep(5)
 					await msg2.delete()
 					return
-				cursor.execute(f"SELECT userid FROM users WHERE userid = {userprofile}")
 				profile = cursor.fetchone()
 				if profile is not None:
 					usera = await message.guild.fetch_member(int(userprofile))
+					if usera is None:
+						await msg.delete()
+						embed5 = discord.Embed(title="", color=0xff0000)
+						embed5.add_field(name=f'{errormessage}', value=f"{errorprofile}")
+						msg2 = await message.channel.send(embed=embed5)
+						time.sleep(5)
+						await msg2.delete()
+						return
 					try:
 						iconprofile = usera.avatar_url
 					except AttributeError:
@@ -14138,7 +14114,6 @@ async def on_message(message):
 						icontypeid = cursor.fetchone()[0]
 						cursor.execute(f"SELECT color1,color2 FROM users WHERE userid = {userprofile}")
 						icons = cursor.fetchone()
-						print(icons)
 						color1 = int(icons[0],base=16)
 						color2 = int(icons[1],base=16)
 						cursor.execute(f"SELECT glowoutline FROM users WHERE userid = {userprofile}")
@@ -14255,7 +14230,6 @@ async def on_message(message):
 						icontypeid = cursor.fetchone()[0]
 						cursor.execute(f"SELECT color1,color2 FROM users WHERE userid = {author}")
 						icons = cursor.fetchone()
-						print(icons)
 						color1 = int(icons[0],base=16)
 						color2 = int(icons[1],base=16)
 						cursor.execute(f"SELECT glowoutline FROM users WHERE userid = {author}")
