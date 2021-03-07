@@ -3715,6 +3715,7 @@ async def on_message(message):
 
 				description += '=' * (-len(description) % 4)
 				base64_bytes = description.encode('ascii')
+				
 				message_bytes = base64.urlsafe_b64decode(base64_bytes)
 				descbase64 = message_bytes.decode('ascii')
 
@@ -4044,6 +4045,7 @@ async def on_message(message):
 											stars,objectplus,levelname,creator,ratingemote,stars,downloads,likes,likesemote,description,coins,verifiedcoins,lengthvalue,idlevel,version,gdversion,color = reqsearch(level)
 											description += '=' * (-len(description) % 4)
 											base64_bytes = description.encode('ascii')
+											
 											message_bytes = base64.urlsafe_b64decode(base64_bytes)
 											descbase64 = message_bytes.decode('ascii')
 
@@ -4281,6 +4283,7 @@ async def on_message(message):
 												stars,objectplus,levelname,creator,ratingemote,stars,downloads,likes,likesemote,description,coins,verifiedcoins,lengthvalue,idlevel,version,gdversion,color = reqsearch(level)
 												description += '=' * (-len(description) % 4)
 												base64_bytes = description.encode('ascii')
+												
 												message_bytes = base64.urlsafe_b64decode(base64_bytes)
 												descbase64 = message_bytes.decode('ascii')
 
@@ -4584,6 +4587,7 @@ async def on_message(message):
 												stars,objectplus,levelname,creator,ratingemote,stars,downloads,likes,likesemote,description,coins,verifiedcoins,lengthvalue,idlevel,version,gdversion,color = reqsearch(level)
 												description += '=' * (-len(description) % 4)
 												base64_bytes = description.encode('ascii')
+												
 												message_bytes = base64.urlsafe_b64decode(base64_bytes)
 												descbase64 = message_bytes.decode('ascii')
 
@@ -4821,6 +4825,7 @@ async def on_message(message):
 													stars,objectplus,levelname,creator,ratingemote,stars,downloads,likes,likesemote,description,coins,verifiedcoins,lengthvalue,idlevel,version,gdversion,color = reqsearch(level)
 													description += '=' * (-len(description) % 4)
 													base64_bytes = description.encode('ascii')
+													
 													message_bytes = base64.urlsafe_b64decode(base64_bytes)
 													descbase64 = message_bytes.decode('ascii')
 
@@ -5693,6 +5698,7 @@ async def on_message(message):
 												stars,objectplus,levelname,creator,ratingemote,stars,downloads,likes,likesemote,description,coins,verifiedcoins,lengthvalue,idlevel,version,gdversion,color = reqsearch(level)
 												description += '=' * (-len(description) % 4)
 												base64_bytes = description.encode('ascii')
+												
 												message_bytes = base64.urlsafe_b64decode(base64_bytes)
 												descbase64 = message_bytes.decode('ascii')
 
@@ -5991,6 +5997,7 @@ async def on_message(message):
 												stars,objectplus,levelname,creator,ratingemote,stars,downloads,likes,likesemote,description,coins,verifiedcoins,lengthvalue,idlevel,version,gdversion,color = reqsearch(level)
 												description += '=' * (-len(description) % 4)
 												base64_bytes = description.encode('ascii')
+												
 												message_bytes = base64.urlsafe_b64decode(base64_bytes)
 												descbase64 = message_bytes.decode('ascii')
 
@@ -6299,6 +6306,7 @@ async def on_message(message):
 												stars,objectplus,levelname,creator,ratingemote,stars,downloads,likes,likesemote,description,coins,verifiedcoins,lengthvalue,idlevel,version,gdversion,color = reqsearch(level)
 												description += '=' * (-len(description) % 4)
 												base64_bytes = description.encode('ascii')
+												
 												message_bytes = base64.urlsafe_b64decode(base64_bytes)
 												descbase64 = message_bytes.decode('ascii')
 
@@ -6597,6 +6605,7 @@ async def on_message(message):
 												stars,objectplus,levelname,creator,ratingemote,stars,downloads,likes,likesemote,description,coins,verifiedcoins,lengthvalue,idlevel,version,gdversion,color = reqsearch(level)
 												description += '=' * (-len(description) % 4)
 												base64_bytes = description.encode('ascii')
+												
 												message_bytes = base64.urlsafe_b64decode(base64_bytes)
 												descbase64 = message_bytes.decode('ascii')
 
@@ -6901,6 +6910,7 @@ async def on_message(message):
 											stars,objectplus,levelname,creator,ratingemote,stars,downloads,likes,likesemote,description,coins,verifiedcoins,lengthvalue,idlevel,version,gdversion,color = reqsearch(level)
 											description += '=' * (-len(description) % 4)
 											base64_bytes = description.encode('ascii')
+											
 											message_bytes = base64.urlsafe_b64decode(base64_bytes)
 											descbase64 = message_bytes.decode('ascii')
 
@@ -7203,6 +7213,7 @@ async def on_message(message):
 											stars,objectplus,levelname,creator,ratingemote,stars,downloads,likes,likesemote,description,coins,verifiedcoins,lengthvalue,idlevel,version,gdversion,color = reqsearch(level)
 											description += '=' * (-len(description) % 4)
 											base64_bytes = description.encode('ascii')
+											
 											message_bytes = base64.urlsafe_b64decode(base64_bytes)
 											descbase64 = message_bytes.decode('ascii')
 
@@ -7288,7 +7299,7 @@ async def on_message(message):
 											embed3 = discord.Embed(title=f'{successtitle}', color=0x00ff00)
 											embed3.add_field(name=f'`{level}` (**{levelname}** {byclient2} **{creator}**) {successreviewed}', value='\u200b')
 											await message.channel.send(embed=embed3)
-											delete = cursor.execute(f"DELETE FROM levels WHERE levelid = %s AND server = %s", (level, server))
+											delete = cursor.execute(f"DELETE FROM levels WHERE levelid = %s AND server = %s", (level, serverid))
 											conn.commit()
 
 											cursor.execute(f"SELECT levelreviewedcount FROM users WHERE userid = {jaj}")
@@ -7736,6 +7747,7 @@ async def on_message(message):
 		
 												description += '=' * (-len(description) % 4)
 												base64_bytes = description.encode('ascii')
+												
 												message_bytes = base64.urlsafe_b64decode(base64_bytes)
 												descbase64 = message_bytes.decode('ascii')
 
@@ -7865,6 +7877,7 @@ async def on_message(message):
 		
 												description += '=' * (-len(description) % 4)
 												base64_bytes = description.encode('ascii')
+												
 												message_bytes = base64.urlsafe_b64decode(base64_bytes)
 												descbase64 = message_bytes.decode('ascii')
 
@@ -7994,6 +8007,7 @@ async def on_message(message):
 		
 												description += '=' * (-len(description) % 4)
 												base64_bytes = description.encode('ascii')
+												
 												message_bytes = base64.urlsafe_b64decode(base64_bytes)
 												descbase64 = message_bytes.decode('ascii')
 
@@ -8123,6 +8137,7 @@ async def on_message(message):
 		
 												description += '=' * (-len(description) % 4)
 												base64_bytes = description.encode('ascii')
+												
 												message_bytes = base64.urlsafe_b64decode(base64_bytes)
 												descbase64 = message_bytes.decode('ascii')
 
@@ -8252,6 +8267,7 @@ async def on_message(message):
 		
 												description += '=' * (-len(description) % 4)
 												base64_bytes = description.encode('ascii')
+												
 												message_bytes = base64.urlsafe_b64decode(base64_bytes)
 												descbase64 = message_bytes.decode('ascii')
 
@@ -8381,6 +8397,7 @@ async def on_message(message):
 		
 												description += '=' * (-len(description) % 4)
 												base64_bytes = description.encode('ascii')
+												
 												message_bytes = base64.urlsafe_b64decode(base64_bytes)
 												descbase64 = message_bytes.decode('ascii')
 
@@ -8510,6 +8527,7 @@ async def on_message(message):
 		
 												description += '=' * (-len(description) % 4)
 												base64_bytes = description.encode('ascii')
+												
 												message_bytes = base64.urlsafe_b64decode(base64_bytes)
 												descbase64 = message_bytes.decode('ascii')
 
@@ -8639,6 +8657,7 @@ async def on_message(message):
 		
 												description += '=' * (-len(description) % 4)
 												base64_bytes = description.encode('ascii')
+												
 												message_bytes = base64.urlsafe_b64decode(base64_bytes)
 												descbase64 = message_bytes.decode('ascii')
 
@@ -8768,6 +8787,7 @@ async def on_message(message):
 		
 												description += '=' * (-len(description) % 4)
 												base64_bytes = description.encode('ascii')
+												
 												message_bytes = base64.urlsafe_b64decode(base64_bytes)
 												descbase64 = message_bytes.decode('ascii')
 
@@ -8898,6 +8918,7 @@ async def on_message(message):
 			
 													description += '=' * (-len(description) % 4)
 													base64_bytes = description.encode('ascii')
+													
 													message_bytes = base64.urlsafe_b64decode(base64_bytes)
 													descbase64 = message_bytes.decode('ascii')
 
@@ -9027,6 +9048,7 @@ async def on_message(message):
 			
 													description += '=' * (-len(description) % 4)
 													base64_bytes = description.encode('ascii')
+													
 													message_bytes = base64.urlsafe_b64decode(base64_bytes)
 													descbase64 = message_bytes.decode('ascii')
 
@@ -9156,6 +9178,7 @@ async def on_message(message):
 			
 													description += '=' * (-len(description) % 4)
 													base64_bytes = description.encode('ascii')
+													
 													message_bytes = base64.urlsafe_b64decode(base64_bytes)
 													descbase64 = message_bytes.decode('ascii')
 
@@ -9285,6 +9308,7 @@ async def on_message(message):
 			
 													description += '=' * (-len(description) % 4)
 													base64_bytes = description.encode('ascii')
+													
 													message_bytes = base64.urlsafe_b64decode(base64_bytes)
 													descbase64 = message_bytes.decode('ascii')
 
