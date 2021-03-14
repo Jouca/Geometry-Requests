@@ -104,6 +104,7 @@ CREATE TABLE `maintenance` (
   `reqsearch` int(4) NOT NULL,
   `reqlevel` int(4) NOT NULL,
   `reqqueue` int(4) NOT NULL,
+  `reqmodqueue` int(4) NOT NULL,
   `reqmyqueue` int(4) NOT NULL,
   `reqreview` int(4) NOT NULL,
   `reqsend` int(4) NOT NULL,

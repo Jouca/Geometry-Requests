@@ -5206,8 +5206,277 @@ async def on_message(message):
 
 				pages = [embed1,embed2,embed3,embed4,embed5,embed6,embed7,embed8,embed9,embed10,embed11,embed12,embed13,embed14,embed15,embed16,embed17,embed18,embed19,embed20]
 				
+				datatest = datas
+				o=-1
+				for l in range(len(datatest)):
+					o+=1
+					if str(datatest[o][0]) not in levels:
+						del datatest[o]
+						o-=1
+
 				for h in range(len(result)):
-					video = datas[h][1]
+					video = datatest[h][1]
+					if current > maxshow:
+						maxshow += 5
+						pageselect += 1
+						pages[pageselect].set_thumbnail(url=(iconprofile))	
+					current += 1
+					queueconstructor(pageselect,result[h],video,h+1,levels[h],pages,creators[h])
+
+				def check(reaction, user):
+					return user == message.author
+
+				i = 0
+				reaction = None
+
+				await msg.delete()
+				msg1 = await message.channel.send(embed=embed1)
+
+				if pageselect <= 1:
+					return
+
+				await msg1.add_reaction(right)
+
+				while True:
+					if str(reaction) == right:
+						i += 1
+						if i+1>=maxpage:
+							await msg1.clear_reactions()
+							await msg1.add_reaction(left)
+							await msg1.edit(embed = pages[i])
+						else:
+							await msg1.add_reaction(left)
+							await msg1.add_reaction(right)
+							await msg1.edit(embed = pages[i])
+					if str(reaction) == left:
+						i -= 1
+						if i<=minpage:
+							await msg1.clear_reactions()
+							await msg1.add_reaction(right)
+							await msg1.edit(embed = pages[i])
+						else:
+							await msg1.add_reaction(left)
+							await msg1.add_reaction(right)
+							await msg1.edit(embed = pages[i])
+
+					try:
+						reaction, user = await client.wait_for('reaction_add', timeout = 15.0, check = check)
+						await msg1.remove_reaction(reaction, user)
+					except:
+						break
+				await msg1.clear_reactions()
+				return
+
+		if msg.startswith("modqueue"):
+			try:
+				conn = MC.connect(host = dbhost, database = dbdatabase, user = dbuser, password = dbpassword)
+				cursor = conn.cursor(buffered=True)
+			except MC.Error as err:
+				if err.errno == errorcode.ER_ACCESS_DENIED_ERROR:
+					print("Something is not right with your username or your password")
+					return
+				elif err.errno == errorcode.ER_BAD_DB_ERROR:
+					print("Database does not exist")
+					return
+				else:
+					print(err)
+					return
+			else:
+				author = message.author.id
+				serverid = message.guild.id
+
+				maincommand = "reqmodqueue"
+				checkmaintenance = checkmaintenance(maincommand)
+				if checkmaintenance == "yes":
+					embed = discord.Embed(title="", color=0xff0000)
+					embed.add_field(name=f'Error. <:error:472907618386575370>', value=f"**The command is under maintenance, please try again later.**")
+					msg2 = await message.channel.send(embed=embed)
+					time.sleep(5)
+					await msg2.delete()
+					return
+				
+				cursor.execute(f"SELECT language FROM users WHERE userid = {author}")
+				try:
+					language = cursor.fetchone()[0]
+				except TypeError:
+					language = language_default
+				language2 = language
+				translate_messages = open(f"language/client/reqmodqueue/{language2}.txt").read().splitlines()
+
+				loadingtitle = translate_messages[0]
+				loadingdesc = translate_messages[1]
+
+				queuetitle = translate_messages[3]
+				queuedesc = translate_messages[4]
+				by = translate_messages[5]
+				information = translate_messages[6]
+				page = translate_messages[7]
+				scrollpage = translate_messages[8]
+				totallevels = translate_messages[9]
+
+				errorpermission = translate_messages[11]
+				
+				translate_cooldown_messages = open(f"language/client/cooldown-{language2}.txt").read().splitlines()
+				errorcooldown1 = translate_cooldown_messages[0]
+				errorcooldown2 = translate_cooldown_messages[1]
+				errormessage = translate_cooldown_messages[3]
+				
+				#cooldowncheck(author)
+				alwayscooldown,secondcooldown = cooldowncheck(author)
+				
+				if alwayscooldown == 1:
+					embed = discord.Embed(title="", color=0xff0000)
+					embed.add_field(name=f'{errormessage}', value=f"{errorcooldown1} {secondcooldown} {errorcooldown2}")
+					msg2 = await message.channel.send(embed=embed)
+					time.sleep(5)
+					await msg2.delete()
+					return
+				sql = "INSERT INTO cooldowns (userid, cooldown) VALUES (%s, %s)"
+				datetime_object_cooldown = datetime_object + datetime.timedelta(seconds=30)
+				val = (author, datetime_object_cooldown)
+				cursor.execute(sql,val)
+				conn.commit()
+
+				embed = discord.Embed(title=f"{loadingtitle}", color=0xffce08)
+				embed.add_field(name=f'{loadingdesc}', value="\u200b")
+				msg = await message.channel.send(embed=embed)
+
+				cursor.execute(f"SELECT userid FROM GDmoderators WHERE userid = {author} LIMIT 1")
+				gdmod = cursor.fetchone()
+				if gdmod is None:
+					await msg.delete()
+					embed = discord.Embed(title="", color=0xff0000)
+					embed.add_field(name=f'{errormessage}', value=f"{errorpermission}")
+					msg2 = await message.channel.send(embed=embed)
+					time.sleep(5)
+					await msg2.delete()
+					return
+
+				var = message.guild.id
+
+				cursor.execute("SELECT levelid,video FROM levels WHERE server = {} AND reviewed = 'yes' ORDER BY ID ASC LIMIT 100".format(var))
+				datas = cursor.fetchall()
+				levels = []
+				creators = []
+
+				for k in range(len(datas)):
+					levels.append(str(datas[k][0]))
+
+				result = queuedecryptor(levels)
+
+				# Getting level datas
+				levels = []
+				result = result.split("#")
+				result1 = result[0]
+				#Getting Username
+				result2 = result[1]
+				result = result1.split("|")
+
+				result2 = result2.split("|")
+
+				for g in range(len(result)):
+					levelids = result[g]
+					levelids = levelids.split(":")
+					levels.append(levelids[1])
+					for k in range(len(result2)):
+						accountid = result2[k]
+						accountid = accountid.split(":")
+						if levelids[7] == accountid[0]:
+							creatornamed = result2[k]
+							creatornamed = creatornamed.split(":")
+							creators.append(creatornamed[1])
+							break
+
+				minpage = 0
+				maxpage = round((len(levels)+5-1) // 5)
+
+				pageselect = 0
+				current = 1
+				maxshow = 5
+
+				totallevelsresult = len(levels)
+
+				embed1 = discord.Embed(title=f"{queuetitle} "+str(message.guild.name), color=0x00ff00)
+				embed1.add_field(name=f'{queuedesc}', value="\u200b", inline=False)
+				embed1.add_field(name=f'{totallevels} {totallevelsresult}', value="\u200b", inline=False)
+				embed2 = discord.Embed(title=f"{queuetitle} "+str(message.guild.name), color=0x00ff00)
+				embed2.add_field(name=f'{queuedesc}', value="\u200b", inline=False)
+				embed2.add_field(name=f'{totallevels} {totallevelsresult}', value="\u200b", inline=False)
+				embed3 = discord.Embed(title=f"{queuetitle} "+str(message.guild.name), color=0x00ff00)
+				embed3.add_field(name=f'{queuedesc}', value="\u200b", inline=False)
+				embed3.add_field(name=f'{totallevels} {totallevelsresult}', value="\u200b", inline=False)
+				embed4 = discord.Embed(title=f"{queuetitle} "+str(message.guild.name), color=0x00ff00)
+				embed4.add_field(name=f'{queuedesc}', value="\u200b", inline=False)
+				embed4.add_field(name=f'{totallevels} {totallevelsresult}', value="\u200b", inline=False)
+				embed5 = discord.Embed(title=f"{queuetitle} "+str(message.guild.name), color=0x00ff00)
+				embed5.add_field(name=f'{queuedesc}', value="\u200b", inline=False)
+				embed5.add_field(name=f'{totallevels} {totallevelsresult}', value="\u200b", inline=False)
+				embed6 = discord.Embed(title=f"{queuetitle} "+str(message.guild.name), color=0x00ff00)
+				embed6.add_field(name=f'{queuedesc}', value="\u200b", inline=False)
+				embed6.add_field(name=f'{totallevels} {totallevelsresult}', value="\u200b", inline=False)
+				embed7 = discord.Embed(title=f"{queuetitle} "+str(message.guild.name), color=0x00ff00)
+				embed7.add_field(name=f'{queuedesc}', value="\u200b", inline=False)
+				embed7.add_field(name=f'{totallevels} {totallevelsresult}', value="\u200b", inline=False)
+				embed8 = discord.Embed(title=f"{queuetitle} "+str(message.guild.name), color=0x00ff00)
+				embed8.add_field(name=f'{queuedesc}', value="\u200b", inline=False)
+				embed8.add_field(name=f'{totallevels} {totallevelsresult}', value="\u200b", inline=False)
+				embed9 = discord.Embed(title=f"{queuetitle} "+str(message.guild.name), color=0x00ff00)
+				embed9.add_field(name=f'{queuedesc}', value="\u200b", inline=False)
+				embed9.add_field(name=f'{totallevels} {totallevelsresult}', value="\u200b", inline=False)
+				embed10 = discord.Embed(title=f"{queuetitle} "+str(message.guild.name), color=0x00ff00)
+				embed10.add_field(name=f'{queuedesc}', value="\u200b", inline=False)
+				embed10.add_field(name=f'{totallevels} {totallevelsresult}', value="\u200b", inline=False)
+				embed11 = discord.Embed(title=f"{queuetitle} "+str(message.guild.name), color=0x00ff00)
+				embed11.add_field(name=f'{queuedesc}', value="\u200b", inline=False)
+				embed11.add_field(name=f'{totallevels} {totallevelsresult}', value="\u200b", inline=False)
+				embed12 = discord.Embed(title=f"{queuetitle} "+str(message.guild.name), color=0x00ff00)
+				embed12.add_field(name=f'{queuedesc}', value="\u200b", inline=False)
+				embed12.add_field(name=f'{totallevels} {totallevelsresult}', value="\u200b", inline=False)
+				embed13 = discord.Embed(title=f"{queuetitle} "+str(message.guild.name), color=0x00ff00)
+				embed13.add_field(name=f'{queuedesc}', value="\u200b", inline=False)
+				embed13.add_field(name=f'{totallevels} {totallevelsresult}', value="\u200b", inline=False)
+				embed14 = discord.Embed(title=f"{queuetitle} "+str(message.guild.name), color=0x00ff00)
+				embed14.add_field(name=f'{queuedesc}', value="\u200b", inline=False)
+				embed14.add_field(name=f'{totallevels} {totallevelsresult}', value="\u200b", inline=False)
+				embed15 = discord.Embed(title=f"{queuetitle} "+str(message.guild.name), color=0x00ff00)
+				embed15.add_field(name=f'{queuedesc}', value="\u200b", inline=False)
+				embed15.add_field(name=f'{totallevels} {totallevelsresult}', value="\u200b", inline=False)
+				embed16 = discord.Embed(title=f"{queuetitle} "+str(message.guild.name), color=0x00ff00)
+				embed16.add_field(name=f'{queuedesc}', value="\u200b", inline=False)
+				embed16.add_field(name=f'{totallevels} {totallevelsresult}', value="\u200b", inline=False)
+				embed17 = discord.Embed(title=f"{queuetitle} "+str(message.guild.name), color=0x00ff00)
+				embed17.add_field(name=f'{queuedesc}', value="\u200b", inline=False)
+				embed17.add_field(name=f'{totallevels} {totallevelsresult}', value="\u200b", inline=False)
+				embed18 = discord.Embed(title=f"{queuetitle} "+str(message.guild.name), color=0x00ff00)
+				embed18.add_field(name=f'{queuedesc}', value="\u200b", inline=False)
+				embed18.add_field(name=f'{totallevels} {totallevelsresult}', value="\u200b", inline=False)
+				embed19 = discord.Embed(title=f"{queuetitle} "+str(message.guild.name), color=0x00ff00)
+				embed19.add_field(name=f'{queuedesc}', value="\u200b", inline=False)
+				embed19.add_field(name=f'{totallevels} {totallevelsresult}', value="\u200b", inline=False)
+				embed20 = discord.Embed(title=f"{queuetitle} "+str(message.guild.name), color=0x00ff00)
+				embed20.add_field(name=f'{queuedesc}', value="\u200b", inline=False)
+				embed20.add_field(name=f'{totallevels} {totallevelsresult}', value="\u200b", inline=False)
+
+				iconprofile = message.guild.icon_url
+				embed1.set_thumbnail(url=(iconprofile))
+
+				if result == "-1":
+					await msg.delete()
+					msg1 = await message.channel.send(embed=embed1)
+					return
+
+				pages = [embed1,embed2,embed3,embed4,embed5,embed6,embed7,embed8,embed9,embed10,embed11,embed12,embed13,embed14,embed15,embed16,embed17,embed18,embed19,embed20]
+				
+				datatest = datas
+				o=-1
+				for l in range(len(datatest)):
+					o+=1
+					if str(datatest[o][0]) not in levels:
+						del datatest[o]
+						o-=1
+
+				for h in range(len(result)):
+					video = datatest[h][1]
 					if current > maxshow:
 						maxshow += 5
 						pageselect += 1
@@ -5451,6 +5720,14 @@ async def on_message(message):
 					return
 
 				pages = [embed1,embed2,embed3,embed4,embed5,embed6,embed7,embed8,embed9,embed10,embed11,embed12,embed13,embed14,embed15,embed16,embed17,embed18,embed19,embed20]
+				
+				datatest = datas
+				o=-1
+				for l in range(len(datatest)):
+					o+=1
+					if str(datatest[o][0]) not in levels:
+						del datatest[o]
+						o-=1
 				
 				for h in range(len(result)):
 					video = datas[h][1]
