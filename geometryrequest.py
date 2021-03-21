@@ -15813,6 +15813,7 @@ async def on_message(message):
 					return
 			else:
 				authorid = message.author.id
+				serverid = message.guild.id
 
 				maincommand = "reqremove"
 				checkmaintenance = checkmaintenance(maincommand)
@@ -15878,9 +15879,27 @@ async def on_message(message):
 							embed.add_field(name=f'{loadingdesc}', value="\u200b")
 							msg = await message.channel.send(embed=embed)
 
-							cursor.execute(f"SELECT messageid FROM levels WHERE server = {serverid}")
-							messages = cursor.fetchall()
-							print(messages)
+							cursor.execute(f"SELECT levelid FROM levels WHERE server = {serverid}")
+							levels = cursor.fetchall()
+							for i in levels:
+								cursor.execute(f"SELECT ReviewChannel FROM setup WHERE serverid = {serverid}")
+								channelmessageid = cursor.fetchone()[0]
+								channelmessageid = client.get_channel(int(channelmessageid))
+
+								cursor.execute(f"SELECT messageid FROM levels WHERE server = {serverid} AND levelid = {i[0]}")
+								messages = cursor.fetchone()[0]
+								try:
+									msg101 = await channelmessageid.fetch_message(int(messages))
+									await msg101.delete()
+								except:
+									cursor.execute(f"SELECT GDModChannel FROM setup WHERE serverid = {serverid}")
+									channelmessageid = cursor.fetchone()[0]
+									channelmessageid = client.get_channel(int(channelmessageid))
+									try:
+										msg101 = await channelmessageid.fetch_message(int(messages))
+										await msg101.delete()
+									except:
+										pass
 
 							cursor.execute(f"DELETE FROM levels WHERE server = {serverid}")
 							conn.commit()
