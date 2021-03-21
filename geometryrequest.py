@@ -5103,6 +5103,14 @@ async def on_message(message):
 
 				result = queuedecryptor(levels)
 
+				embed400 = discord.Embed(title=f"{queuetitle} "+str(message.guild.name), color=0x00ff00)
+				embed400.add_field(name=f'{queuedesc}', value="\u200b", inline=False)
+
+				if len(levels) == 0:
+					await msg.delete()
+					msg1 = await message.channel.send(embed=embed400)
+					return
+
 				# Getting level datas
 				levels = []
 				result = result.split("#")
@@ -5354,13 +5362,21 @@ async def on_message(message):
 
 				var = message.guild.id
 
-				cursor.execute("SELECT levelid,video FROM levels WHERE server = {} AND reviewed = 'yes' ORDER BY ID ASC LIMIT 100".format(var))
+				cursor.execute("SELECT levelid,video FROM levels WHERE server = {} AND reviewed = 'yes' ORDER BY messageid ASC LIMIT 100".format(var))
 				datas = cursor.fetchall()
 				levels = []
 				creators = []
 
 				for k in range(len(datas)):
 					levels.append(str(datas[k][0]))
+
+				embed400 = discord.Embed(title=f"{queuetitle} "+str(message.guild.name), color=0x00ff00)
+				embed400.add_field(name=f'{queuedesc}', value="\u200b", inline=False)
+
+				if len(levels) == 0:
+					await msg.delete()
+					msg1 = await message.channel.send(embed=embed400)
+					return
 
 				result = queuedecryptor(levels)
 
@@ -5614,6 +5630,14 @@ async def on_message(message):
 
 				for k in range(len(datas)):
 					levels.append(str(datas[k][0]))
+
+				embed400 = discord.Embed(title=f"{queuetitle} "+str(message.guild.name), color=0x00ff00)
+				embed400.add_field(name=f'{queuedesc}', value="\u200b", inline=False)
+
+				if len(levels) == 0:
+					await msg.delete()
+					msg1 = await message.channel.send(embed=embed400)
+					return
 
 				result = queuedecryptor(levels)
 
@@ -6046,18 +6070,18 @@ async def on_message(message):
 													pass
 												await msg.delete()
 												
+												cursor.execute(f"SELECT ReviewChannel FROM setup WHERE serverid = {serverid}")
+												channelmessageid = cursor.fetchone()[0]
+												channelmessageid = client.get_channel(int(channelmessageid))
+
 												cursor.execute(f"SELECT messageid FROM levels WHERE server = {serverid} AND levelid = {level}")
-												messages = cursor.fetchall()
-												for row in messages:
-													try:
-														msg101 = await message.channel.fetch_message(int(row[0]))
-													except:
-														msg101 = None
-													else:
-														try:
-															await msg101.delete()
-														except TypeError:
-															pass
+												messages = cursor.fetchone()[0]
+												msg101 = await channelmessageid.fetch_message(int(messages))
+
+												try:
+													await msg101.delete()
+												except:
+													pass
 												
 												embed3 = discord.Embed(title=f'{successtitle}', color=0x00ff00)
 												embed3.add_field(name=f'`{level}` (**{levelname}** {byclient2} **{creator}**) {successreviewed}', value='\u200b')
@@ -6067,6 +6091,12 @@ async def on_message(message):
 												channel3 = client.get_channel(int(gdmodchannel123[0]))
 												embed4 = discord.Embed(title=f'{gdmodlevelapproved}', color=0x00ff00)
 												embed4.add_field(name=f'`{level}` (**{levelname}** {byserver} **{creator}**)', value='\u200b')
+
+												cursor.execute(f"SELECT video FROM levels WHERE server = {serverid} AND levelid = {level}")
+												videotype = cursor.fetchone()[0]
+												if videotype is not None:
+													embed4.add_field(name=f'\nVideo :', value=f"{videotype}", inline=False)
+												
 												pognyanya = cursor.execute(f"SELECT userid FROM GDmoderators WHERE serverid = {serverid} LIMIT 1")
 												gdmodchannel1234 = cursor.fetchone()
 												msgmod = await channel3.send(f"<@{gdmodchannel1234[0]}>",embed=embed4)
@@ -6344,18 +6374,18 @@ async def on_message(message):
 													pass
 												await msg.delete()
 												
+												cursor.execute(f"SELECT ReviewChannel FROM setup WHERE serverid = {serverid}")
+												channelmessageid = cursor.fetchone()[0]
+												channelmessageid = client.get_channel(int(channelmessageid))
+
 												cursor.execute(f"SELECT messageid FROM levels WHERE server = {serverid} AND levelid = {level}")
-												messages = cursor.fetchall()
-												for row in messages:
-													try:
-														msg101 = await message.channel.fetch_message(int(row[0]))
-													except:
-														msg101 = None
-													else:
-														try:
-															await msg101.delete()
-														except TypeError:
-															pass
+												messages = cursor.fetchone()[0]
+												msg101 = await channelmessageid.fetch_message(int(messages))
+
+												try:
+													await msg101.delete()
+												except:
+													pass
 												
 												embed3 = discord.Embed(title=f'{successtitle}', color=0x00ff00)
 												embed3.add_field(name=f'`{level}` (**{levelname}** {byclient2} **{creator}**) {successreviewed}', value='\u200b')
@@ -6653,18 +6683,18 @@ async def on_message(message):
 												except discord.errors.Forbidden:
 													pass
 													
+												cursor.execute(f"SELECT ReviewChannel FROM setup WHERE serverid = {serverid}")
+												channelmessageid = cursor.fetchone()[0]
+												channelmessageid = client.get_channel(int(channelmessageid))
+
 												cursor.execute(f"SELECT messageid FROM levels WHERE server = {serverid} AND levelid = {level}")
-												messages = cursor.fetchall()
-												for row in messages:
-													try:
-														msg101 = await message.channel.fetch_message(int(row[0]))
-													except:
-														msg101 = None
-													else:
-														try:
-															await msg101.delete()
-														except TypeError:
-															pass
+												messages = cursor.fetchone()[0]
+												msg101 = await channelmessageid.fetch_message(int(messages))
+
+												try:
+													await msg101.delete()
+												except:
+													pass
 												
 												await msg.delete()
 												embed3 = discord.Embed(title=f'{successtitle}', color=0x00ff00)
@@ -6675,6 +6705,12 @@ async def on_message(message):
 												channel3 = client.get_channel(int(gdmodchannel123))
 												embed4 = discord.Embed(title=f'{gdmodlevelapproved}', color=0x00ff00)
 												embed4.add_field(name=f'`{level}` (**{levelname}** {byserver} **{creator}**)', value='\u200b')
+
+												cursor.execute(f"SELECT video FROM levels WHERE server = {serverid} AND levelid = {level}")
+												videotype = cursor.fetchone()[0]
+												if videotype is not None:
+													embed4.add_field(name=f'\nVideo :', value=f"{videotype}", inline=False)
+												
 												pognyanya = cursor.execute(f"SELECT userid FROM GDmoderators WHERE serverid = {serverid} LIMIT 1")
 												gdmodchannel1234 = cursor.fetchone()[0]
 												msgmod = await channel3.send(f"<@{gdmodchannel1234}>",embed=embed4)
@@ -6951,18 +6987,18 @@ async def on_message(message):
 												except discord.errors.Forbidden:
 													pass
 													
+												cursor.execute(f"SELECT ReviewChannel FROM setup WHERE serverid = {serverid}")
+												channelmessageid = cursor.fetchone()[0]
+												channelmessageid = client.get_channel(int(channelmessageid))
+
 												cursor.execute(f"SELECT messageid FROM levels WHERE server = {serverid} AND levelid = {level}")
-												messages = cursor.fetchall()
-												for row in messages:
-													try:
-														msg101 = await message.channel.fetch_message(int(row[0]))
-													except:
-														msg101 = None
-													else:
-														try:
-															await msg101.delete()
-														except TypeError:
-															pass
+												messages = cursor.fetchone()[0]
+												msg101 = await channelmessageid.fetch_message(int(messages))
+
+												try:
+													await msg101.delete()
+												except:
+													pass
 												
 												await msg.delete()
 												embed3 = discord.Embed(title=f'{successtitle}', color=0x00ff00)
@@ -7256,18 +7292,18 @@ async def on_message(message):
 											except discord.errors.Forbidden:
 												pass
 												
+											cursor.execute(f"SELECT ReviewChannel FROM setup WHERE serverid = {serverid}")
+											channelmessageid = cursor.fetchone()[0]
+											channelmessageid = client.get_channel(int(channelmessageid))
+
 											cursor.execute(f"SELECT messageid FROM levels WHERE server = {serverid} AND levelid = {level}")
-											messages = cursor.fetchall()
-											for row in messages:
-												try:
-													msg101 = await message.channel.fetch_message(int(row[0]))
-												except:
-													msg101 = None
-												else:
-													try:
-														await msg101.delete()
-													except TypeError:
-														pass
+											messages = cursor.fetchone()[0]
+											msg101 = await channelmessageid.fetch_message(int(messages))
+
+											try:
+												await msg101.delete()
+											except:
+												pass
 											
 											await msg.delete()
 											embed3 = discord.Embed(title=f'{successtitle}', color=0x00ff00)
@@ -7559,18 +7595,18 @@ async def on_message(message):
 											except discord.errors.Forbidden:
 												pass
 												
+											cursor.execute(f"SELECT ReviewChannel FROM setup WHERE serverid = {serverid}")
+											channelmessageid = cursor.fetchone()[0]
+											channelmessageid = client.get_channel(int(channelmessageid))
+
 											cursor.execute(f"SELECT messageid FROM levels WHERE server = {serverid} AND levelid = {level}")
-											messages = cursor.fetchall()
-											for row in messages:
-												try:
-													msg101 = await message.channel.fetch_message(int(row[0]))
-												except:
-													msg101 = None
-												else:
-													try:
-														await msg101.delete()
-													except TypeError:
-														pass
+											messages = cursor.fetchone()[0]
+											msg101 = await channelmessageid.fetch_message(int(messages))
+
+											try:
+												await msg101.delete()
+											except:
+												pass
 											
 											await msg.delete()
 											embed3 = discord.Embed(title=f'{successtitle}', color=0x00ff00)
@@ -8008,6 +8044,26 @@ async def on_message(message):
 											embed4 = discord.Embed(title=f'{successtitle}', color=0x00ff00)
 											embed4.add_field(name=f'{thelevel} `{level}` (**{levelname}** {by} **{creator}**) {successsend} **AUTO 1<:starrate:718204629858517003> RATE** !', value='\u200b')
 											await message.channel.send(embed=embed4)
+
+											cursor.execute(f"SELECT ReviewChannel FROM setup WHERE serverid = {serverid}")
+											channelmessageid = cursor.fetchone()[0]
+											channelmessageid = client.get_channel(int(channelmessageid))
+
+											cursor.execute(f"SELECT messageid FROM levels WHERE server = {serverid} AND levelid = {level}")
+											messages = cursor.fetchone()[0]
+											try:
+												msg101 = await channelmessageid.fetch_message(int(messages))
+												await msg101.delete()
+											except:
+												cursor.execute(f"SELECT GDModChannel FROM setup WHERE serverid = {serverid}")
+												channelmessageid = cursor.fetchone()[0]
+												channelmessageid = client.get_channel(int(channelmessageid))
+												try:
+													msg101 = await channelmessageid.fetch_message(int(messages))
+													await msg101.delete()
+												except:
+													pass
+
 											delete = cursor.execute(f"DELETE FROM levels WHERE levelid = %s and server = {serverid} AND server = {serverid}", (level, ))
 											conn.commit()
 											
@@ -8096,19 +8152,6 @@ async def on_message(message):
 													await channel.send(embed=embed5)
 												except discord.errors.Forbidden:
 													pass
-											
-											cursor.execute(f"SELECT messageid FROM levels WHERE server = {serverid} AND levelid = {level}")
-											messages = cursor.fetchall()
-											for row in messages:
-												try:
-													msg101 = await message.channel.fetch_message(int(row[0]))
-												except:
-													msg101 = None
-												else:
-													try:
-														await msg101.delete()
-													except TypeError:
-														pass
 											return
 										elif star == "2":
 											await msg.delete()
@@ -8134,6 +8177,26 @@ async def on_message(message):
 											embed4 = discord.Embed(title=f'{successtitle}', color=0x00ff00)
 											embed4.add_field(name=f'{thelevel} `{level}` (**{levelname}** {by} **{creator}**) {successsend} **EASY 2<:starrate:718204629858517003> RATE** !', value='\u200b')
 											await message.channel.send(embed=embed4)
+
+											cursor.execute(f"SELECT ReviewChannel FROM setup WHERE serverid = {serverid}")
+											channelmessageid = cursor.fetchone()[0]
+											channelmessageid = client.get_channel(int(channelmessageid))
+
+											cursor.execute(f"SELECT messageid FROM levels WHERE server = {serverid} AND levelid = {level}")
+											messages = cursor.fetchone()[0]
+											try:
+												msg101 = await channelmessageid.fetch_message(int(messages))
+												await msg101.delete()
+											except:
+												cursor.execute(f"SELECT GDModChannel FROM setup WHERE serverid = {serverid}")
+												channelmessageid = cursor.fetchone()[0]
+												channelmessageid = client.get_channel(int(channelmessageid))
+												try:
+													msg101 = await channelmessageid.fetch_message(int(messages))
+													await msg101.delete()
+												except:
+													pass
+
 											delete = cursor.execute(f"DELETE FROM levels WHERE levelid = %s and server = %s", (level, serverid))
 											conn.commit()
 											
@@ -8226,19 +8289,6 @@ async def on_message(message):
 													await channel.send(embed=embed5)
 												except discord.errors.Forbidden:
 													pass
-													
-											cursor.execute(f"SELECT messageid FROM levels WHERE server = {serverid} AND levelid = {level}")
-											messages = cursor.fetchall()
-											for row in messages:
-												try:
-													msg101 = await message.channel.fetch_message(int(row[0]))
-												except:
-													msg101 = None
-												else:
-													try:
-														await msg101.delete()
-													except TypeError:
-														pass
 											return
 										elif star == "3":
 											await msg.delete()
@@ -8264,6 +8314,26 @@ async def on_message(message):
 											embed4 = discord.Embed(title=f'{successtitle}', color=0x00ff00)
 											embed4.add_field(name=f'{thelevel} `{level}` (**{levelname}** {by} **{creator}**) {successsend} **NORMAL 3<:starrate:718204629858517003> RATE** !', value='\u200b')
 											await message.channel.send(embed=embed4)
+
+											cursor.execute(f"SELECT ReviewChannel FROM setup WHERE serverid = {serverid}")
+											channelmessageid = cursor.fetchone()[0]
+											channelmessageid = client.get_channel(int(channelmessageid))
+
+											cursor.execute(f"SELECT messageid FROM levels WHERE server = {serverid} AND levelid = {level}")
+											messages = cursor.fetchone()[0]
+											try:
+												msg101 = await channelmessageid.fetch_message(int(messages))
+												await msg101.delete()
+											except:
+												cursor.execute(f"SELECT GDModChannel FROM setup WHERE serverid = {serverid}")
+												channelmessageid = cursor.fetchone()[0]
+												channelmessageid = client.get_channel(int(channelmessageid))
+												try:
+													msg101 = await channelmessageid.fetch_message(int(messages))
+													await msg101.delete()
+												except:
+													pass
+											
 											delete = cursor.execute(f"DELETE FROM levels WHERE levelid = %s and server = %s", (level, serverid))
 											conn.commit()
 											
@@ -8356,19 +8426,6 @@ async def on_message(message):
 													await channel.send(embed=embed5)
 												except discord.errors.Forbidden:
 													pass
-													
-											cursor.execute(f"SELECT messageid FROM levels WHERE server = {serverid} AND levelid = {level}")
-											messages = cursor.fetchall()
-											for row in messages:
-												try:
-													msg101 = await message.channel.fetch_message(int(row[0]))
-												except:
-													msg101 = None
-												else:
-													try:
-														await msg101.delete()
-													except TypeError:
-														pass
 											return
 										elif star == "4":
 											await msg.delete()
@@ -8394,6 +8451,26 @@ async def on_message(message):
 											embed4 = discord.Embed(title=f'{successtitle}', color=0x00ff00)
 											embed4.add_field(name=f'{thelevel} `{level}` (**{levelname}** {by} **{creator}**) {successsend} **HARD 4<:starrate:718204629858517003> RATE** !', value='\u200b')
 											await message.channel.send(embed=embed4)
+
+											cursor.execute(f"SELECT ReviewChannel FROM setup WHERE serverid = {serverid}")
+											channelmessageid = cursor.fetchone()[0]
+											channelmessageid = client.get_channel(int(channelmessageid))
+
+											cursor.execute(f"SELECT messageid FROM levels WHERE server = {serverid} AND levelid = {level}")
+											messages = cursor.fetchone()[0]
+											try:
+												msg101 = await channelmessageid.fetch_message(int(messages))
+												await msg101.delete()
+											except:
+												cursor.execute(f"SELECT GDModChannel FROM setup WHERE serverid = {serverid}")
+												channelmessageid = cursor.fetchone()[0]
+												channelmessageid = client.get_channel(int(channelmessageid))
+												try:
+													msg101 = await channelmessageid.fetch_message(int(messages))
+													await msg101.delete()
+												except:
+													pass
+											
 											delete = cursor.execute(f"DELETE FROM levels WHERE levelid = %s and server = %s", (level, serverid))
 											conn.commit()
 											
@@ -8486,19 +8563,6 @@ async def on_message(message):
 													await channel.send(embed=embed5)
 												except discord.errors.Forbidden:
 													pass
-													
-											cursor.execute(f"SELECT messageid FROM levels WHERE server = {serverid} AND levelid = {level}")
-											messages = cursor.fetchall()
-											for row in messages:
-												try:
-													msg101 = await message.channel.fetch_message(int(row[0]))
-												except:
-													msg101 = None
-												else:
-													try:
-														await msg101.delete()
-													except TypeError:
-														pass
 											return
 										elif star == "5":
 											await msg.delete()
@@ -8524,6 +8588,26 @@ async def on_message(message):
 											embed4 = discord.Embed(title=f'{successtitle}', color=0x00ff00)
 											embed4.add_field(name=f'{thelevel} `{level}` (**{levelname}** {by} **{creator}**) {successsend} **HARD 5<:starrate:718204629858517003> RATE** !', value='\u200b')
 											await message.channel.send(embed=embed4)
+
+											cursor.execute(f"SELECT ReviewChannel FROM setup WHERE serverid = {serverid}")
+											channelmessageid = cursor.fetchone()[0]
+											channelmessageid = client.get_channel(int(channelmessageid))
+
+											cursor.execute(f"SELECT messageid FROM levels WHERE server = {serverid} AND levelid = {level}")
+											messages = cursor.fetchone()[0]
+											try:
+												msg101 = await channelmessageid.fetch_message(int(messages))
+												await msg101.delete()
+											except:
+												cursor.execute(f"SELECT GDModChannel FROM setup WHERE serverid = {serverid}")
+												channelmessageid = cursor.fetchone()[0]
+												channelmessageid = client.get_channel(int(channelmessageid))
+												try:
+													msg101 = await channelmessageid.fetch_message(int(messages))
+													await msg101.delete()
+												except:
+													pass
+
 											delete = cursor.execute(f"DELETE FROM levels WHERE levelid = %s and server = %s", (level, serverid))
 											conn.commit()
 											
@@ -8616,19 +8700,6 @@ async def on_message(message):
 													await channel.send(embed=embed5)
 												except discord.errors.Forbidden:
 													pass
-													
-											cursor.execute(f"SELECT messageid FROM levels WHERE server = {serverid} AND levelid = {level}")
-											messages = cursor.fetchall()
-											for row in messages:
-												try:
-													msg101 = await message.channel.fetch_message(int(row[0]))
-												except:
-													msg101 = None
-												else:
-													try:
-														await msg101.delete()
-													except TypeError:
-														pass
 											return
 										elif star == "6":
 											await msg.delete()
@@ -8654,6 +8725,26 @@ async def on_message(message):
 											embed4 = discord.Embed(title=f'{successtitle}', color=0x00ff00)
 											embed4.add_field(name=f'{thelevel} `{level}` (**{levelname}** {by} **{creator}**) {successsend} **HARDER 6<:starrate:718204629858517003> RATE** !', value='\u200b')
 											await message.channel.send(embed=embed4)
+
+											cursor.execute(f"SELECT ReviewChannel FROM setup WHERE serverid = {serverid}")
+											channelmessageid = cursor.fetchone()[0]
+											channelmessageid = client.get_channel(int(channelmessageid))
+
+											cursor.execute(f"SELECT messageid FROM levels WHERE server = {serverid} AND levelid = {level}")
+											messages = cursor.fetchone()[0]
+											try:
+												msg101 = await channelmessageid.fetch_message(int(messages))
+												await msg101.delete()
+											except:
+												cursor.execute(f"SELECT GDModChannel FROM setup WHERE serverid = {serverid}")
+												channelmessageid = cursor.fetchone()[0]
+												channelmessageid = client.get_channel(int(channelmessageid))
+												try:
+													msg101 = await channelmessageid.fetch_message(int(messages))
+													await msg101.delete()
+												except:
+													pass
+
 											delete = cursor.execute(f"DELETE FROM levels WHERE levelid = %s and server = %s", (level, serverid))
 											conn.commit()
 											
@@ -8746,19 +8837,6 @@ async def on_message(message):
 													await channel.send(embed=embed5)
 												except discord.errors.Forbidden:
 													pass
-													
-											cursor.execute(f"SELECT messageid FROM levels WHERE server = {serverid} AND levelid = {level}")
-											messages = cursor.fetchall()
-											for row in messages:
-												try:
-													msg101 = await message.channel.fetch_message(int(row[0]))
-												except:
-													msg101 = None
-												else:
-													try:
-														await msg101.delete()
-													except TypeError:
-														pass
 											return
 										elif star == "7":
 											await msg.delete()
@@ -8784,6 +8862,26 @@ async def on_message(message):
 											embed4 = discord.Embed(title=f'{successtitle}', color=0x00ff00)
 											embed4.add_field(name=f'{thelevel} `{level}` (**{levelname}** {by} **{creator}**) {successsend} **HARDER 7<:starrate:718204629858517003> RATE** !', value='\u200b')
 											await message.channel.send(embed=embed4)
+
+											cursor.execute(f"SELECT ReviewChannel FROM setup WHERE serverid = {serverid}")
+											channelmessageid = cursor.fetchone()[0]
+											channelmessageid = client.get_channel(int(channelmessageid))
+
+											cursor.execute(f"SELECT messageid FROM levels WHERE server = {serverid} AND levelid = {level}")
+											messages = cursor.fetchone()[0]
+											try:
+												msg101 = await channelmessageid.fetch_message(int(messages))
+												await msg101.delete()
+											except:
+												cursor.execute(f"SELECT GDModChannel FROM setup WHERE serverid = {serverid}")
+												channelmessageid = cursor.fetchone()[0]
+												channelmessageid = client.get_channel(int(channelmessageid))
+												try:
+													msg101 = await channelmessageid.fetch_message(int(messages))
+													await msg101.delete()
+												except:
+													pass
+											
 											delete = cursor.execute(f"DELETE FROM levels WHERE levelid = %s and server = %s", (level, serverid))
 											conn.commit()
 											
@@ -8876,19 +8974,6 @@ async def on_message(message):
 													await channel.send(embed=embed5)
 												except discord.errors.Forbidden:
 													pass
-													
-											cursor.execute(f"SELECT messageid FROM levels WHERE server = {serverid} AND levelid = {level}")
-											messages = cursor.fetchall()
-											for row in messages:
-												try:
-													msg101 = await message.channel.fetch_message(int(row[0]))
-												except:
-													msg101 = None
-												else:
-													try:
-														await msg101.delete()
-													except TypeError:
-														pass
 											return
 										elif star == "8":
 											await msg.delete()
@@ -8914,6 +8999,26 @@ async def on_message(message):
 											embed4 = discord.Embed(title=f'{successtitle}', color=0x00ff00)
 											embed4.add_field(name=f'{thelevel} `{level}` (**{levelname}** {by} **{creator}**) {successsend} **INSANE 8<:starrate:718204629858517003> RATE** !', value='\u200b')
 											await message.channel.send(embed=embed4)
+
+											cursor.execute(f"SELECT ReviewChannel FROM setup WHERE serverid = {serverid}")
+											channelmessageid = cursor.fetchone()[0]
+											channelmessageid = client.get_channel(int(channelmessageid))
+
+											cursor.execute(f"SELECT messageid FROM levels WHERE server = {serverid} AND levelid = {level}")
+											messages = cursor.fetchone()[0]
+											try:
+												msg101 = await channelmessageid.fetch_message(int(messages))
+												await msg101.delete()
+											except:
+												cursor.execute(f"SELECT GDModChannel FROM setup WHERE serverid = {serverid}")
+												channelmessageid = cursor.fetchone()[0]
+												channelmessageid = client.get_channel(int(channelmessageid))
+												try:
+													msg101 = await channelmessageid.fetch_message(int(messages))
+													await msg101.delete()
+												except:
+													pass
+											
 											delete = cursor.execute(f"DELETE FROM levels WHERE levelid = %s and server = %s", (level, serverid))
 											conn.commit()
 											
@@ -9006,19 +9111,6 @@ async def on_message(message):
 													await channel.send(embed=embed5)
 												except discord.errors.Forbidden:
 													pass
-											
-											cursor.execute(f"SELECT messageid FROM levels WHERE server = {serverid} AND levelid = {level}")
-											messages = cursor.fetchall()
-											for row in messages:
-												try:
-													msg101 = await message.channel.fetch_message(int(row[0]))
-												except:
-													msg101 = None
-												else:
-													try:
-														await msg101.delete()
-													except TypeError:
-														pass
 											return
 										elif star == "9":
 											await msg.delete()
@@ -9044,6 +9136,26 @@ async def on_message(message):
 											embed4 = discord.Embed(title=f'{successtitle}', color=0x00ff00)
 											embed4.add_field(name=f'{thelevel} `{level}` (**{levelname}** {by} **{creator}**) {successsend} **INSANE 9<:starrate:718204629858517003> RATE** !', value='\u200b')
 											await message.channel.send(embed=embed4)
+
+											cursor.execute(f"SELECT ReviewChannel FROM setup WHERE serverid = {serverid}")
+											channelmessageid = cursor.fetchone()[0]
+											channelmessageid = client.get_channel(int(channelmessageid))
+
+											cursor.execute(f"SELECT messageid FROM levels WHERE server = {serverid} AND levelid = {level}")
+											messages = cursor.fetchone()[0]
+											try:
+												msg101 = await channelmessageid.fetch_message(int(messages))
+												await msg101.delete()
+											except:
+												cursor.execute(f"SELECT GDModChannel FROM setup WHERE serverid = {serverid}")
+												channelmessageid = cursor.fetchone()[0]
+												channelmessageid = client.get_channel(int(channelmessageid))
+												try:
+													msg101 = await channelmessageid.fetch_message(int(messages))
+													await msg101.delete()
+												except:
+													pass
+											
 											delete = cursor.execute(f"DELETE FROM levels WHERE levelid = %s and server = %s", (level, serverid))
 											conn.commit()
 											
@@ -9136,19 +9248,6 @@ async def on_message(message):
 													await channel.send(embed=embed5)
 												except discord.errors.Forbidden:
 													pass
-													
-											cursor.execute(f"SELECT messageid FROM levels WHERE server = {serverid} AND levelid = {level}")
-											messages = cursor.fetchall()
-											for row in messages:
-												try:
-													msg101 = await message.channel.fetch_message(int(row[0]))
-												except:
-													msg101 = None
-												else:
-													try:
-														await msg101.delete()
-													except TypeError:
-														pass
 											return
 										elif star == "10":
 											if demon == "1":
@@ -9175,6 +9274,26 @@ async def on_message(message):
 												embed4 = discord.Embed(title=f'{successtitle}', color=0x00ff00)
 												embed4.add_field(name=f'{thelevel} `{level}` (**{levelname}** {by} **{creator}**) {successsend} **EASY DEMON 10<:starrate:718204629858517003> RATE** !', value='\u200b')
 												await message.channel.send(embed=embed4)
+
+												cursor.execute(f"SELECT ReviewChannel FROM setup WHERE serverid = {serverid}")
+												channelmessageid = cursor.fetchone()[0]
+												channelmessageid = client.get_channel(int(channelmessageid))
+
+												cursor.execute(f"SELECT messageid FROM levels WHERE server = {serverid} AND levelid = {level}")
+												messages = cursor.fetchone()[0]
+												try:
+													msg101 = await channelmessageid.fetch_message(int(messages))
+													await msg101.delete()
+												except:
+													cursor.execute(f"SELECT GDModChannel FROM setup WHERE serverid = {serverid}")
+													channelmessageid = cursor.fetchone()[0]
+													channelmessageid = client.get_channel(int(channelmessageid))
+													try:
+														msg101 = await channelmessageid.fetch_message(int(messages))
+														await msg101.delete()
+													except:
+														pass
+												
 												delete = cursor.execute(f"DELETE FROM levels WHERE levelid = %s and server = %s", (level, serverid))
 												conn.commit()
 												
@@ -9267,19 +9386,6 @@ async def on_message(message):
 														await channel.send(embed=embed5)
 													except discord.errors.Forbidden:
 														pass
-												
-												cursor.execute(f"SELECT messageid FROM levels WHERE server = {serverid} AND levelid = {level}")
-												messages = cursor.fetchall()
-												for row in messages:
-													try:
-														msg101 = await message.channel.fetch_message(int(row[0]))
-													except:
-														msg101 = None
-													else:
-														try:
-															await msg101.delete()
-														except TypeError:
-															pass
 												return
 											elif demon == "2":
 												await msg.delete()
@@ -9305,6 +9411,26 @@ async def on_message(message):
 												embed4 = discord.Embed(title=f'{successtitle}', color=0x00ff00)
 												embed4.add_field(name=f'{thelevel} `{level}` (**{levelname}** {by} **{creator}**) {successsend} **MEDIUM DEMON 10<:starrate:718204629858517003> RATE** !', value='\u200b')
 												await message.channel.send(embed=embed4)
+
+												cursor.execute(f"SELECT ReviewChannel FROM setup WHERE serverid = {serverid}")
+												channelmessageid = cursor.fetchone()[0]
+												channelmessageid = client.get_channel(int(channelmessageid))
+
+												cursor.execute(f"SELECT messageid FROM levels WHERE server = {serverid} AND levelid = {level}")
+												messages = cursor.fetchone()[0]
+												try:
+													msg101 = await channelmessageid.fetch_message(int(messages))
+													await msg101.delete()
+												except:
+													cursor.execute(f"SELECT GDModChannel FROM setup WHERE serverid = {serverid}")
+													channelmessageid = cursor.fetchone()[0]
+													channelmessageid = client.get_channel(int(channelmessageid))
+													try:
+														msg101 = await channelmessageid.fetch_message(int(messages))
+														await msg101.delete()
+													except:
+														pass
+
 												delete = cursor.execute(f"DELETE FROM levels WHERE levelid = %s and server = %s", (level, serverid))
 												conn.commit()
 												
@@ -9397,19 +9523,6 @@ async def on_message(message):
 														await channel.send(embed=embed5)
 													except discord.errors.Forbidden:
 														pass
-														
-												cursor.execute(f"SELECT messageid FROM levels WHERE server = {serverid} AND levelid = {level}")
-												messages = cursor.fetchall()
-												for row in messages:
-													try:
-														msg101 = await message.channel.fetch_message(int(row[0]))
-													except:
-														msg101 = None
-													else:
-														try:
-															await msg101.delete()
-														except TypeError:
-															pass
 												return
 											elif demon == "3":
 												await msg.delete()
@@ -9435,6 +9548,26 @@ async def on_message(message):
 												embed4 = discord.Embed(title=f'{successtitle}', color=0x00ff00)
 												embed4.add_field(name=f'{thelevel} `{level}` (**{levelname}** {by} **{creator}**) {successsend} **HARD DEMON 10<:starrate:718204629858517003> RATE** !', value='\u200b')
 												await message.channel.send(embed=embed4)
+
+												cursor.execute(f"SELECT ReviewChannel FROM setup WHERE serverid = {serverid}")
+												channelmessageid = cursor.fetchone()[0]
+												channelmessageid = client.get_channel(int(channelmessageid))
+
+												cursor.execute(f"SELECT messageid FROM levels WHERE server = {serverid} AND levelid = {level}")
+												messages = cursor.fetchone()[0]
+												try:
+													msg101 = await channelmessageid.fetch_message(int(messages))
+													await msg101.delete()
+												except:
+													cursor.execute(f"SELECT GDModChannel FROM setup WHERE serverid = {serverid}")
+													channelmessageid = cursor.fetchone()[0]
+													channelmessageid = client.get_channel(int(channelmessageid))
+													try:
+														msg101 = await channelmessageid.fetch_message(int(messages))
+														await msg101.delete()
+													except:
+														pass
+
 												delete = cursor.execute(f"DELETE FROM levels WHERE levelid = %s and server = %s", (level, serverid))
 												conn.commit()
 												
@@ -9527,19 +9660,6 @@ async def on_message(message):
 														await channel.send(embed=embed5)
 													except discord.errors.Forbidden:
 														pass
-														
-												cursor.execute(f"SELECT messageid FROM levels WHERE server = {serverid} AND levelid = {level}")
-												messages = cursor.fetchall()
-												for row in messages:
-													try:
-														msg101 = await message.channel.fetch_message(int(row[0]))
-													except:
-														msg101 = None
-													else:
-														try:
-															await msg101.delete()
-														except TypeError:
-															pass
 												return
 											elif demon == "4":
 												await msg.delete()
@@ -9565,6 +9685,26 @@ async def on_message(message):
 												embed4 = discord.Embed(title=f'{successtitle}', color=0x00ff00)
 												embed4.add_field(name=f'{thelevel} `{level}` (**{levelname}** {by} **{creator}**) {successsend} **INSANE DEMON 10<:starrate:718204629858517003> RATE** !', value='\u200b')
 												await message.channel.send(embed=embed4)
+
+												cursor.execute(f"SELECT ReviewChannel FROM setup WHERE serverid = {serverid}")
+												channelmessageid = cursor.fetchone()[0]
+												channelmessageid = client.get_channel(int(channelmessageid))
+
+												cursor.execute(f"SELECT messageid FROM levels WHERE server = {serverid} AND levelid = {level}")
+												messages = cursor.fetchone()[0]
+												try:
+													msg101 = await channelmessageid.fetch_message(int(messages))
+													await msg101.delete()
+												except:
+													cursor.execute(f"SELECT GDModChannel FROM setup WHERE serverid = {serverid}")
+													channelmessageid = cursor.fetchone()[0]
+													channelmessageid = client.get_channel(int(channelmessageid))
+													try:
+														msg101 = await channelmessageid.fetch_message(int(messages))
+														await msg101.delete()
+													except:
+														pass
+												
 												delete = cursor.execute(f"DELETE FROM levels WHERE levelid = %s and server = %s", (level, serverid))
 												conn.commit()
 												
@@ -9657,19 +9797,6 @@ async def on_message(message):
 														await channel.send(embed=embed5)
 													except discord.errors.Forbidden:
 														pass
-														
-												cursor.execute(f"SELECT messageid FROM levels WHERE server = {serverid} AND levelid = {level}")
-												messages = cursor.fetchall()
-												for row in messages:
-													try:
-														msg101 = await message.channel.fetch_message(int(row[0]))
-													except:
-														msg101 = None
-													else:
-														try:
-															await msg101.delete()
-														except TypeError:
-															pass
 												return
 											elif demon == "5":
 												await msg.delete()
@@ -9695,6 +9822,26 @@ async def on_message(message):
 												embed4 = discord.Embed(title=f'{successtitle}', color=0x00ff00)
 												embed4.add_field(name=f'{thelevel} `{level}` (**{levelname}** {by} **{creator}**) {successsend} **EXTREME DEMON 10<:starrate:718204629858517003> RATE** !', value='\u200b')
 												await message.channel.send(embed=embed4)
+
+												cursor.execute(f"SELECT ReviewChannel FROM setup WHERE serverid = {serverid}")
+												channelmessageid = cursor.fetchone()[0]
+												channelmessageid = client.get_channel(int(channelmessageid))
+
+												cursor.execute(f"SELECT messageid FROM levels WHERE server = {serverid} AND levelid = {level}")
+												messages = cursor.fetchone()[0]
+												try:
+													msg101 = await channelmessageid.fetch_message(int(messages))
+													await msg101.delete()
+												except:
+													cursor.execute(f"SELECT GDModChannel FROM setup WHERE serverid = {serverid}")
+													channelmessageid = cursor.fetchone()[0]
+													channelmessageid = client.get_channel(int(channelmessageid))
+													try:
+														msg101 = await channelmessageid.fetch_message(int(messages))
+														await msg101.delete()
+													except:
+														pass
+
 												delete = cursor.execute(f"DELETE FROM levels WHERE levelid = %s and server = %s", (level, serverid))
 												conn.commit()
 												
@@ -9787,19 +9934,6 @@ async def on_message(message):
 														await channel.send(embed=embed5)
 													except discord.errors.Forbidden:
 														pass
-														
-												cursor.execute(f"SELECT messageid FROM levels WHERE server = {serverid} AND levelid = {level}")
-												messages = cursor.fetchall()
-												for row in messages:
-													try:
-														msg101 = await message.channel.fetch_message(int(row[0]))
-													except:
-														msg101 = None
-													else:
-														try:
-															await msg101.delete()
-														except TypeError:
-															pass
 												return
 											else:
 												await msg.delete()
@@ -9825,6 +9959,26 @@ async def on_message(message):
 												embed4 = discord.Embed(title=f'{successtitle}', color=0x00ff00)
 												embed4.add_field(name=f'{thelevel} `{level}` (**{levelname}** {by} **{creator}**) {successsend} **DEMON 10<:starrate:718204629858517003> RATE** !', value='\u200b')
 												await message.channel.send(embed=embed4)
+
+												cursor.execute(f"SELECT ReviewChannel FROM setup WHERE serverid = {serverid}")
+												channelmessageid = cursor.fetchone()[0]
+												channelmessageid = client.get_channel(int(channelmessageid))
+
+												cursor.execute(f"SELECT messageid FROM levels WHERE server = {serverid} AND levelid = {level}")
+												messages = cursor.fetchone()[0]
+												try:
+													msg101 = await channelmessageid.fetch_message(int(messages))
+													await msg101.delete()
+												except:
+													cursor.execute(f"SELECT GDModChannel FROM setup WHERE serverid = {serverid}")
+													channelmessageid = cursor.fetchone()[0]
+													channelmessageid = client.get_channel(int(channelmessageid))
+													try:
+														msg101 = await channelmessageid.fetch_message(int(messages))
+														await msg101.delete()
+													except:
+														pass
+
 												delete = cursor.execute(f"DELETE FROM levels WHERE levelid = %s and server = %s", (level, serverid))
 												conn.commit()
 												
@@ -9917,19 +10071,6 @@ async def on_message(message):
 														await channel.send(embed=embed5)
 													except discord.errors.Forbidden:
 														pass
-														
-												cursor.execute(f"SELECT messageid FROM levels WHERE server = {serverid} AND levelid = {level}")
-												messages = cursor.fetchall()
-												for row in messages:
-													try:
-														msg101 = await message.channel.fetch_message(int(row[0]))
-													except:
-														msg101 = None
-													else:
-														try:
-															await msg101.delete()
-														except TypeError:
-															pass
 												return
 										else:
 											await msg.delete()
@@ -9982,6 +10123,26 @@ async def on_message(message):
 											embed4 = discord.Embed(title=f'{successtitle}', color=0x00ff00)
 											embed4.add_field(name=f'{thelevel} `{level}` (**{levelname}** {by} **{creator}**) {successsend} **AUTO 1<:starrate:718204629858517003> FEATURED** !', value='\u200b')
 											await message.channel.send(embed=embed4)
+
+											cursor.execute(f"SELECT ReviewChannel FROM setup WHERE serverid = {serverid}")
+											channelmessageid = cursor.fetchone()[0]
+											channelmessageid = client.get_channel(int(channelmessageid))
+
+											cursor.execute(f"SELECT messageid FROM levels WHERE server = {serverid} AND levelid = {level}")
+											messages = cursor.fetchone()[0]
+											try:
+												msg101 = await channelmessageid.fetch_message(int(messages))
+												await msg101.delete()
+											except:
+												cursor.execute(f"SELECT GDModChannel FROM setup WHERE serverid = {serverid}")
+												channelmessageid = cursor.fetchone()[0]
+												channelmessageid = client.get_channel(int(channelmessageid))
+												try:
+													msg101 = await channelmessageid.fetch_message(int(messages))
+													await msg101.delete()
+												except:
+													pass
+
 											delete = cursor.execute(f"DELETE FROM levels WHERE levelid = %s and server = %s", (level, serverid))
 											conn.commit()
 											
@@ -10074,19 +10235,6 @@ async def on_message(message):
 													await channel.send(embed=embed5)
 												except discord.errors.Forbidden:
 													pass
-													
-											cursor.execute(f"SELECT messageid FROM levels WHERE server = {serverid} AND levelid = {level}")
-											messages = cursor.fetchall()
-											for row in messages:
-												try:
-													msg101 = await message.channel.fetch_message(int(row[0]))
-												except:
-													msg101 = None
-												else:
-													try:
-														await msg101.delete()
-													except TypeError:
-														pass
 											return
 										elif star == "2":
 											await msg.delete()
@@ -10112,6 +10260,26 @@ async def on_message(message):
 											embed4 = discord.Embed(title=f'{successtitle}', color=0x00ff00)
 											embed4.add_field(name=f'{thelevel} `{level}` (**{levelname}** {by} **{creator}**) {successsend} **EASY 2<:starrate:718204629858517003> FEATURED** !', value='\u200b')
 											await message.channel.send(embed=embed4)
+
+											cursor.execute(f"SELECT ReviewChannel FROM setup WHERE serverid = {serverid}")
+											channelmessageid = cursor.fetchone()[0]
+											channelmessageid = client.get_channel(int(channelmessageid))
+
+											cursor.execute(f"SELECT messageid FROM levels WHERE server = {serverid} AND levelid = {level}")
+											messages = cursor.fetchone()[0]
+											try:
+												msg101 = await channelmessageid.fetch_message(int(messages))
+												await msg101.delete()
+											except:
+												cursor.execute(f"SELECT GDModChannel FROM setup WHERE serverid = {serverid}")
+												channelmessageid = cursor.fetchone()[0]
+												channelmessageid = client.get_channel(int(channelmessageid))
+												try:
+													msg101 = await channelmessageid.fetch_message(int(messages))
+													await msg101.delete()
+												except:
+													pass
+
 											delete = cursor.execute(f"DELETE FROM levels WHERE levelid = %s and server = %s", (level, serverid))
 											conn.commit()
 											
@@ -10204,19 +10372,6 @@ async def on_message(message):
 													await channel.send(embed=embed5)
 												except discord.errors.Forbidden:
 													pass
-													
-											cursor.execute(f"SELECT messageid FROM levels WHERE server = {serverid} AND levelid = {level}")
-											messages = cursor.fetchall()
-											for row in messages:
-												try:
-													msg101 = await message.channel.fetch_message(int(row[0]))
-												except:
-													msg101 = None
-												else:
-													try:
-														await msg101.delete()
-													except TypeError:
-														pass
 											return
 										elif star == "3":
 											await msg.delete()
@@ -10242,6 +10397,26 @@ async def on_message(message):
 											embed4 = discord.Embed(title=f'{successtitle}', color=0x00ff00)
 											embed4.add_field(name=f'{thelevel} `{level}` (**{levelname}** {by} **{creator}**) {successsend} **NORMAL 3<:starrate:718204629858517003> FEATURED** !', value='\u200b')
 											await message.channel.send(embed=embed4)
+
+											cursor.execute(f"SELECT ReviewChannel FROM setup WHERE serverid = {serverid}")
+											channelmessageid = cursor.fetchone()[0]
+											channelmessageid = client.get_channel(int(channelmessageid))
+
+											cursor.execute(f"SELECT messageid FROM levels WHERE server = {serverid} AND levelid = {level}")
+											messages = cursor.fetchone()[0]
+											try:
+												msg101 = await channelmessageid.fetch_message(int(messages))
+												await msg101.delete()
+											except:
+												cursor.execute(f"SELECT GDModChannel FROM setup WHERE serverid = {serverid}")
+												channelmessageid = cursor.fetchone()[0]
+												channelmessageid = client.get_channel(int(channelmessageid))
+												try:
+													msg101 = await channelmessageid.fetch_message(int(messages))
+													await msg101.delete()
+												except:
+													pass
+											
 											delete = cursor.execute(f"DELETE FROM levels WHERE levelid = %s and server = %s", (level, serverid))
 											conn.commit()
 											
@@ -10334,19 +10509,6 @@ async def on_message(message):
 													await channel.send(embed=embed5)
 												except discord.errors.Forbidden:
 													pass
-													
-											cursor.execute(f"SELECT messageid FROM levels WHERE server = {serverid} AND levelid = {level}")
-											messages = cursor.fetchall()
-											for row in messages:
-												try:
-													msg101 = await message.channel.fetch_message(int(row[0]))
-												except:
-													msg101 = None
-												else:
-													try:
-														await msg101.delete()
-													except TypeError:
-														pass
 											return
 										elif star == "4":
 											await msg.delete()
@@ -10372,6 +10534,26 @@ async def on_message(message):
 											embed4 = discord.Embed(title=f'{successtitle}', color=0x00ff00)
 											embed4.add_field(name=f'{thelevel} `{level}` (**{levelname}** {by} **{creator}**) {successsend} **HARD 4<:starrate:718204629858517003> FEATURED** !', value='\u200b')
 											await message.channel.send(embed=embed4)
+
+											cursor.execute(f"SELECT ReviewChannel FROM setup WHERE serverid = {serverid}")
+											channelmessageid = cursor.fetchone()[0]
+											channelmessageid = client.get_channel(int(channelmessageid))
+
+											cursor.execute(f"SELECT messageid FROM levels WHERE server = {serverid} AND levelid = {level}")
+											messages = cursor.fetchone()[0]
+											try:
+												msg101 = await channelmessageid.fetch_message(int(messages))
+												await msg101.delete()
+											except:
+												cursor.execute(f"SELECT GDModChannel FROM setup WHERE serverid = {serverid}")
+												channelmessageid = cursor.fetchone()[0]
+												channelmessageid = client.get_channel(int(channelmessageid))
+												try:
+													msg101 = await channelmessageid.fetch_message(int(messages))
+													await msg101.delete()
+												except:
+													pass
+											
 											delete = cursor.execute(f"DELETE FROM levels WHERE levelid = %s and server = %s", (level, serverid))
 											conn.commit()
 											
@@ -10464,19 +10646,6 @@ async def on_message(message):
 													await channel.send(embed=embed5)
 												except discord.errors.Forbidden:
 													pass
-													
-											cursor.execute(f"SELECT messageid FROM levels WHERE server = {serverid} AND levelid = {level}")
-											messages = cursor.fetchall()
-											for row in messages:
-												try:
-													msg101 = await message.channel.fetch_message(int(row[0]))
-												except:
-													msg101 = None
-												else:
-													try:
-														await msg101.delete()
-													except TypeError:
-														pass
 											return
 										elif star == "5":
 											await msg.delete()
@@ -10502,6 +10671,26 @@ async def on_message(message):
 											embed4 = discord.Embed(title=f'{successtitle}', color=0x00ff00)
 											embed4.add_field(name=f'{thelevel} `{level}` (**{levelname}** {by} **{creator}**) {successsend} **HARD 5<:starrate:718204629858517003> FEATURED** !', value='\u200b')
 											await message.channel.send(embed=embed4)
+
+											cursor.execute(f"SELECT ReviewChannel FROM setup WHERE serverid = {serverid}")
+											channelmessageid = cursor.fetchone()[0]
+											channelmessageid = client.get_channel(int(channelmessageid))
+
+											cursor.execute(f"SELECT messageid FROM levels WHERE server = {serverid} AND levelid = {level}")
+											messages = cursor.fetchone()[0]
+											try:
+												msg101 = await channelmessageid.fetch_message(int(messages))
+												await msg101.delete()
+											except:
+												cursor.execute(f"SELECT GDModChannel FROM setup WHERE serverid = {serverid}")
+												channelmessageid = cursor.fetchone()[0]
+												channelmessageid = client.get_channel(int(channelmessageid))
+												try:
+													msg101 = await channelmessageid.fetch_message(int(messages))
+													await msg101.delete()
+												except:
+													pass
+
 											delete = cursor.execute(f"DELETE FROM levels WHERE levelid = %s and server = %s", (level, serverid))
 											conn.commit()
 											
@@ -10594,19 +10783,6 @@ async def on_message(message):
 													await channel.send(embed=embed5)
 												except discord.errors.Forbidden:
 													pass
-													
-											cursor.execute(f"SELECT messageid FROM levels WHERE server = {serverid} AND levelid = {level}")
-											messages = cursor.fetchall()
-											for row in messages:
-												try:
-													msg101 = await message.channel.fetch_message(int(row[0]))
-												except:
-													msg101 = None
-												else:
-													try:
-														await msg101.delete()
-													except TypeError:
-														pass
 											return
 										elif star == "6":
 											await msg.delete()
@@ -10632,6 +10808,26 @@ async def on_message(message):
 											embed4 = discord.Embed(title=f'{successtitle}', color=0x00ff00)
 											embed4.add_field(name=f'{thelevel} `{level}` (**{levelname}** {by} **{creator}**) {successsend} **HARDER 6<:starrate:718204629858517003> FEATURED** !', value='\u200b')
 											await message.channel.send(embed=embed4)
+
+											cursor.execute(f"SELECT ReviewChannel FROM setup WHERE serverid = {serverid}")
+											channelmessageid = cursor.fetchone()[0]
+											channelmessageid = client.get_channel(int(channelmessageid))
+
+											cursor.execute(f"SELECT messageid FROM levels WHERE server = {serverid} AND levelid = {level}")
+											messages = cursor.fetchone()[0]
+											try:
+												msg101 = await channelmessageid.fetch_message(int(messages))
+												await msg101.delete()
+											except:
+												cursor.execute(f"SELECT GDModChannel FROM setup WHERE serverid = {serverid}")
+												channelmessageid = cursor.fetchone()[0]
+												channelmessageid = client.get_channel(int(channelmessageid))
+												try:
+													msg101 = await channelmessageid.fetch_message(int(messages))
+													await msg101.delete()
+												except:
+													pass
+
 											delete = cursor.execute(f"DELETE FROM levels WHERE levelid = %s and server = %s", (level, serverid))
 											conn.commit()
 											
@@ -10724,19 +10920,6 @@ async def on_message(message):
 													await channel.send(embed=embed5)
 												except discord.errors.Forbidden:
 													pass
-													
-											cursor.execute(f"SELECT messageid FROM levels WHERE server = {serverid} AND levelid = {level}")
-											messages = cursor.fetchall()
-											for row in messages:
-												try:
-													msg101 = await message.channel.fetch_message(int(row[0]))
-												except:
-													msg101 = None
-												else:
-													try:
-														await msg101.delete()
-													except TypeError:
-														pass
 											return
 										elif star == "7":
 											await msg.delete()
@@ -10762,6 +10945,26 @@ async def on_message(message):
 											embed4 = discord.Embed(title=f'{successtitle}', color=0x00ff00)
 											embed4.add_field(name=f'{thelevel} `{level}` (**{levelname}** {by} **{creator}**) {successsend} **HARDER 7<:starrate:718204629858517003> FEATURED** !', value='\u200b')
 											await message.channel.send(embed=embed4)
+
+											cursor.execute(f"SELECT ReviewChannel FROM setup WHERE serverid = {serverid}")
+											channelmessageid = cursor.fetchone()[0]
+											channelmessageid = client.get_channel(int(channelmessageid))
+
+											cursor.execute(f"SELECT messageid FROM levels WHERE server = {serverid} AND levelid = {level}")
+											messages = cursor.fetchone()[0]
+											try:
+												msg101 = await channelmessageid.fetch_message(int(messages))
+												await msg101.delete()
+											except:
+												cursor.execute(f"SELECT GDModChannel FROM setup WHERE serverid = {serverid}")
+												channelmessageid = cursor.fetchone()[0]
+												channelmessageid = client.get_channel(int(channelmessageid))
+												try:
+													msg101 = await channelmessageid.fetch_message(int(messages))
+													await msg101.delete()
+												except:
+													pass
+											
 											delete = cursor.execute(f"DELETE FROM levels WHERE levelid = %s and server = %s", (level, serverid))
 											conn.commit()
 											
@@ -10854,19 +11057,6 @@ async def on_message(message):
 													await channel.send(embed=embed5)
 												except discord.errors.Forbidden:
 													pass
-													
-											cursor.execute(f"SELECT messageid FROM levels WHERE server = {serverid} AND levelid = {level}")
-											messages = cursor.fetchall()
-											for row in messages:
-												try:
-													msg101 = await message.channel.fetch_message(int(row[0]))
-												except:
-													msg101 = None
-												else:
-													try:
-														await msg101.delete()
-													except TypeError:
-														pass
 											return
 										elif star == "8":
 											await msg.delete()
@@ -10892,6 +11082,26 @@ async def on_message(message):
 											embed4 = discord.Embed(title=f'{successtitle}', color=0x00ff00)
 											embed4.add_field(name=f'{thelevel} `{level}` (**{levelname}** {by} **{creator}**) {successsend} **INSANE 8<:starrate:718204629858517003> FEATURED** !', value='\u200b')
 											await message.channel.send(embed=embed4)
+
+											cursor.execute(f"SELECT ReviewChannel FROM setup WHERE serverid = {serverid}")
+											channelmessageid = cursor.fetchone()[0]
+											channelmessageid = client.get_channel(int(channelmessageid))
+
+											cursor.execute(f"SELECT messageid FROM levels WHERE server = {serverid} AND levelid = {level}")
+											messages = cursor.fetchone()[0]
+											try:
+												msg101 = await channelmessageid.fetch_message(int(messages))
+												await msg101.delete()
+											except:
+												cursor.execute(f"SELECT GDModChannel FROM setup WHERE serverid = {serverid}")
+												channelmessageid = cursor.fetchone()[0]
+												channelmessageid = client.get_channel(int(channelmessageid))
+												try:
+													msg101 = await channelmessageid.fetch_message(int(messages))
+													await msg101.delete()
+												except:
+													pass
+											
 											delete = cursor.execute(f"DELETE FROM levels WHERE levelid = %s and server = %s", (level, serverid))
 											conn.commit()
 											
@@ -10984,19 +11194,6 @@ async def on_message(message):
 													await channel.send(embed=embed5)
 												except discord.errors.Forbidden:
 													pass
-													
-											cursor.execute(f"SELECT messageid FROM levels WHERE server = {serverid} AND levelid = {level}")
-											messages = cursor.fetchall()
-											for row in messages:
-												try:
-													msg101 = await message.channel.fetch_message(int(row[0]))
-												except:
-													msg101 = None
-												else:
-													try:
-														await msg101.delete()
-													except TypeError:
-														pass
 											return
 										elif star == "9":
 											await msg.delete()
@@ -11022,6 +11219,26 @@ async def on_message(message):
 											embed4 = discord.Embed(title=f'{successtitle}', color=0x00ff00)
 											embed4.add_field(name=f'{thelevel} `{level}` (**{levelname}** {by} **{creator}**) {successsend} **INSANE 9<:starrate:718204629858517003> FEATURED** !', value='\u200b')
 											await message.channel.send(embed=embed4)
+
+											cursor.execute(f"SELECT ReviewChannel FROM setup WHERE serverid = {serverid}")
+											channelmessageid = cursor.fetchone()[0]
+											channelmessageid = client.get_channel(int(channelmessageid))
+
+											cursor.execute(f"SELECT messageid FROM levels WHERE server = {serverid} AND levelid = {level}")
+											messages = cursor.fetchone()[0]
+											try:
+												msg101 = await channelmessageid.fetch_message(int(messages))
+												await msg101.delete()
+											except:
+												cursor.execute(f"SELECT GDModChannel FROM setup WHERE serverid = {serverid}")
+												channelmessageid = cursor.fetchone()[0]
+												channelmessageid = client.get_channel(int(channelmessageid))
+												try:
+													msg101 = await channelmessageid.fetch_message(int(messages))
+													await msg101.delete()
+												except:
+													pass
+											
 											delete = cursor.execute(f"DELETE FROM levels WHERE levelid = %s and server = %s", (level, serverid))
 											conn.commit()
 											
@@ -11114,19 +11331,6 @@ async def on_message(message):
 													await channel.send(embed=embed5)
 												except discord.errors.Forbidden:
 													pass
-													
-											cursor.execute(f"SELECT messageid FROM levels WHERE server = {serverid} AND levelid = {level}")
-											messages = cursor.fetchall()
-											for row in messages:
-												try:
-													msg101 = await message.channel.fetch_message(int(row[0]))
-												except:
-													msg101 = None
-												else:
-													try:
-														await msg101.delete()
-													except TypeError:
-														pass
 											return
 										elif star == "10":
 											if demon == "1":
@@ -11153,6 +11357,26 @@ async def on_message(message):
 												embed4 = discord.Embed(title=f'{successtitle}', color=0x00ff00)
 												embed4.add_field(name=f'{thelevel} `{level}` (**{levelname}** {by} **{creator}**) {successsend} **EASY DEMON 10<:starrate:718204629858517003> FEATURED** !', value='\u200b')
 												await message.channel.send(embed=embed4)
+
+												cursor.execute(f"SELECT ReviewChannel FROM setup WHERE serverid = {serverid}")
+												channelmessageid = cursor.fetchone()[0]
+												channelmessageid = client.get_channel(int(channelmessageid))
+
+												cursor.execute(f"SELECT messageid FROM levels WHERE server = {serverid} AND levelid = {level}")
+												messages = cursor.fetchone()[0]
+												try:
+													msg101 = await channelmessageid.fetch_message(int(messages))
+													await msg101.delete()
+												except:
+													cursor.execute(f"SELECT GDModChannel FROM setup WHERE serverid = {serverid}")
+													channelmessageid = cursor.fetchone()[0]
+													channelmessageid = client.get_channel(int(channelmessageid))
+													try:
+														msg101 = await channelmessageid.fetch_message(int(messages))
+														await msg101.delete()
+													except:
+														pass
+												
 												delete = cursor.execute(f"DELETE FROM levels WHERE levelid = %s and server = %s", (level, serverid))
 												conn.commit()
 												
@@ -11245,19 +11469,6 @@ async def on_message(message):
 														await channel.send(embed=embed5)
 													except discord.errors.Forbidden:
 														pass
-														
-												cursor.execute(f"SELECT messageid FROM levels WHERE server = {serverid} AND levelid = {level}")
-												messages = cursor.fetchall()
-												for row in messages:
-													try:
-														msg101 = await message.channel.fetch_message(int(row[0]))
-													except:
-														msg101 = None
-													else:
-														try:
-															await msg101.delete()
-														except TypeError:
-															pass
 												return
 											elif demon == "2":
 												await msg.delete()
@@ -11283,6 +11494,26 @@ async def on_message(message):
 												embed4 = discord.Embed(title=f'{successtitle}', color=0x00ff00)
 												embed4.add_field(name=f'{thelevel} `{level}` (**{levelname}** {by} **{creator}**) {successsend} **MEDIUM DEMON 10<:starrate:718204629858517003> FEATURED** !', value='\u200b')
 												await message.channel.send(embed=embed4)
+
+												cursor.execute(f"SELECT ReviewChannel FROM setup WHERE serverid = {serverid}")
+												channelmessageid = cursor.fetchone()[0]
+												channelmessageid = client.get_channel(int(channelmessageid))
+
+												cursor.execute(f"SELECT messageid FROM levels WHERE server = {serverid} AND levelid = {level}")
+												messages = cursor.fetchone()[0]
+												try:
+													msg101 = await channelmessageid.fetch_message(int(messages))
+													await msg101.delete()
+												except:
+													cursor.execute(f"SELECT GDModChannel FROM setup WHERE serverid = {serverid}")
+													channelmessageid = cursor.fetchone()[0]
+													channelmessageid = client.get_channel(int(channelmessageid))
+													try:
+														msg101 = await channelmessageid.fetch_message(int(messages))
+														await msg101.delete()
+													except:
+														pass
+												
 												delete = cursor.execute(f"DELETE FROM levels WHERE levelid = %s and server = %s", (level, serverid))
 												conn.commit()
 												
@@ -11375,19 +11606,6 @@ async def on_message(message):
 														await channel.send(embed=embed5)
 													except discord.errors.Forbidden:
 														pass
-														
-												cursor.execute(f"SELECT messageid FROM levels WHERE server = {serverid} AND levelid = {level}")
-												messages = cursor.fetchall()
-												for row in messages:
-													try:
-														msg101 = await message.channel.fetch_message(int(row[0]))
-													except:
-														msg101 = None
-													else:
-														try:
-															await msg101.delete()
-														except TypeError:
-															pass
 												return
 											elif demon == "3":
 												await msg.delete()
@@ -11413,6 +11631,26 @@ async def on_message(message):
 												embed4 = discord.Embed(title=f'{successtitle}', color=0x00ff00)
 												embed4.add_field(name=f'{thelevel} `{level}` (**{levelname}** {by} **{creator}**) {successsend} **HARD DEMON 10<:starrate:718204629858517003> FEATURED** !', value='\u200b')
 												await message.channel.send(embed=embed4)
+
+												cursor.execute(f"SELECT ReviewChannel FROM setup WHERE serverid = {serverid}")
+												channelmessageid = cursor.fetchone()[0]
+												channelmessageid = client.get_channel(int(channelmessageid))
+
+												cursor.execute(f"SELECT messageid FROM levels WHERE server = {serverid} AND levelid = {level}")
+												messages = cursor.fetchone()[0]
+												try:
+													msg101 = await channelmessageid.fetch_message(int(messages))
+													await msg101.delete()
+												except:
+													cursor.execute(f"SELECT GDModChannel FROM setup WHERE serverid = {serverid}")
+													channelmessageid = cursor.fetchone()[0]
+													channelmessageid = client.get_channel(int(channelmessageid))
+													try:
+														msg101 = await channelmessageid.fetch_message(int(messages))
+														await msg101.delete()
+													except:
+														pass
+												
 												delete = cursor.execute(f"DELETE FROM levels WHERE levelid = %s and server = %s", (level, serverid))
 												conn.commit()
 												
@@ -11505,19 +11743,6 @@ async def on_message(message):
 														await channel.send(embed=embed5)
 													except discord.errors.Forbidden:
 														pass
-														
-												cursor.execute(f"SELECT messageid FROM levels WHERE server = {serverid} AND levelid = {level}")
-												messages = cursor.fetchall()
-												for row in messages:
-													try:
-														msg101 = await message.channel.fetch_message(int(row[0]))
-													except:
-														msg101 = None
-													else:
-														try:
-															await msg101.delete()
-														except TypeError:
-															pass
 												return
 											elif demon == "4":
 												await msg.delete()
@@ -11543,6 +11768,26 @@ async def on_message(message):
 												embed4 = discord.Embed(title=f'{successtitle}', color=0x00ff00)
 												embed4.add_field(name=f'{thelevel} `{level}` (**{levelname}** {by} **{creator}**) {successsend} **INSANE DEMON 10<:starrate:718204629858517003> FEATURED** !', value='\u200b')
 												await message.channel.send(embed=embed4)
+
+												cursor.execute(f"SELECT ReviewChannel FROM setup WHERE serverid = {serverid}")
+												channelmessageid = cursor.fetchone()[0]
+												channelmessageid = client.get_channel(int(channelmessageid))
+
+												cursor.execute(f"SELECT messageid FROM levels WHERE server = {serverid} AND levelid = {level}")
+												messages = cursor.fetchone()[0]
+												try:
+													msg101 = await channelmessageid.fetch_message(int(messages))
+													await msg101.delete()
+												except:
+													cursor.execute(f"SELECT GDModChannel FROM setup WHERE serverid = {serverid}")
+													channelmessageid = cursor.fetchone()[0]
+													channelmessageid = client.get_channel(int(channelmessageid))
+													try:
+														msg101 = await channelmessageid.fetch_message(int(messages))
+														await msg101.delete()
+													except:
+														pass
+												
 												delete = cursor.execute(f"DELETE FROM levels WHERE levelid = %s and server = %s", (level, serverid))
 												conn.commit()
 												
@@ -11635,19 +11880,6 @@ async def on_message(message):
 														await channel.send(embed=embed5)
 													except discord.errors.Forbidden:
 														pass
-														
-												cursor.execute(f"SELECT messageid FROM levels WHERE server = {serverid} AND levelid = {level}")
-												messages = cursor.fetchall()
-												for row in messages:
-													try:
-														msg101 = await message.channel.fetch_message(int(row[0]))
-													except:
-														msg101 = None
-													else:
-														try:
-															await msg101.delete()
-														except TypeError:
-															pass
 												return
 											elif demon == "5":
 												await msg.delete()
@@ -11673,6 +11905,26 @@ async def on_message(message):
 												embed4 = discord.Embed(title=f'{successtitle}', color=0x00ff00)
 												embed4.add_field(name=f'{thelevel} `{level}` (**{levelname}** {by} **{creator}**) {successsend} **EXTREME DEMON 10<:starrate:718204629858517003> FEATURED** !', value='\u200b')
 												await message.channel.send(embed=embed4)
+
+												cursor.execute(f"SELECT ReviewChannel FROM setup WHERE serverid = {serverid}")
+												channelmessageid = cursor.fetchone()[0]
+												channelmessageid = client.get_channel(int(channelmessageid))
+
+												cursor.execute(f"SELECT messageid FROM levels WHERE server = {serverid} AND levelid = {level}")
+												messages = cursor.fetchone()[0]
+												try:
+													msg101 = await channelmessageid.fetch_message(int(messages))
+													await msg101.delete()
+												except:
+													cursor.execute(f"SELECT GDModChannel FROM setup WHERE serverid = {serverid}")
+													channelmessageid = cursor.fetchone()[0]
+													channelmessageid = client.get_channel(int(channelmessageid))
+													try:
+														msg101 = await channelmessageid.fetch_message(int(messages))
+														await msg101.delete()
+													except:
+														pass
+												
 												delete = cursor.execute(f"DELETE FROM levels WHERE levelid = %s and server = %s", (level, serverid))
 												conn.commit()
 												
@@ -11765,19 +12017,6 @@ async def on_message(message):
 														await channel.send(embed=embed5)
 													except discord.errors.Forbidden:
 														pass
-														
-												cursor.execute(f"SELECT messageid FROM levels WHERE server = {serverid} AND levelid = {level}")
-												messages = cursor.fetchall()
-												for row in messages:
-													try:
-														msg101 = await message.channel.fetch_message(int(row[0]))
-													except:
-														msg101 = None
-													else:
-														try:
-															await msg101.delete()
-														except TypeError:
-															pass
 												return
 											else:
 												await msg.delete()
@@ -11803,6 +12042,26 @@ async def on_message(message):
 												embed4 = discord.Embed(title=f'{successtitle}', color=0x00ff00)
 												embed4.add_field(name=f'{thelevel} `{level}` (**{levelname}** {by} **{creator}**) {successsend} **DEMON 10<:starrate:718204629858517003> FEATURED** !', value='\u200b')
 												await message.channel.send(embed=embed4)
+
+												cursor.execute(f"SELECT ReviewChannel FROM setup WHERE serverid = {serverid}")
+												channelmessageid = cursor.fetchone()[0]
+												channelmessageid = client.get_channel(int(channelmessageid))
+
+												cursor.execute(f"SELECT messageid FROM levels WHERE server = {serverid} AND levelid = {level}")
+												messages = cursor.fetchone()[0]
+												try:
+													msg101 = await channelmessageid.fetch_message(int(messages))
+													await msg101.delete()
+												except:
+													cursor.execute(f"SELECT GDModChannel FROM setup WHERE serverid = {serverid}")
+													channelmessageid = cursor.fetchone()[0]
+													channelmessageid = client.get_channel(int(channelmessageid))
+													try:
+														msg101 = await channelmessageid.fetch_message(int(messages))
+														await msg101.delete()
+													except:
+														pass
+												
 												delete = cursor.execute(f"DELETE FROM levels WHERE levelid = %s and server = %s", (level, serverid))
 												conn.commit()
 												
@@ -11895,19 +12154,6 @@ async def on_message(message):
 														await channel.send(embed=embed5)
 													except discord.errors.Forbidden:
 														pass
-														
-												cursor.execute(f"SELECT messageid FROM levels WHERE server = {serverid} AND levelid = {level}")
-												messages = cursor.fetchall()
-												for row in messages:
-													try:
-														msg101 = await message.channel.fetch_message(int(row[0]))
-													except:
-														msg101 = None
-													else:
-														try:
-															await msg101.delete()
-														except TypeError:
-															pass
 												return
 										else:
 											await msg.delete()
@@ -15631,19 +15877,10 @@ async def on_message(message):
 							embed = discord.Embed(title=f"{loadingtitle}", color=0xffce08)
 							embed.add_field(name=f'{loadingdesc}', value="\u200b")
 							msg = await message.channel.send(embed=embed)
-							
+
 							cursor.execute(f"SELECT messageid FROM levels WHERE server = {serverid}")
 							messages = cursor.fetchall()
-							for row in messages:
-								try:
-									msg101 = await message.channel.fetch_message(int(row[0]))
-								except:
-									msg101 = None
-								else:
-									try:
-										await msg101.delete()
-									except TypeError:
-										pass
+							print(messages)
 
 							cursor.execute(f"DELETE FROM levels WHERE server = {serverid}")
 							conn.commit()
@@ -15675,18 +15912,24 @@ async def on_message(message):
 								embed.add_field(name=f'{loadingdesc}', value="\u200b")
 								msg = await message.channel.send(embed=embed)
 								
+								cursor.execute(f"SELECT ReviewChannel FROM setup WHERE serverid = {serverid}")
+								channelmessageid = cursor.fetchone()[0]
+								channelmessageid = client.get_channel(int(channelmessageid))
+
 								cursor.execute(f"SELECT messageid FROM levels WHERE server = {serverid} AND levelid = {level}")
-								messages = cursor.fetchall()
-								for row in messages:
+								messages = cursor.fetchone()[0]
+								try:
+									msg101 = await channelmessageid.fetch_message(int(messages))
+									await msg101.delete()
+								except:
+									cursor.execute(f"SELECT GDModChannel FROM setup WHERE serverid = {serverid}")
+									channelmessageid = cursor.fetchone()[0]
+									channelmessageid = client.get_channel(int(channelmessageid))
 									try:
-										msg101 = await message.channel.fetch_message(int(row[0]))
+										msg101 = await channelmessageid.fetch_message(int(messages))
+										await msg101.delete()
 									except:
-										msg101 = None
-									else:
-										try:
-											await msg101.delete()
-										except TypeError:
-											pass
+										pass
 
 								cursor.execute(f"DELETE FROM levels WHERE server = {serverid} AND levelid = %s", (level, ))
 								conn.commit()
