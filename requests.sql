@@ -1,11 +1,11 @@
 -- phpMyAdmin SQL Dump
--- version 4.6.6deb4
+-- version 4.6.6deb4+deb9u2
 -- https://www.phpmyadmin.net/
 --
 -- Client :  localhost:3306
--- Généré le :  Mer 10 Février 2021 à 14:49
--- Version du serveur :  10.1.41-MariaDB-0+deb9u1
--- Version de PHP :  7.0.33-0+deb9u6
+-- Généré le :  Jeu 15 Avril 2021 à 00:01
+-- Version du serveur :  10.1.48-MariaDB-0+deb9u1
+-- Version de PHP :  7.0.33-0+deb9u10
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
 SET time_zone = "+00:00";
@@ -28,7 +28,6 @@ USE `requests`;
 -- Structure de la table `banned`
 --
 
-DROP TABLE IF EXISTS `banned`;
 CREATE TABLE `banned` (
   `userid` bigint(20) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
@@ -39,7 +38,6 @@ CREATE TABLE `banned` (
 -- Structure de la table `cooldowns`
 --
 
-DROP TABLE IF EXISTS `cooldowns`;
 CREATE TABLE `cooldowns` (
   `userid` bigint(25) NOT NULL,
   `cooldown` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
@@ -51,7 +49,6 @@ CREATE TABLE `cooldowns` (
 -- Structure de la table `GDmoderators`
 --
 
-DROP TABLE IF EXISTS `GDmoderators`;
 CREATE TABLE `GDmoderators` (
   `moderatorname` varchar(25) DEFAULT NULL,
   `userid` varchar(25) NOT NULL,
@@ -66,7 +63,6 @@ CREATE TABLE `GDmoderators` (
 -- Structure de la table `GRmoderators`
 --
 
-DROP TABLE IF EXISTS `GRmoderators`;
 CREATE TABLE `GRmoderators` (
   `userid` varchar(25) NOT NULL,
   `name` varchar(20) NOT NULL
@@ -78,7 +74,6 @@ CREATE TABLE `GRmoderators` (
 -- Structure de la table `levels`
 --
 
-DROP TABLE IF EXISTS `levels`;
 CREATE TABLE `levels` (
   `ID` int(11) NOT NULL,
   `levelid` int(11) NOT NULL,
@@ -95,7 +90,6 @@ CREATE TABLE `levels` (
 -- Structure de la table `maintenance`
 --
 
-DROP TABLE IF EXISTS `maintenance`;
 CREATE TABLE `maintenance` (
   `reqhelp` int(4) NOT NULL,
   `reqabout` int(4) NOT NULL,
@@ -108,6 +102,7 @@ CREATE TABLE `maintenance` (
   `reqmyqueue` int(4) NOT NULL,
   `reqreview` int(4) NOT NULL,
   `reqsend` int(4) NOT NULL,
+  `reqnotsend` int(4) NOT NULL DEFAULT '0',
   `reqreport` int(4) NOT NULL,
   `reqmodapprove` int(4) NOT NULL,
   `reqmodunapprove` int(4) NOT NULL,
@@ -133,7 +128,6 @@ CREATE TABLE `maintenance` (
 -- Structure de la table `modlist`
 --
 
-DROP TABLE IF EXISTS `modlist`;
 CREATE TABLE `modlist` (
   `username` varchar(26) NOT NULL,
   `accountID` int(11) NOT NULL,
@@ -146,7 +140,6 @@ CREATE TABLE `modlist` (
 -- Structure de la table `reports`
 --
 
-DROP TABLE IF EXISTS `reports`;
 CREATE TABLE `reports` (
   `ID` int(11) NOT NULL,
   `levelid` int(11) NOT NULL,
@@ -159,7 +152,6 @@ CREATE TABLE `reports` (
 -- Structure de la table `rewards`
 --
 
-DROP TABLE IF EXISTS `rewards`;
 CREATE TABLE `rewards` (
   `userid` bigint(25) NOT NULL,
   `ship1` bigint(11) NOT NULL DEFAULT '0',
@@ -377,7 +369,6 @@ CREATE TABLE `rewards` (
 -- Structure de la table `setup`
 --
 
-DROP TABLE IF EXISTS `setup`;
 CREATE TABLE `setup` (
   `ID` int(11) NOT NULL,
   `serverid` varchar(25) NOT NULL,
@@ -392,7 +383,8 @@ CREATE TABLE `setup` (
   `NeedVideo` varchar(10) NOT NULL,
   `language` varchar(8) NOT NULL,
   `RemoveRated` varchar(10) NOT NULL,
-  `GDModCheckedChannel` bigint(20) DEFAULT NULL
+  `GDModCheckedChannel` bigint(20) DEFAULT NULL,
+  `GDModCheckedChannelNoSend` bigint(20) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 -- --------------------------------------------------------
@@ -401,7 +393,6 @@ CREATE TABLE `setup` (
 -- Structure de la table `tokenrewards`
 --
 
-DROP TABLE IF EXISTS `tokenrewards`;
 CREATE TABLE `tokenrewards` (
   `ID` int(11) NOT NULL,
   `name` varchar(50) NOT NULL,
@@ -418,7 +409,6 @@ CREATE TABLE `tokenrewards` (
 -- Structure de la table `tokens`
 --
 
-DROP TABLE IF EXISTS `tokens`;
 CREATE TABLE `tokens` (
   `ID` int(10) NOT NULL,
   `token` varchar(10) NOT NULL,
@@ -433,7 +423,6 @@ CREATE TABLE `tokens` (
 -- Structure de la table `users`
 --
 
-DROP TABLE IF EXISTS `users`;
 CREATE TABLE `users` (
   `ID` int(11) NOT NULL,
   `userid` varchar(25) NOT NULL,
@@ -570,7 +559,7 @@ ALTER TABLE `users`
 -- AUTO_INCREMENT pour la table `levels`
 --
 ALTER TABLE `levels`
-  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2110;
+  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2543;
 --
 -- AUTO_INCREMENT pour la table `maintenance`
 --
@@ -580,12 +569,12 @@ ALTER TABLE `maintenance`
 -- AUTO_INCREMENT pour la table `reports`
 --
 ALTER TABLE `reports`
-  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
+  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
 --
 -- AUTO_INCREMENT pour la table `setup`
 --
 ALTER TABLE `setup`
-  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=247;
+  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=296;
 --
 -- AUTO_INCREMENT pour la table `tokenrewards`
 --
@@ -600,7 +589,7 @@ ALTER TABLE `tokens`
 -- AUTO_INCREMENT pour la table `users`
 --
 ALTER TABLE `users`
-  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=570;
+  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=716;
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
 /*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;

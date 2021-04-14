@@ -28,7 +28,7 @@ color_palette = ['0x7dff00','0x00ff01','0x00ff7e','0x01ffff','0x01c8ff','0x0000f
 
 jouca = 216708683290247168
 
-TOKEN = "token of the bot"
+TOKEN = "TOKEN"
 prefix = "req!"
 
 #########################
@@ -1814,9 +1814,14 @@ async def on_message(message):
 							embed.add_field(name=f"{gdmodchanneltitle}", value=f"<#{gdmodchannel}>", inline=False)
 						gdmodcheckedchannel = result[13]
 						if gdmodcheckedchannel == None:
-							embed.add_field(name=f"GDModCheckedChannel", value=f"{nochannel}", inline=False)
+							embed.add_field(name=f"GDModCheckedChannel =", value=f"{nochannel}", inline=False)
 						elif gdmodcheckedchannel is not None:
-							embed.add_field(name=f"GDModCheckedChannel", value=f"<#{gdmodcheckedchannel}>", inline=False)
+							embed.add_field(name=f"GDModCheckedChannel =", value=f"<#{gdmodcheckedchannel}>", inline=False)
+						gdmodcheckedchannelnosend = result[14]
+						if gdmodcheckedchannelnosend == None:
+							embed.add_field(name=f"GDModCheckedChannelNoSend =", value=f"{nochannel}", inline=False)
+						elif gdmodcheckedchannelnosend is not None:
+							embed.add_field(name=f"GDModCheckedChannelNoSend =", value=f"<#{gdmodcheckedchannelnosend}>", inline=False)
 					tagreviewer = result[9]
 					if tagreviewer == "0":
 						embed.add_field(name=f"{tagreviewertitle}", value=f"{notitle}", inline=False)
@@ -1881,7 +1886,7 @@ async def on_message(message):
 				args = [x for ar in args for x in ar.split('\n')]
 
 				try:
-					description = args[1]
+					description = args[1].lower()
 				except IndexError as error:
 					description = None
 				try:
@@ -2023,9 +2028,14 @@ async def on_message(message):
 										embed.add_field(name=f"{gdmodchanneltitle}", value=f"<#{gdmodchannel}>", inline=False)
 									gdmodcheckedchannel = result[13]
 									if gdmodcheckedchannel == None:
-										embed.add_field(name=f"GDModCheckedChannel", value=f"{nochannel}", inline=False)
+										embed.add_field(name=f"GDModCheckedChannel =", value=f"{nochannel}", inline=False)
 									elif gdmodcheckedchannel is not None:
-										embed.add_field(name=f"GDModCheckedChannel", value=f"<#{gdmodcheckedchannel}>", inline=False)
+										embed.add_field(name=f"GDModCheckedChannel =", value=f"<#{gdmodcheckedchannel}>", inline=False)
+									gdmodcheckedchannelnosend = result[14]
+									if gdmodcheckedchannelnosend == None:
+										embed.add_field(name=f"GDModCheckedChannelNoSend =", value=f"{nochannel}", inline=False)
+									elif gdmodcheckedchannelnosend is not None:
+										embed.add_field(name=f"GDModCheckedChannelNoSend =", value=f"<#{gdmodcheckedchannelnosend}>", inline=False)
 								tagreviewer = result[9]
 								if tagreviewer == "0":
 									embed.add_field(name=f"{tagreviewertitle}", value=f"{notitle}", inline=False)
@@ -2129,9 +2139,14 @@ async def on_message(message):
 										embed.add_field(name=f"{gdmodchanneltitle}", value=f"<#{gdmodchannel}>", inline=False)
 									gdmodcheckedchannel = result[13]
 									if gdmodcheckedchannel == None:
-										embed.add_field(name=f"GDModCheckedChannel", value=f"{nochannel}", inline=False)
+										embed.add_field(name=f"GDModCheckedChannel =", value=f"{nochannel}", inline=False)
 									elif gdmodcheckedchannel is not None:
-										embed.add_field(name=f"GDModCheckedChannel", value=f"<#{gdmodcheckedchannel}>", inline=False)
+										embed.add_field(name=f"GDModCheckedChannel =", value=f"<#{gdmodcheckedchannel}>", inline=False)
+									gdmodcheckedchannelnosend = result[14]
+									if gdmodcheckedchannelnosend == None:
+										embed.add_field(name=f"GDModCheckedChannelNoSend =", value=f"{nochannel}", inline=False)
+									elif gdmodcheckedchannelnosend is not None:
+										embed.add_field(name=f"GDModCheckedChannelNoSend =", value=f"<#{gdmodcheckedchannelnosend}>", inline=False)
 								tagreviewer = result[9]
 								if tagreviewer == "0":
 									embed.add_field(name=f"{tagreviewertitle}", value=f"{notitle}", inline=False)
@@ -2232,9 +2247,14 @@ async def on_message(message):
 										embed.add_field(name=f"{gdmodchanneltitle}", value=f"<#{gdmodchannel}>", inline=False)
 									gdmodcheckedchannel = result[13]
 									if gdmodcheckedchannel == None:
-										embed.add_field(name=f"GDModCheckedChannel", value=f"{nochannel}", inline=False)
+										embed.add_field(name=f"GDModCheckedChannel =", value=f"{nochannel}", inline=False)
 									elif gdmodcheckedchannel is not None:
-										embed.add_field(name=f"GDModCheckedChannel", value=f"<#{gdmodcheckedchannel}>", inline=False)
+										embed.add_field(name=f"GDModCheckedChannel =", value=f"<#{gdmodcheckedchannel}>", inline=False)
+									gdmodcheckedchannelnosend = result[14]
+									if gdmodcheckedchannelnosend == None:
+										embed.add_field(name=f"GDModCheckedChannelNoSend =", value=f"{nochannel}", inline=False)
+									elif gdmodcheckedchannelnosend is not None:
+										embed.add_field(name=f"GDModCheckedChannelNoSend =", value=f"<#{gdmodcheckedchannelnosend}>", inline=False)
 								tagreviewer = result[9]
 								if tagreviewer == "0":
 									embed.add_field(name=f"{tagreviewertitle}", value=f"{notitle}", inline=False)
@@ -2335,9 +2355,14 @@ async def on_message(message):
 										embed.add_field(name=f"{gdmodchanneltitle}", value=f"<#{gdmodchannel}>", inline=False)
 									gdmodcheckedchannel = result[13]
 									if gdmodcheckedchannel == None:
-										embed.add_field(name=f"GDModCheckedChannel", value=f"{nochannel}", inline=False)
+										embed.add_field(name=f"GDModCheckedChannel =", value=f"{nochannel}", inline=False)
 									elif gdmodcheckedchannel is not None:
-										embed.add_field(name=f"GDModCheckedChannel", value=f"<#{gdmodcheckedchannel}>", inline=False)
+										embed.add_field(name=f"GDModCheckedChannel =", value=f"<#{gdmodcheckedchannel}>", inline=False)
+									gdmodcheckedchannelnosend = result[14]
+									if gdmodcheckedchannelnosend == None:
+										embed.add_field(name=f"GDModCheckedChannelNoSend =", value=f"{nochannel}", inline=False)
+									elif gdmodcheckedchannelnosend is not None:
+										embed.add_field(name=f"GDModCheckedChannelNoSend =", value=f"<#{gdmodcheckedchannelnosend}>", inline=False)
 								tagreviewer = result[9]
 								if tagreviewer == "0":
 									embed.add_field(name=f"{tagreviewertitle}", value=f"{notitle}", inline=False)
@@ -2438,9 +2463,14 @@ async def on_message(message):
 										embed.add_field(name=f"{gdmodchanneltitle}", value=f"<#{gdmodchannel}>", inline=False)
 									gdmodcheckedchannel = result[13]
 									if gdmodcheckedchannel == None:
-										embed.add_field(name=f"GDModCheckedChannel", value=f"{nochannel}", inline=False)
+										embed.add_field(name=f"GDModCheckedChannel =", value=f"{nochannel}", inline=False)
 									elif gdmodcheckedchannel is not None:
-										embed.add_field(name=f"GDModCheckedChannel", value=f"<#{gdmodcheckedchannel}>", inline=False)
+										embed.add_field(name=f"GDModCheckedChannel =", value=f"<#{gdmodcheckedchannel}>", inline=False)
+									gdmodcheckedchannelnosend = result[14]
+									if gdmodcheckedchannelnosend == None:
+										embed.add_field(name=f"GDModCheckedChannelNoSend =", value=f"{nochannel}", inline=False)
+									elif gdmodcheckedchannelnosend is not None:
+										embed.add_field(name=f"GDModCheckedChannelNoSend =", value=f"<#{gdmodcheckedchannelnosend}>", inline=False)
 								tagreviewer = result[9]
 								if tagreviewer == "0":
 									embed.add_field(name=f"{tagreviewertitle}", value=f"{notitle}", inline=False)
@@ -2541,9 +2571,14 @@ async def on_message(message):
 										embed.add_field(name=f"{gdmodchanneltitle}", value=f"<#{gdmodchannel}>", inline=False)
 									gdmodcheckedchannel = result[13]
 									if gdmodcheckedchannel == None:
-										embed.add_field(name=f"GDModCheckedChannel", value=f"{nochannel}", inline=False)
+										embed.add_field(name=f"GDModCheckedChannel =", value=f"{nochannel}", inline=False)
 									elif gdmodcheckedchannel is not None:
-										embed.add_field(name=f"GDModCheckedChannel", value=f"<#{gdmodcheckedchannel}>", inline=False)
+										embed.add_field(name=f"GDModCheckedChannel =", value=f"<#{gdmodcheckedchannel}>", inline=False)
+									gdmodcheckedchannelnosend = result[14]
+									if gdmodcheckedchannelnosend == None:
+										embed.add_field(name=f"GDModCheckedChannelNoSend =", value=f"{nochannel}", inline=False)
+									elif gdmodcheckedchannelnosend is not None:
+										embed.add_field(name=f"GDModCheckedChannelNoSend =", value=f"<#{gdmodcheckedchannelnosend}>", inline=False)
 								tagreviewer = result[9]
 								if tagreviewer == "0":
 									embed.add_field(name=f"{tagreviewertitle}", value=f"{notitle}", inline=False)
@@ -2648,9 +2683,14 @@ async def on_message(message):
 											embed.add_field(name=f"{gdmodchanneltitle}", value=f"<#{gdmodchannel}>", inline=False)
 										gdmodcheckedchannel = result[13]
 										if gdmodcheckedchannel == None:
-											embed.add_field(name=f"GDModCheckedChannel", value=f"{nochannel}", inline=False)
+											embed.add_field(name=f"GDModCheckedChannel =", value=f"{nochannel}", inline=False)
 										elif gdmodcheckedchannel is not None:
-											embed.add_field(name=f"GDModCheckedChannel", value=f"<#{gdmodcheckedchannel}>", inline=False)
+											embed.add_field(name=f"GDModCheckedChannel =", value=f"<#{gdmodcheckedchannel}>", inline=False)
+										gdmodcheckedchannelnosend = result[14]
+										if gdmodcheckedchannelnosend == None:
+											embed.add_field(name=f"GDModCheckedChannelNoSend =", value=f"{nochannel}", inline=False)
+										elif gdmodcheckedchannelnosend is not None:
+											embed.add_field(name=f"GDModCheckedChannelNoSend =", value=f"<#{gdmodcheckedchannelnosend}>", inline=False)
 									tagreviewer = result[9]
 									if tagreviewer == "0":
 										embed.add_field(name=f"{tagreviewertitle}", value=f"{notitle}", inline=False)
@@ -2762,9 +2802,133 @@ async def on_message(message):
 											embed.add_field(name=f"{gdmodchanneltitle}", value=f"<#{gdmodchannel}>", inline=False)
 										gdmodcheckedchannel = result[13]
 										if gdmodcheckedchannel == None:
-											embed.add_field(name=f"GDModCheckedChannel", value=f"{nochannel}", inline=False)
+											embed.add_field(name=f"GDModCheckedChannel =", value=f"{nochannel}", inline=False)
 										elif gdmodcheckedchannel is not None:
-											embed.add_field(name=f"GDModCheckedChannel", value=f"<#{gdmodcheckedchannel}>", inline=False)
+											embed.add_field(name=f"GDModCheckedChannel =", value=f"<#{gdmodcheckedchannel}>", inline=False)
+										gdmodcheckedchannelnosend = result[14]
+										if gdmodcheckedchannelnosend == None:
+											embed.add_field(name=f"GDModCheckedChannelNoSend =", value=f"{nochannel}", inline=False)
+										elif gdmodcheckedchannelnosend is not None:
+											embed.add_field(name=f"GDModCheckedChannelNoSend =", value=f"<#{gdmodcheckedchannelnosend}>", inline=False)
+									tagreviewer = result[9]
+									if tagreviewer == "0":
+										embed.add_field(name=f"{tagreviewertitle}", value=f"{notitle}", inline=False)
+									elif tagreviewer == "1":
+										embed.add_field(name=f"{tagreviewertitle}", value=f"{yestitle}", inline=False)
+									needvideo = result[10]
+									if needvideo == "0":
+										embed.add_field(name=f"{needvideotitle}", value=f"{notitle}", inline=False)
+									elif needvideo == "1":
+										embed.add_field(name=f"{needvideotitle}", value=f"{yestitle}", inline=False)
+									languagesetup = result[11]
+									if languagesetup == "en":
+										embed.add_field(name=f"{languagetitle}", value=f"{englishlanguage}", inline=False)
+									elif languagesetup == "fr":
+										embed.add_field(name=f"{languagetitle}", value=f"{frenchlanguage}", inline=False)
+									elif languagesetup == "es":
+										embed.add_field(name=f"{languagetitle}", value=f"{frenchlanguage}", inline=False)
+									removerated = result[12]
+									if removerated == "0":
+										embed.add_field(name=f"{removeratedtitle}", value=f"{notitle}", inline=False)
+									elif removerated == "1":
+										embed.add_field(name=f"{removeratedtitle}", value=f"{yestitle}", inline=False)
+									embed.set_footer(text=f"{message.guild.name} --- {message.author}")
+									await message.channel.send(embed=embed)
+									return
+								embed = discord.Embed(title="", color=0xff0000)
+								embed.add_field(name=f'{errormessage}', value=f"{errorchanneltag}")
+								msg2 = await message.channel.send(embed=embed)
+								time.sleep(5)
+								await msg2.delete()
+								return
+							else:
+								embed = discord.Embed(title="", color=0xff0000)
+								embed.add_field(name=f'{errormessage}', value=f"{errorgdmod}")
+								msg2 = await message.channel.send(embed=embed)
+								time.sleep(5)
+								await msg2.delete()
+								return
+						if description == "gdmodcheckedchannelnosend":
+							var = message.guild.id
+							pogya = cursor.execute(f"SELECT serverid FROM GDmoderators WHERE serverid = {var}")
+							gdmod1 = cursor.fetchone()
+							if gdmod1 is not None:
+								if valeur is not None:
+									if valeur.startswith("<"):
+										valeur = valeur.replace('<', '')
+										valeur = valeur.replace('>', '')
+										valeur = valeur.replace('#', '')
+										role = client.get_channel(int(valeur))
+										if role is None:
+											embed = discord.Embed(title="", color=0xff0000)
+											embed.add_field(name=f'{errormessage}', value=f"{errorchanneldontexist}")
+											msg2 = await message.channel.send(embed=embed)
+											time.sleep(5)
+											await msg2.delete()
+											return
+									var = message.guild.id
+									embed3 = discord.Embed(title=f"{loadingtitle}", color=0xffce08)
+									embed3.add_field(name=f"{loadingdesc}", value="\u200b")
+									msg = await message.channel.send(embed=embed3)
+									cursor.execute(f"UPDATE setup SET GDModCheckedChannelNoSend = %s WHERE serverid = {var}", (valeur, ))
+									conn.commit()
+									cursor.execute(f"SELECT * FROM setup WHERE serverid = {var} LIMIT 1")
+									result = cursor.fetchone()
+									await msg.delete()
+									embed = discord.Embed(title=f"{setupmaintitle}", color=0x8E8E8E)
+									embed.set_author(name=f"{serversettings}", icon_url="https://cdn.discordapp.com/emojis/472907599361212426.png?v=1")
+									embed.add_field(name=f"{servernametitle}", value=f"{server}", inline=False)
+									reviewerrole = result[2]
+									if reviewerrole == None:
+										embed.add_field(name=f"{reviewerroletitle}", value=f"{norole}", inline=False)
+									elif reviewerrole is not None:
+										embed.add_field(name=f"{reviewerroletitle}", value=f"<@&{reviewerrole}>", inline=False)
+									ownerrole = result[3]
+									if ownerrole == None:
+										embed.add_field(name=f"{ownerroletitle}", value=f"{norole}", inline=False)
+									elif ownerrole is not None:
+										embed.add_field(name=f"{ownerroletitle}", value=f"<@&{ownerrole}>", inline=False)
+									requestchannel = result[4]
+									if requestchannel == None:
+										embed.add_field(name=f"{requestchanneltitle}", value=f"{nochannel}", inline=False)
+									elif requestchannel is not None:
+										embed.add_field(name=f"{requestchanneltitle}", value=f"<#{requestchannel}>", inline=False)
+									reviewchannel = result[5]
+									if reviewchannel == None:
+										embed.add_field(name=f"{reviewchanneltitle}", value=f"{nochannel}", inline=False)
+									elif reviewchannel is not None:
+										embed.add_field(name=f"{reviewchanneltitle}", value=f"<#{reviewchannel}>", inline=False)
+									checkedreviewchannel = result[6]
+									if checkedreviewchannel == None:
+										embed.add_field(name=f"{checkedreviewchanneltitle}", value=f"{nochannel}", inline=False)
+									elif checkedreviewchannel is not None:
+										embed.add_field(name=f"{checkedreviewchanneltitle}", value=f"<#{checkedreviewchannel}>", inline=False)
+									announcementbot = result[7]
+									if announcementbot == None:
+										embed.add_field(name=f"{announcementbottitle}", value=f"{nochannel}", inline=False)
+									elif announcementbot is not None:
+										embed.add_field(name=f"{announcementbottitle}", value=f"<#{announcementbot}>", inline=False)
+									conn.commit()
+									pogya = cursor.execute(f"SELECT serverid FROM GDmoderators WHERE serverid = {var}")
+									gdmod1 = cursor.fetchone()
+									if gdmod1 is not None:
+										conn.commit()
+										cursor.execute(f"SELECT * FROM setup WHERE serverid = {var} LIMIT 1")
+										gdmodchannel = result[8]
+										if gdmodchannel == None:
+											embed.add_field(name=f"{gdmodchanneltitle}", value=f"{nochannel}", inline=False)
+										elif gdmodchannel is not None:
+											embed.add_field(name=f"{gdmodchanneltitle}", value=f"<#{gdmodchannel}>", inline=False)
+										gdmodcheckedchannel = result[13]
+										if gdmodcheckedchannel == None:
+											embed.add_field(name=f"GDModCheckedChannel =", value=f"{nochannel}", inline=False)
+										elif gdmodcheckedchannel is not None:
+											embed.add_field(name=f"GDModCheckedChannel =", value=f"<#{gdmodcheckedchannel}>", inline=False)
+										gdmodcheckedchannelnosend = result[14]
+										if gdmodcheckedchannelnosend == None:
+											embed.add_field(name=f"GDModCheckedChannelNoSend =", value=f"{nochannel}", inline=False)
+										elif gdmodcheckedchannelnosend is not None:
+											embed.add_field(name=f"GDModCheckedChannelNoSend =", value=f"<#{gdmodcheckedchannelnosend}>", inline=False)
 									tagreviewer = result[9]
 									if tagreviewer == "0":
 										embed.add_field(name=f"{tagreviewertitle}", value=f"{notitle}", inline=False)
@@ -2860,9 +3024,14 @@ async def on_message(message):
 										embed.add_field(name=f"{gdmodchanneltitle}", value=f"<#{gdmodchannel}>", inline=False)
 									gdmodcheckedchannel = result[13]
 									if gdmodcheckedchannel == None:
-										embed.add_field(name=f"GDModCheckedChannel", value=f"{nochannel}", inline=False)
+										embed.add_field(name=f"GDModCheckedChannel =", value=f"{nochannel}", inline=False)
 									elif gdmodcheckedchannel is not None:
-										embed.add_field(name=f"GDModCheckedChannel", value=f"<#{gdmodcheckedchannel}>", inline=False)
+										embed.add_field(name=f"GDModCheckedChannel =", value=f"<#{gdmodcheckedchannel}>", inline=False)
+									gdmodcheckedchannelnosend = result[14]
+									if gdmodcheckedchannelnosend == None:
+										embed.add_field(name=f"GDModCheckedChannelNoSend =", value=f"{nochannel}", inline=False)
+									elif gdmodcheckedchannelnosend is not None:
+										embed.add_field(name=f"GDModCheckedChannelNoSend =", value=f"<#{gdmodcheckedchannelnosend}>", inline=False)
 								tagreviewer = result[9]
 								if tagreviewer == "0":
 									embed.add_field(name=f"{tagreviewertitle}", value=f"{notitle}", inline=False)
@@ -2944,9 +3113,14 @@ async def on_message(message):
 										embed.add_field(name=f"{gdmodchanneltitle}", value=f"<#{gdmodchannel}>", inline=False)
 									gdmodcheckedchannel = result[13]
 									if gdmodcheckedchannel == None:
-										embed.add_field(name=f"GDModCheckedChannel", value=f"{nochannel}", inline=False)
+										embed.add_field(name=f"GDModCheckedChannel =", value=f"{nochannel}", inline=False)
 									elif gdmodcheckedchannel is not None:
-										embed.add_field(name=f"GDModCheckedChannel", value=f"<#{gdmodcheckedchannel}>", inline=False)
+										embed.add_field(name=f"GDModCheckedChannel =", value=f"<#{gdmodcheckedchannel}>", inline=False)
+									gdmodcheckedchannelnosend = result[14]
+									if gdmodcheckedchannelnosend == None:
+										embed.add_field(name=f"GDModCheckedChannelNoSend =", value=f"{nochannel}", inline=False)
+									elif gdmodcheckedchannelnosend is not None:
+										embed.add_field(name=f"GDModCheckedChannelNoSend =", value=f"<#{gdmodcheckedchannelnosend}>", inline=False)
 								tagreviewer = result[9]
 								if tagreviewer == "0":
 									embed.add_field(name=f"{tagreviewertitle}", value=f"{notitle}", inline=False)
@@ -3035,9 +3209,14 @@ async def on_message(message):
 										embed.add_field(name=f"{gdmodchanneltitle}", value=f"<#{gdmodchannel}>", inline=False)
 									gdmodcheckedchannel = result[13]
 									if gdmodcheckedchannel == None:
-										embed.add_field(name=f"GDModCheckedChannel", value=f"{nochannel}", inline=False)
+										embed.add_field(name=f"GDModCheckedChannel =", value=f"{nochannel}", inline=False)
 									elif gdmodcheckedchannel is not None:
-										embed.add_field(name=f"GDModCheckedChannel", value=f"<#{gdmodcheckedchannel}>", inline=False)
+										embed.add_field(name=f"GDModCheckedChannel =", value=f"<#{gdmodcheckedchannel}>", inline=False)
+									gdmodcheckedchannelnosend = result[14]
+									if gdmodcheckedchannelnosend == None:
+										embed.add_field(name=f"GDModCheckedChannelNoSend =", value=f"{nochannel}", inline=False)
+									elif gdmodcheckedchannelnosend is not None:
+										embed.add_field(name=f"GDModCheckedChannelNoSend =", value=f"<#{gdmodcheckedchannelnosend}>", inline=False)
 								tagreviewer = result[9]
 								if tagreviewer == "0":
 									embed.add_field(name=f"{tagreviewertitle}", value=f"{notitle}", inline=False)
@@ -3119,9 +3298,14 @@ async def on_message(message):
 										embed.add_field(name=f"{gdmodchanneltitle}", value=f"<#{gdmodchannel}>", inline=False)
 									gdmodcheckedchannel = result[13]
 									if gdmodcheckedchannel == None:
-										embed.add_field(name=f"GDModCheckedChannel", value=f"{nochannel}", inline=False)
+										embed.add_field(name=f"GDModCheckedChannel =", value=f"{nochannel}", inline=False)
 									elif gdmodcheckedchannel is not None:
-										embed.add_field(name=f"GDModCheckedChannel", value=f"<#{gdmodcheckedchannel}>", inline=False)
+										embed.add_field(name=f"GDModCheckedChannel =", value=f"<#{gdmodcheckedchannel}>", inline=False)
+									gdmodcheckedchannelnosend = result[14]
+									if gdmodcheckedchannelnosend == None:
+										embed.add_field(name=f"GDModCheckedChannelNoSend =", value=f"{nochannel}", inline=False)
+									elif gdmodcheckedchannelnosend is not None:
+										embed.add_field(name=f"GDModCheckedChannelNoSend =", value=f"<#{gdmodcheckedchannelnosend}>", inline=False)
 								tagreviewer = result[9]
 								if tagreviewer == "0":
 									embed.add_field(name=f"{tagreviewertitle}", value=f"{notitle}", inline=False)
@@ -3210,9 +3394,14 @@ async def on_message(message):
 										embed.add_field(name=f"{gdmodchanneltitle}", value=f"<#{gdmodchannel}>", inline=False)
 									gdmodcheckedchannel = result[13]
 									if gdmodcheckedchannel == None:
-										embed.add_field(name=f"GDModCheckedChannel", value=f"{nochannel}", inline=False)
+										embed.add_field(name=f"GDModCheckedChannel =", value=f"{nochannel}", inline=False)
 									elif gdmodcheckedchannel is not None:
-										embed.add_field(name=f"GDModCheckedChannel", value=f"<#{gdmodcheckedchannel}>", inline=False)
+										embed.add_field(name=f"GDModCheckedChannel =", value=f"<#{gdmodcheckedchannel}>", inline=False)
+									gdmodcheckedchannelnosend = result[14]
+									if gdmodcheckedchannelnosend == None:
+										embed.add_field(name=f"GDModCheckedChannelNoSend =", value=f"{nochannel}", inline=False)
+									elif gdmodcheckedchannelnosend is not None:
+										embed.add_field(name=f"GDModCheckedChannelNoSend =", value=f"<#{gdmodcheckedchannelnosend}>", inline=False)
 								tagreviewer = result[9]
 								if tagreviewer == "0":
 									embed.add_field(name=f"{tagreviewertitle}", value=f"{notitle}", inline=False)
@@ -3294,9 +3483,14 @@ async def on_message(message):
 										embed.add_field(name=f"{gdmodchanneltitle}", value=f"<#{gdmodchannel}>", inline=False)
 									gdmodcheckedchannel = result[13]
 									if gdmodcheckedchannel == None:
-										embed.add_field(name=f"GDModCheckedChannel", value=f"{nochannel}", inline=False)
+										embed.add_field(name=f"GDModCheckedChannel =", value=f"{nochannel}", inline=False)
 									elif gdmodcheckedchannel is not None:
-										embed.add_field(name=f"GDModCheckedChannel", value=f"<#{gdmodcheckedchannel}>", inline=False)
+										embed.add_field(name=f"GDModCheckedChannel =", value=f"<#{gdmodcheckedchannel}>", inline=False)
+									gdmodcheckedchannelnosend = result[14]
+									if gdmodcheckedchannelnosend == None:
+										embed.add_field(name=f"GDModCheckedChannelNoSend =", value=f"{nochannel}", inline=False)
+									elif gdmodcheckedchannelnosend is not None:
+										embed.add_field(name=f"GDModCheckedChannelNoSend =", value=f"<#{gdmodcheckedchannelnosend}>", inline=False)
 								tagreviewer = result[9]
 								if tagreviewer == "0":
 									embed.add_field(name=f"{tagreviewertitle}", value=f"{notitle}", inline=False)
@@ -3378,9 +3572,14 @@ async def on_message(message):
 										embed.add_field(name=f"{gdmodchanneltitle}", value=f"<#{gdmodchannel}>", inline=False)
 									gdmodcheckedchannel = result[13]
 									if gdmodcheckedchannel == None:
-										embed.add_field(name=f"GDModCheckedChannel", value=f"{nochannel}", inline=False)
+										embed.add_field(name=f"GDModCheckedChannel =", value=f"{nochannel}", inline=False)
 									elif gdmodcheckedchannel is not None:
-										embed.add_field(name=f"GDModCheckedChannel", value=f"<#{gdmodcheckedchannel}>", inline=False)
+										embed.add_field(name=f"GDModCheckedChannel =", value=f"<#{gdmodcheckedchannel}>", inline=False)
+									gdmodcheckedchannelnosend = result[14]
+									if gdmodcheckedchannelnosend == None:
+										embed.add_field(name=f"GDModCheckedChannelNoSend =", value=f"{nochannel}", inline=False)
+									elif gdmodcheckedchannelnosend is not None:
+										embed.add_field(name=f"GDModCheckedChannelNoSend =", value=f"<#{gdmodcheckedchannelnosend}>", inline=False)
 								tagreviewer = result[9]
 								if tagreviewer == "0":
 									embed.add_field(name=f"{tagreviewertitle}", value=f"{notitle}", inline=False)
@@ -3470,9 +3669,14 @@ async def on_message(message):
 										embed.add_field(name=f"{gdmodchanneltitle}", value=f"<#{gdmodchannel}>", inline=False)
 									gdmodcheckedchannel = result[13]
 									if gdmodcheckedchannel == None:
-										embed.add_field(name=f"GDModCheckedChannel", value=f"{nochannel}", inline=False)
+										embed.add_field(name=f"GDModCheckedChannel =", value=f"{nochannel}", inline=False)
 									elif gdmodcheckedchannel is not None:
-										embed.add_field(name=f"GDModCheckedChannel", value=f"<#{gdmodcheckedchannel}>", inline=False)
+										embed.add_field(name=f"GDModCheckedChannel =", value=f"<#{gdmodcheckedchannel}>", inline=False)
+									gdmodcheckedchannelnosend = result[14]
+									if gdmodcheckedchannelnosend == None:
+										embed.add_field(name=f"GDModCheckedChannelNoSend =", value=f"{nochannel}", inline=False)
+									elif gdmodcheckedchannelnosend is not None:
+										embed.add_field(name=f"GDModCheckedChannelNoSend =", value=f"<#{gdmodcheckedchannelnosend}>", inline=False)
 								tagreviewer = result[9]
 								if tagreviewer == "0":
 									embed.add_field(name=f"{tagreviewertitle}", value=f"{notitle}", inline=False)
@@ -3554,9 +3758,14 @@ async def on_message(message):
 										embed.add_field(name=f"{gdmodchanneltitle}", value=f"<#{gdmodchannel}>", inline=False)
 									gdmodcheckedchannel = result[13]
 									if gdmodcheckedchannel == None:
-										embed.add_field(name=f"GDModCheckedChannel", value=f"{nochannel}", inline=False)
+										embed.add_field(name=f"GDModCheckedChannel =", value=f"{nochannel}", inline=False)
 									elif gdmodcheckedchannel is not None:
-										embed.add_field(name=f"GDModCheckedChannel", value=f"<#{gdmodcheckedchannel}>", inline=False)
+										embed.add_field(name=f"GDModCheckedChannel =", value=f"<#{gdmodcheckedchannel}>", inline=False)
+									gdmodcheckedchannelnosend = result[14]
+									if gdmodcheckedchannelnosend == None:
+										embed.add_field(name=f"GDModCheckedChannelNoSend =", value=f"{nochannel}", inline=False)
+									elif gdmodcheckedchannelnosend is not None:
+										embed.add_field(name=f"GDModCheckedChannelNoSend =", value=f"<#{gdmodcheckedchannelnosend}>", inline=False)
 								tagreviewer = result[9]
 								if tagreviewer == "0":
 									embed.add_field(name=f"{tagreviewertitle}", value=f"{notitle}", inline=False)
@@ -7900,7 +8109,6 @@ async def on_message(message):
 				except IndexError as error:
 					demon = None
 
-				author = message.author.id
 				cursor.execute(f"SELECT language FROM users WHERE userid = {author}")
 				try:
 					language = cursor.fetchone()[0]
@@ -12210,6 +12418,425 @@ async def on_message(message):
 					await msg.delete()
 					embed = discord.Embed(title="", color=0xff0000)
 					#embed.set_thumbnail(url="https://cdn.discordapp.com/emojis/472907618386575370.png")
+					embed.add_field(name=f'{errormessage}', value=f"{errorpermission}")
+					msg2 = await message.channel.send(embed=embed)
+					time.sleep(5)
+					await msg2.delete()
+					return
+
+		if msg.startswith("notsend"):
+			try:
+				conn = MC.connect(host = dbhost, database = dbdatabase, user = dbuser, password = dbpassword)
+				cursor = conn.cursor()
+			except MC.Error as err:
+				if err.errno == errorcode.ER_ACCESS_DENIED_ERROR:
+					print("Something is not right with your username or your password")
+					return
+				elif err.errno == errorcode.ER_BAD_DB_ERROR:
+					print("Database does not exist")
+					return
+				else:
+					print(err)
+					return
+			else:
+				conn.cursor(buffered=True)
+
+				maincommand = "reqnotsend"
+				checkmaintenance = checkmaintenance(maincommand)
+				if checkmaintenance == "yes":
+					embed = discord.Embed(title="", color=0xff0000)
+					embed.add_field(name=f'Error. <:error:472907618386575370>', value=f"**The command is under maintenance, please try again later.**")
+					msg2 = await message.channel.send(embed=embed)
+					time.sleep(5)
+					await msg2.delete()
+					return
+				
+				args = [x for ar in args for x in ar.split('\n')]
+
+				author = message.author.id
+				serverid = message.guild.id
+
+				try:
+					level = args[1]
+				except IndexError as error:
+					level = 0
+				try:
+					reason = args[2]
+				except IndexError as error:
+					reason = None
+				
+				cursor.execute(f"SELECT language FROM users WHERE userid = {author}")
+				try:
+					language = cursor.fetchone()[0]
+				except TypeError:
+					language = language_default
+					
+				cursor.execute(f"SELECT language FROM setup WHERE serverid = {serverid}")
+				try:
+					languageserver = cursor.fetchone()[0]
+				except TypeError:
+					languageserver = language_default
+				language2 = language
+				translate_messages = open(f"language/client/reqnotsend/{language2}.txt").read().splitlines()
+
+				loadingtitle = translate_messages[0]
+				loadingdesc = translate_messages[1]
+
+				errormessage = translate_messages[3]
+				errorqueue1 = translate_messages[4]
+				errorqueue2 = translate_messages[5]
+				errorsyntax = translate_messages[6]
+				errorrate = translate_messages[7]
+				errorban = translate_messages[8]
+				errorblacklist = translate_messages[9]
+				errorpermission = translate_messages[10]
+
+				successtitle = translate_messages[12]
+				thelevel = translate_messages[13]
+				by = translate_messages[14]
+				successsend = translate_messages[15]
+
+				translate_messages_server = open(f"language/server/reqnotsend/{languageserver}.txt").read().splitlines()
+
+				byserver = translate_messages_server[0]
+				notsendserver = translate_messages_server[1]
+				reasonserver = translate_messages_server[2]
+				
+				translate_messages_search = open(f"language/server/reqsearch/{languageserver}.txt").read().splitlines()
+
+				searchresult = translate_messages_search[3]
+				desc = translate_messages_search[5]
+				none = translate_messages_search[6]
+				coinstitle = translate_messages_search[7]
+				sizetitle = translate_messages_search[8]
+				newgroundsplay = translate_messages_search[9]
+				downloadsong = translate_messages_search[10]
+				detailledsong = translate_messages_search[11]
+				idleveltitle = translate_messages_search[12]
+				levelversiontitle = translate_messages_search[13]
+				minimumgdver = translate_messages_search[14]
+				objectcount = translate_messages_search[15]
+				lagtitleobject = translate_messages_search[16]
+				youtubelink = translate_messages_search[17]
+				officialsongtitle = translate_messages_search[18]
+
+				data = f"gameVersion=21&binaryVersion=35&gdw=0&type=0&str={level}&diff=-&len=-&page=0&total=0&secret=Wmfd2893gb7".encode()
+				result = urlopen("http://www.boomlings.com/database/getGJLevels21.php",data).read().decode()
+				embed = discord.Embed(title=f"{loadingtitle}", color=0xffce08)
+				embed.add_field(name=f'{loadingdesc}', value="\u200b")
+				msg = await message.channel.send(embed=embed)
+				pog = cursor.execute(f"SELECT userid FROM GDmoderators WHERE userid = {author} LIMIT 1")
+				gdmod = cursor.fetchone()
+				if gdmod is not None:
+					result = result.split(":")
+					levelname = result[3]
+					creator = convertinfo("u","n",result[7])
+					if message.author.guild_permissions.administrator:
+						poggery = cursor.execute(f"SELECT isBlacklist FROM reports WHERE levelid = %s", (level, ))
+						maybe_number2 = cursor.fetchone()
+						if maybe_number2 is None:
+							poggare = cursor.execute(f"SELECT userid FROM banned WHERE userid = {author}")
+							maybe_number3 = cursor.fetchone()
+							if maybe_number3 is None:
+								pogaga = cursor.execute(f"SELECT levelid FROM levels WHERE server = {serverid} AND levelid = %s LIMIT 1", (level, ))
+								try:
+									maybe_number4 = cursor.fetchone()[0]
+								except TypeError:
+									await msg.delete()
+									embed = discord.Embed(title="", color=0xff0000)
+									embed.add_field(name=f'{errormessage}', value=f'{errorqueue1} `{level}` {errorqueue2}')
+									msg2 = await message.channel.send(embed=embed)
+									time.sleep(5)
+									await msg2.delete()
+									return
+								cursor.execute(f"SELECT server FROM levels WHERE server = {serverid} AND levelid = %s LIMIT 1", (level, ))
+								try:
+									maybe_number12345 = cursor.fetchone()[0]
+								except TypeError:
+									await msg.delete()
+									embed = discord.Embed(title="", color=0xff0000)
+									embed.add_field(name=f'{errormessage}', value=f'{errorqueue1} `{level}` {errorqueue2}')
+									msg2 = await message.channel.send(embed=embed)
+									time.sleep(5)
+									await msg2.delete()
+									return
+								if str(maybe_number4) == str(level):
+									stars,objectplus,levelname,creator,ratingemote,stars,downloads,likes,likesemote,description,coins,verifiedcoins,lengthvalue,idlevel,version,gdversion,color = reqsearch(level)
+									
+									embed13 = discord.Embed(title=f'`{level}` (**{levelname}** {byserver} **{creator}**)', color=0xff0000)
+									if reason is not None:
+										nyaya = cursor.execute(f"SELECT requester FROM levels WHERE levelid = %s AND server = %s LIMIT 1", (level, serverid))
+										user1 = cursor.fetchone()[0]
+										username = await client.fetch_user(int(user1))
+
+										cursor.execute(f"SELECT language FROM users WHERE userid = {user1}")
+										try:
+											language_requester = cursor.fetchone()[0]
+										except TypeError:
+											language_requester = language_default
+										language2_requester = language_requester
+										translate_messages_requester = open(f"language/requester/reqnotsend/{language2}.txt").read().splitlines()
+
+										successtitlerequester = translate_messages_requester[0]
+										thelevelyourequested = translate_messages_requester[1]
+										byrequester = translate_messages_requester[2]
+										notsendrequester = translate_messages_requester[3]
+										reasonrequester = translate_messages_requester[4]
+
+										await msg.delete()
+										papa = cursor.execute(f"SELECT moderatorname FROM GDmoderators WHERE userid = {author} LIMIT 1")
+										gdmodname = cursor.fetchone()[0]
+										embed3 = discord.Embed(title=f'{successtitlerequester}', color=0xff0000)
+										embed3.set_thumbnail(url="https://cdn.discordapp.com/emojis/693237079538270261.png?v=1")
+										embed3.add_field(name=f'{thelevelyourequested} `{level}` (**{levelname}** {byrequester} **{creator}**) {notsendrequester} {gdmodname}.\n\n{reasonrequester} {reason}', value='\u200b')
+										channel = await username.create_dm()
+										try:
+											await channel.send(embed=embed3)
+										except discord.errors.Forbidden:
+											pass
+										
+										nani = cursor.execute(f"SELECT requester FROM levels WHERE levelid = %s AND server = %s LIMIT 1", (level, serverid))
+										user1 = cursor.fetchone()[0]
+										username = await client.fetch_user(int(user1))
+										embed4 = discord.Embed(title=f'{successtitle}', color=0x00ff00)
+										embed4.add_field(name=f'{thelevel} `{level}` (**{levelname}** {by} **{creator}**) {successsend}', value='\u200b')
+										await message.channel.send(embed=embed4)
+
+										cursor.execute(f"SELECT ReviewChannel FROM setup WHERE serverid = {serverid}")
+										channelmessageid = cursor.fetchone()[0]
+										channelmessageid = client.get_channel(int(channelmessageid))
+
+										cursor.execute(f"SELECT messageid FROM levels WHERE server = {serverid} AND levelid = {level}")
+										messages = cursor.fetchone()[0]
+										try:
+											msg101 = await channelmessageid.fetch_message(int(messages))
+											await msg101.delete()
+										except:
+											cursor.execute(f"SELECT GDModChannel FROM setup WHERE serverid = {serverid}")
+											channelmessageid = cursor.fetchone()[0]
+											channelmessageid = client.get_channel(int(channelmessageid))
+											try:
+												msg101 = await channelmessageid.fetch_message(int(messages))
+												await msg101.delete()
+											except:
+												pass
+
+										delete = cursor.execute(f"DELETE FROM levels WHERE levelid = %s and server = {serverid} AND server = {serverid}", (level, ))
+										conn.commit()
+										
+										cursor.execute(f"SELECT GDModCheckedChannelNoSend FROM setup WHERE serverid = {serverid} LIMIT 1")
+										try:
+											gdmodcheckedchannel = cursor.fetchone()[0]
+										except TypeError:
+											gdmodcheckedchannel = None
+										if gdmodcheckedchannel is not None:
+											channelmod = client.get_channel(int(gdmodcheckedchannel))
+											
+											embed13.add_field(name=f"{notsendserver} {gdmodname}. <:error:472907618386575370>\n\n{reasonserver} {reason}", value="\u200b")
+											embed13.set_thumbnail(url=f"https://cdn.discordapp.com/emojis/693237079538270261.png?v=1")
+	
+											description += '=' * (-len(description) % 4)
+											base64_bytes = description.encode('ascii')
+											
+											message_bytes = base64.urlsafe_b64decode(base64_bytes)
+											descbase64 = message_bytes.decode('ascii')
+
+											if int(objectplus) >= 40000:
+												embed13.add_field(name=f'<:play:472908887859789835> __{levelname}__ {byserver} {creator} <:object_overflow:472908865953071115>', value=f"{desc} {descbase64}", inline=False)
+											elif int(objectplus) <= 39999:
+												embed13.add_field(name=f'<:play:472908887859789835> __{levelname}__ {byserver} {creator}', value=f"{desc} {descbase64}", inline=False)
+
+											if int(coins) == 0:
+												coinsvalue = f"{none}"
+											elif int(coins) == 1:
+												coinsvalue = "<:user_coin_unverified:472908993832943631>"
+											elif int(coins) == 2:
+												coinsvalue = "<:user_coin_unverified:472908993832943631> <:user_coin_unverified:472908993832943631>"
+											elif int(coins) == 3:
+												coinsvalue = "<:user_coin_unverified:472908993832943631> <:user_coin_unverified:472908993832943631> <:user_coin_unverified:472908993832943631>"
+
+											try:
+												if int(verifiedcoins) == 1:
+													if int(coins) == 0:
+														coinsvalue = f"{none}"
+													elif int(coins) == 1:
+														coinsvalue = "<:user_coin:472908993711308800>"
+													elif int(coins) == 2:
+														coinsvalue = "<:user_coin:472908993711308800> <:user_coin:472908993711308800>"
+													elif int(coins) == 3:
+														coinsvalue = "<:user_coin:472908993711308800> <:user_coin:472908993711308800> <:user_coin:472908993711308800>"
+											except ValueError:
+												pass
+
+											embed13.add_field(name=f'{coinstitle}: {coinsvalue}', value=f"<:downloads:472907713727430658> `{downloads}`\n{likesemote} `{likes}`\n<:length:472908680459976704> `{lengthvalue}`\n", inline=False)
+
+											#reqsearch2(level)
+											try:
+												songname,songauthor,songid,sizesong,songlink,officialsong = reqsearch2(level)
+											except ValueError:
+												songname,songauthor,songid,sizesong,songlink = reqsearch2(level)
+
+											songlink2 = unquote(f"{songlink}")
+											try:
+												officialsong2 = int(officialsong)
+											except UnboundLocalError:
+												embed13.add_field(name=f':musical_note:  __{songname}__ {by} {songauthor}', value=f"SongID: {songid} - {sizetitle}: {sizesong}MB\n<:play:472908887859789835> [{newgroundsplay}](https://newgrounds.com/audio/load/{songid}) <:download_song:472907696685711370> [{downloadsong}]({songlink2})", inline=False)
+											else:
+												embed13.add_field(name=f':musical_note: :white_check_mark:   __**{songname}**__ {by} {songauthor}', value=f"SongID: {songid} - {sizetitle}: {sizesong}MB\n<:play:472908887859789835> [{newgroundsplay}](https://newgrounds.com/audio/load/{songid}) <:download_song:472907696685711370> [{youtubelink}]({songlink2})", inline=False)
+											
+											await channelmod.send(f"<@{user1}>",embed=embed13)
+											return
+									else:
+										nyaya = cursor.execute(f"SELECT requester FROM levels WHERE levelid = %s AND server = %s LIMIT 1", (level, serverid))
+										user1 = cursor.fetchone()[0]
+										username = await client.fetch_user(int(user1))
+
+										cursor.execute(f"SELECT language FROM users WHERE userid = {user1}")
+										try:
+											language_requester = cursor.fetchone()[0]
+										except TypeError:
+											language_requester = language_default
+										language2_requester = language_requester
+										translate_messages_requester = open(f"language/requester/reqnotsend/{language2}.txt").read().splitlines()
+
+										successtitlerequester = translate_messages_requester[0]
+										thelevelyourequested = translate_messages_requester[1]
+										byrequester = translate_messages_requester[2]
+										notsendrequester = translate_messages_requester[3]
+										reasonrequester = translate_messages_requester[4]
+
+										await msg.delete()
+										papa = cursor.execute(f"SELECT moderatorname FROM GDmoderators WHERE userid = {author} LIMIT 1")
+										gdmodname = cursor.fetchone()[0]
+										embed3 = discord.Embed(title=f'{successtitlerequester}', color=0xff0000)
+										embed3.set_thumbnail(url="https://cdn.discordapp.com/emojis/693237079538270261.png?v=1")
+										embed3.add_field(name=f'{thelevelyourequested} `{level}` (**{levelname}** {byrequester} **{creator}**) {notsendrequester} {gdmodname}.', value='\u200b')
+										channel = await username.create_dm()
+										try:
+											await channel.send(embed=embed3)
+										except discord.errors.Forbidden:
+											pass
+										
+										nani = cursor.execute(f"SELECT requester FROM levels WHERE levelid = %s AND server = %s LIMIT 1", (level, serverid))
+										user1 = cursor.fetchone()[0]
+										username = await client.fetch_user(int(user1))
+										embed4 = discord.Embed(title=f'{successtitle}', color=0x00ff00)
+										embed4.add_field(name=f'{thelevel} `{level}` (**{levelname}** {by} **{creator}**) {successsend}', value='\u200b')
+										await message.channel.send(embed=embed4)
+
+										cursor.execute(f"SELECT ReviewChannel FROM setup WHERE serverid = {serverid}")
+										channelmessageid = cursor.fetchone()[0]
+										channelmessageid = client.get_channel(int(channelmessageid))
+
+										cursor.execute(f"SELECT messageid FROM levels WHERE server = {serverid} AND levelid = {level}")
+										messages = cursor.fetchone()[0]
+										try:
+											msg101 = await channelmessageid.fetch_message(int(messages))
+											await msg101.delete()
+										except:
+											cursor.execute(f"SELECT GDModChannel FROM setup WHERE serverid = {serverid}")
+											channelmessageid = cursor.fetchone()[0]
+											channelmessageid = client.get_channel(int(channelmessageid))
+											try:
+												msg101 = await channelmessageid.fetch_message(int(messages))
+												await msg101.delete()
+											except:
+												pass
+
+										delete = cursor.execute(f"DELETE FROM levels WHERE levelid = %s and server = {serverid} AND server = {serverid}", (level, ))
+										conn.commit()
+										
+										cursor.execute(f"SELECT GDModCheckedChannelNoSend FROM setup WHERE serverid = {serverid} LIMIT 1")
+										try:
+											gdmodcheckedchannel = cursor.fetchone()[0]
+										except TypeError:
+											gdmodcheckedchannel = None
+										if gdmodcheckedchannel is not None:
+											channelmod = client.get_channel(int(gdmodcheckedchannel))
+											
+											embed13.add_field(name=f"{notsendserver} {gdmodname}. <:error:472907618386575370>", value="\u200b")
+											embed13.set_thumbnail(url=f"https://cdn.discordapp.com/emojis/693237079538270261.png?v=1")
+	
+											description += '=' * (-len(description) % 4)
+											base64_bytes = description.encode('ascii')
+											
+											message_bytes = base64.urlsafe_b64decode(base64_bytes)
+											descbase64 = message_bytes.decode('ascii')
+
+											if int(objectplus) >= 40000:
+												embed13.add_field(name=f'<:play:472908887859789835> __{levelname}__ {byserver} {creator} <:object_overflow:472908865953071115>', value=f"{desc} {descbase64}", inline=False)
+											elif int(objectplus) <= 39999:
+												embed13.add_field(name=f'<:play:472908887859789835> __{levelname}__ {byserver} {creator}', value=f"{desc} {descbase64}", inline=False)
+
+											if int(coins) == 0:
+												coinsvalue = f"{none}"
+											elif int(coins) == 1:
+												coinsvalue = "<:user_coin_unverified:472908993832943631>"
+											elif int(coins) == 2:
+												coinsvalue = "<:user_coin_unverified:472908993832943631> <:user_coin_unverified:472908993832943631>"
+											elif int(coins) == 3:
+												coinsvalue = "<:user_coin_unverified:472908993832943631> <:user_coin_unverified:472908993832943631> <:user_coin_unverified:472908993832943631>"
+
+											try:
+												if int(verifiedcoins) == 1:
+													if int(coins) == 0:
+														coinsvalue = f"{none}"
+													elif int(coins) == 1:
+														coinsvalue = "<:user_coin:472908993711308800>"
+													elif int(coins) == 2:
+														coinsvalue = "<:user_coin:472908993711308800> <:user_coin:472908993711308800>"
+													elif int(coins) == 3:
+														coinsvalue = "<:user_coin:472908993711308800> <:user_coin:472908993711308800> <:user_coin:472908993711308800>"
+											except ValueError:
+												pass
+
+											embed13.add_field(name=f'{coinstitle}: {coinsvalue}', value=f"<:downloads:472907713727430658> `{downloads}`\n{likesemote} `{likes}`\n<:length:472908680459976704> `{lengthvalue}`\n", inline=False)
+
+											#reqsearch2(level)
+											try:
+												songname,songauthor,songid,sizesong,songlink,officialsong = reqsearch2(level)
+											except ValueError:
+												songname,songauthor,songid,sizesong,songlink = reqsearch2(level)
+
+											songlink2 = unquote(f"{songlink}")
+											try:
+												officialsong2 = int(officialsong)
+											except UnboundLocalError:
+												embed13.add_field(name=f':musical_note:  __{songname}__ {by} {songauthor}', value=f"SongID: {songid} - {sizetitle}: {sizesong}MB\n<:play:472908887859789835> [{newgroundsplay}](https://newgrounds.com/audio/load/{songid}) <:download_song:472907696685711370> [{downloadsong}]({songlink2})", inline=False)
+											else:
+												embed13.add_field(name=f':musical_note: :white_check_mark:   __**{songname}**__ {by} {songauthor}', value=f"SongID: {songid} - {sizetitle}: {sizesong}MB\n<:play:472908887859789835> [{newgroundsplay}](https://newgrounds.com/audio/load/{songid}) <:download_song:472907696685711370> [{youtubelink}]({songlink2})", inline=False)
+											
+											await channelmod.send(f"<@{user1}>",embed=embed13)
+											return
+							else:
+								await msg.delete()
+								embed = discord.Embed(title="", color=0xff0000)
+								embed.add_field(name=f'{errormessage}', value=f"{errorban}")
+								msg2 = await message.channel.send(embed=embed)
+								time.sleep(5)
+								await msg2.delete()
+								return
+						else:
+							conn.commit()
+							await msg.delete()
+							embed = discord.Embed(title="", color=0xff0000)
+							embed.add_field(name=f'{errormessage}', value=f'{errorblacklist}')
+							msg2 = await message.channel.send(embed=embed)
+							time.sleep(5)
+							await msg2.delete()
+							return
+					else:
+						await msg.delete()
+						embed = discord.Embed(title="", color=0xff0000)
+						embed.add_field(name=f'{errormessage}', value=f"{errorpermission}")
+						msg2 = await message.channel.send(embed=embed)
+						time.sleep(5)
+						await msg2.delete()
+						return
+							
+				else:
+					await msg.delete()
+					embed = discord.Embed(title="", color=0xff0000)
 					embed.add_field(name=f'{errormessage}', value=f"{errorpermission}")
 					msg2 = await message.channel.send(embed=embed)
 					time.sleep(5)
