@@ -1,0 +1,16 @@
+<:info:472908656514433064> Loading...
+Loading... Please wait a little moment
+
+Error. <:error:472907618386575370>
+No levels with the ID
+found on the queue.
+You need to select in the command with the numbers of stars (1 to 10) and/or the demon type (1 to 5) in your send.
+You need to select with 'star' or 'featured' for execute this command.
+You were banned because you didn't followed the bot rules, you will no longer be able to send/review/report levels. If this is an error, please contact support at this email address: joucagame@gmail.com.
+This level is blacklisted on the bot. The reasons are because this level is against the rules of Geometry Dash.
+You don't have the permission to execute this command.
+
+Success ! <:success:472908961176092702>
+The level
+by
+has been send to the requester for no send to RobTop.

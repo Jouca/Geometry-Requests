@@ -1,0 +1,16 @@
+<:info:472908656514433064> Chargement...
+Chargement... Veuillez patienter un petit moment
+
+Erreur. <:error:472907618386575370>
+Aucun niveaux avec l'ID
+trouvé dans la liste.
+Vous avez besoin de sélectionner dans la commande avec le nombres d'étoiles (1 to 10) et/ou le type du démon (1 a 5) sur vôtre envoie.
+Vous avez besoin de sélectionner avec 'star' ou 'featured' pour éxecuter cette commande.
+Vous avez été banni car vous n'avez pas suivi les règles du bot, vous n'êtes plus capâble d'envoyer/d'évaluer/de rapporter des niveaux. Si ceci est une erreur, Merci de contacter le support à cette adresse email : joucagame@gmail.com.
+Ce niveau est sous liste noire sur le bot. Les raisons sont que ce niveau est contre les règles de Geometry Dash.
+Vous n'avez pas la permission d'éxecuter cette commande.
+
+Succès ! <:success:472908961176092702>
+Le niveau
+par
+a été envoyé à l'envoyeur pour aucun envoi à RobTop.
