@@ -12461,7 +12461,7 @@ async def on_message(message):
 				except IndexError as error:
 					level = 0
 				try:
-					reason = args[2]
+					reason = args[2:]
 				except IndexError as error:
 					reason = None
 				
