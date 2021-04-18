@@ -12565,6 +12565,7 @@ async def on_message(message):
 									
 									embed13 = discord.Embed(title=f'`{level}` (**{levelname}** {byserver} **{creator}**)', color=0xff0000)
 									if reason is not None:
+										reason = ' '.join(reason)
 										nyaya = cursor.execute(f"SELECT requester FROM levels WHERE levelid = %s AND server = %s LIMIT 1", (level, serverid))
 										user1 = cursor.fetchone()[0]
 										username = await client.fetch_user(int(user1))
